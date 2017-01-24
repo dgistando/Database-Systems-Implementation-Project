@@ -8,7 +8,6 @@ using namespace std;
 
 
 Catalog::Catalog(string& _fileName) {
-	cout << hi;
 }
 
 Catalog::~Catalog() {
