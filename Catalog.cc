@@ -7,13 +7,21 @@
 using namespace std;
 
 
+
+
 Catalog::Catalog(string& _fileName) {
+	//sql open
+	//read catalog in memory
+	string test = "this is a test string";
 }
 
 Catalog::~Catalog() {
+	//sql close
+	//save in database
 }
 
 bool Catalog::Save() {
+
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
@@ -21,13 +29,15 @@ bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
+
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
-	return true;
+	return true; //where is the fie that contains data
 }
 
 void Catalog::SetDataFile(string& _table, string& _path) {
+
 }
 
 bool Catalog::GetNoDistinct(string& _table, string& _attribute,
