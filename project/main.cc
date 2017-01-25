@@ -9,7 +9,14 @@ using namespace std;
 
 
 int main () {
-	
+	//First create a menu
+	cout<< "Some text"<<endl;
+	//create a table,
+
+	//drop a table, 
+
+	//display the content of the catalog
+
 	return 0;
 }
 
