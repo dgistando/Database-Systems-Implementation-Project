@@ -9,7 +9,19 @@ using namespace std;
 
 
 int main () {
-	string table = "region", attribute, type;
+	//First create a menu
+	cout<< "Some text"<<endl;
+	//create a table,
+
+	//drop a table, 
+
+	//display the content of the catalog
+
+	return 0;
+}
+
+
+	/*string table = "region", attribute, type;
 	vector<string> attributes, types;
 	vector<unsigned int> distincts;
 
@@ -51,7 +63,4 @@ int main () {
 
 	c.CreateTable(table, attributes, types);
 
-	cout << c << endl;
-
-	return 0;
-}
+	cout << c << endl;*/
