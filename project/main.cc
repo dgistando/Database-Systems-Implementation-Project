@@ -9,12 +9,40 @@ using namespace std;
 
 
 int main () {
+<<<<<<< HEAD:main.cc
 	
 	return 0;
 }
 /*string table = "region", attribute, type;
 vector<string> attributes, types;
 vector<unsigned int> distincts;
+=======
+	//First create a menu
+	cout<< "Some text"<<endl;
+	//create a table,
+
+	//drop a table, 
+
+	//display the content of the catalog
+
+	return 0;
+}
+
+
+	/*string table = "region", attribute, type;
+	vector<string> attributes, types;
+	vector<unsigned int> distincts;
+
+	attribute = "r_regionkey"; attributes.push_back(attribute);
+	type = "INTEGER"; types.push_back(type);
+	distincts.push_back(5);
+	attribute = "r_name"; attributes.push_back(attribute);
+	type = "STRING"; types.push_back(type);
+	distincts.push_back(5);
+	attribute = "r_comment"; attributes.push_back(attribute);
+	type = "STRING"; types.push_back(type);
+	distincts.push_back(5);
+>>>>>>> 896694c1687c4835843ebce474e6e864a715c0aa:project/main.cc
 
 attribute = "r_regionkey"; attributes.push_back(attribute);
 type = "INTEGER"; types.push_back(type);
@@ -52,6 +80,10 @@ cout << s2 << endl;
 string dbFile = "catalog.sqlite";
 Catalog c(dbFile);
 
+<<<<<<< HEAD:main.cc
 c.CreateTable(table, attributes, types);
 
 cout << c << endl;*/
+=======
+	cout << c << endl;*/
+>>>>>>> 896694c1687c4835843ebce474e6e864a715c0aa:project/main.cc
