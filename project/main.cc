@@ -9,26 +9,19 @@ using namespace std;
 
 
 int main () {
-<<<<<<< HEAD:main.cc
-	
-	return 0;
-}
-/*string table = "region", attribute, type;
-vector<string> attributes, types;
-vector<unsigned int> distincts;
-=======
-	//First create a menu
-	cout<< "Some text"<<endl;
-	//create a table,
+	string db_name = "";
+	cout << "Enter the database: ";
+	cin >> db_name;
+	if(db_name != ""){
 
-	//drop a table, 
+	}
 
-	//display the content of the catalog
 
 	return 0;
 }
+int printMenu (){
 
-
+}
 	/*string table = "region", attribute, type;
 	vector<string> attributes, types;
 	vector<unsigned int> distincts;
@@ -84,6 +77,3 @@ Catalog c(dbFile);
 c.CreateTable(table, attributes, types);
 
 cout << c << endl;*/
-=======
-	cout << c << endl;*/
->>>>>>> 896694c1687c4835843ebce474e6e864a715c0aa:project/main.cc
