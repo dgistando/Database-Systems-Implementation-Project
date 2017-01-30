@@ -13,7 +13,7 @@ int main () {
 	cout<< "Some text"<<endl;
 	//create a table,
 
-	//drop a table, 
+	//drop a table,
 
 	//display the content of the catalog
 
