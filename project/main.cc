@@ -3,30 +3,53 @@
 
 #include "Catalog.h"
 
-
-
-extern "C" {
-#include "QueryParser.h"
+using namespace std;
+int printMenu (){
+	int answer;
+	cout << "MENU: " << endl;
+	cout << endl;
+	cout << "1) CREATE TABLE" << endl;
+	cout << "2) DROP TABLE" << endl;
+	cout << "3) VIEW CATALOG" << endl;
+	cout << "4) SAVE DATABSE" << endl;
+	cin >> answer;
+	switch(answer){
+		case(answer = 1):
+			CreateTable();
+			break;
+		case(answer = 2):
+			DropTable();
+			break;
+		case(answer = 3):
+			//multiple functions here?
+			break;
+		case(answer = 4):
+			Save();
+			break;
+	}
 }
 
-<<<<<<< Zac
-#include "QueryOptimizer.h"
-#include "QueryCompiler.h"
-#include "RelOp.h"
-=======
+int main () {
+	string db_name = "";
+	cout << "Enter the database: ";
+	cin >> db_name;
+	if(db_name != ""){
+		Catalog(*db_name);
+//<<<<<<< HEAD
 	//drop a table,
->>>>>>> Nothing
+//=======
+	}
+	printMenu();
+//>>>>>>> refs/remotes/origin/master
 
 using namespace std;
 
+	return 0;
+}
 
-// these data structures hold the result of the parsing
-extern struct FuncOperator* finalFunction; // the aggregate function
-extern struct TableList* tables; // the list of tables in the query
-extern struct AndList* predicate; // the predicate in WHERE
-extern struct NameList* groupingAtts; // grouping attributes
-extern struct NameList* attsToSelect; // the attributes in SELECT
-extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
+	/*string table = "region", attribute, type;
+	vector<string> attributes, types;
+	vector<unsigned int> distincts;
 
 
 extern "C" int yyparse();
