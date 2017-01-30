@@ -9,9 +9,13 @@ extern "C" {
 #include "QueryParser.h"
 }
 
+<<<<<<< Zac
 #include "QueryOptimizer.h"
 #include "QueryCompiler.h"
 #include "RelOp.h"
+=======
+	//drop a table,
+>>>>>>> Nothing
 
 using namespace std;
 
