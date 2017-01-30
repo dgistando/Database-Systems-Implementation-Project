@@ -6,26 +6,48 @@
 #include "Catalog.h"
 
 using namespace std;
-
+int printMenu (){
+	int answer;
+	cout << "MENU: " << endl;
+	cout << endl;
+	cout << "1) CREATE TABLE" << endl;
+	cout << "2) DROP TABLE" << endl;
+	cout << "3) VIEW CATALOG" << endl;
+	cout << "4) SAVE DATABSE" << endl;
+	cin >> answer;
+	switch(answer){
+		case(answer = 1):
+			CreateTable();
+			break;
+		case(answer = 2):
+			DropTable();
+			break;
+		case(answer = 3):
+			//multiple functions here?
+			break;
+		case(answer = 4):
+			Save();
+			break;
+	}
+}
 
 int main () {
 	string db_name = "";
 	cout << "Enter the database: ";
 	cin >> db_name;
 	if(db_name != ""){
-
-<<<<<<< HEAD
+		Catalog(*db_name);
+//<<<<<<< HEAD
 	//drop a table,
-=======
+//=======
 	}
->>>>>>> refs/remotes/origin/master
+	printMenu();
+//>>>>>>> refs/remotes/origin/master
 
 
 	return 0;
 }
-int printMenu (){
 
-}
 	/*string table = "region", attribute, type;
 	vector<string> attributes, types;
 	vector<unsigned int> distincts;
