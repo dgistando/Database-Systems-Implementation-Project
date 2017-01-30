@@ -1,0 +1,71 @@
+
+bool GetNoTuples(string& _table, unsigned int& _noTuples)
+	
+	string statement = "SELECT COUNT(type) from sqlite_master WHERE type='table' AND table_name='" + _table + "';";
+	// if statement returns 0, then return false
+	// if statement returns 1, then return true
+	
+void SetNoTuples(string& _table, unsigned int& _noTuples)
+	
+	_noTuples = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND table_name = '" + _table + "';";
+	//returns number of tuples for _table using catalog
+	
+bool GetDataFile(string& _table, string& _path);
+void SetDataFile(string& _table, string& _path);
+
+bool GetNoDistinct(string& _table, string& _attribute, unsigned int& _noDistinct)
+	string statement = "SELECT COUNT(type) from sqlite_master WHERE type='table' AND table_name='" + _table + "';";
+	//should be the same query as other functions
+	// if statement returns 0, then return false
+	// if statement returns 1, then return true
+	//would we need all values that are passed?
+	
+void SetNoDistinct(string& _table, string& _attribute, unsigned int& _noDistinct)
+	_noDistinct = "SELECT COUNT(DISTINCT " + _attribute + ") FROM sqlite_master WHERE type = 'table' AND table_name = " + _table + ";";
+	//returns number of distinct values in _table using catalog
+
+void GetTables(vector<string>& _tables)
+	_tables = "SELECT table_name FROM sqlite_master WHERE type = 'table'";
+	//returns the names of the tables, but need to store them into a vector
+	
+bool GetAttributes(string& _table, vector<string>& _attributes);
+	_attributes = "SELECT name FROM sqlite_master WHERE type = 'attribute' AND table_name = " + _table + ";";
+	//should give us attributes of a _table, but need to store in vector
+	
+	string statement = "SELECT COUNT(type) from sqlite_master WHERE type='table' AND table_name='" + _table + "';";
+	// if statement returns 0, then return false
+	// if statement returns 1, then return true
+	
+bool GetSchema(string& _table, Schema& _schema)
+	//need to work on schcemea
+	//checkc if table exists
+
+bool CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes);
+
+	//step1 - check if table already exists in catalog, tables cannot have same name
+	//step2 - make sure multiple attributes do not have same name in same attribute
+	//step3 - make sure attributes are either int, float or string
+	//step4 - create table 
+	//step5 - store table information into catalog
+	//step6 - return true if operation is successful
+	
+bool DropTable(string& _table)
+	statement = "DROP TABLE _table"; 
+	//drops table from database
+	statement = "DELETE FROM sqlite_master WHERE type = 'table' AND table_name = '" + _table + "';";
+	//removes any rows from catalog containing that table
+	
+	//return true if operation is successful
+	
+	
+	
+	
+HOW CATALOG SHOULD BE SETUP
+CREATE TABLE sqlite_master (
+  type text, 					//either "attribute" or "table"
+  name text, 					//name of the attribute/table
+  tbl_name text, 				//name of the table where it is located
+  rootpage integer, 			//???
+  sql text 						//sql statement used to create the attribute?
+);
+
