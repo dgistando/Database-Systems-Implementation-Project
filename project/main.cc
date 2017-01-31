@@ -14,16 +14,16 @@ int printMenu (){
 	cout << "4) SAVE DATABSE" << endl;
 	cin >> answer;
 	switch(answer){
-		case(answer = 1):
+		case 1:
 			CreateTable();
 			break;
-		case(answer = 2):
+		case 2:
 			DropTable();
 			break;
-		case(answer = 3):
+		case 3:
 			//multiple functions here?
 			break;
-		case(answer = 4):
+		case 4:
 			Save();
 			break;
 	}
