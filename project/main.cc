@@ -6,7 +6,7 @@
 #include "Catalog.h"
 
 using namespace std;
-int printMenu (){
+int printMenu (Catalog cname){
 	int answer;
 	cout << "MENU: " << endl;
 	cout << endl;
@@ -15,20 +15,20 @@ int printMenu (){
 	cout << "3) VIEW CATALOG" << endl;
 	cout << "4) SAVE DATABSE" << endl;
 	cin >> answer;
-	switch(answer){
+/*	switch(answer){
 		case 1:
-			CreateTable();
+			cname.CreateTable();
 			break;
 		case 2:
-			DropTable();
+			cname.DropTable();
 			break;
 		case 3:
 			//multiple functions here?
 			break;
 		case 4:
-			Save();
+			cname.Save();
 			break;
-	}
+	} */
 }
 
 int main () {
@@ -36,12 +36,13 @@ int main () {
 	cout << "Enter the database: ";
 	cin >> db_name;
 	if(db_name != ""){
-		Catalog(*db_name);
+		Catalog cname = Catalog(db_name);
+		printMenu(cname);
 //<<<<<<< HEAD
 	//drop a table,
 //=======
 	}
-	printMenu();
+
 //>>>>>>> refs/remotes/origin/master
 
 
