@@ -2,6 +2,7 @@
 #define _CATALOG_H
 
 #include <string>
+#include <string.h>
 #include <vector>
 #include <iostream>
 
@@ -28,16 +29,59 @@ private:
     public:
         sqlite3 *_db;
         bool _isOpen;
-        int _rc;
-        string _sql;
-        string _error;
         DBAccess(string &fileName){
-            _rc = sqlite3_open_v2(fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
-            if(_rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
+            int rc = sqlite3_open_v2(fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
+            if(rc == SQLITE_OK){ _isOpen = 1; ReadCatalog(); } else { _isOpen = 0; }
         }
         ~DBAccess(){
+            //write catalog
+            WriteCatalog();
             //delete _db;
         }
+        static int CatalogCallback(void *a_parameter, int argc, char **argv, char **colName){
+            char *columnName[] = { "name", "numTuples", "location" };
+            for (int i = 0; i < argc; i++){
+               for (int j = 0; j < sizeof(columnName)/sizeof(columnName[0]); j++){
+                    if (strcmp (colName[i], columnName[j]) == 0) {
+                        switch (j) {
+                            case 0:
+                                //strncpy (pTbl1Record[iIndex].cKey, (argv[i] ? argv[i] : "NULL"), 19);
+                                break;
+                            case 1:
+                                //pTbl1Record[iIndex].iValue = atoi (argv[i] ? argv[i] : "0");
+                                break;
+                            case 2:
+                                
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    }
+               } 
+            }
+            return 0;
+        }
+        static int AttributeCallback(void *a_parameter, int argc, char **argv, char **colName){
+            for (int i = 0; i < argc; i++){
+                
+            }
+            return 0;
+        }
+        bool ReadCatalog(){
+            if(_isOpen){
+                char * err;
+                string sql = "SELECT * FROM Catalog";
+                //int rc = sqlite3_exec(_db, sql.c_str(), CatalogCallback, 0, &err);
+                
+            } else return 0;
+        }
+        bool WriteCatalog() {
+            if(_isOpen){
+                
+            } else return 0;
+        }
+        
     };
     class CatalogEntry{
     public:
@@ -70,13 +114,13 @@ private:
         CatalogMap(){ }
         ~CatalogMap(){ }
         bool InsertNewCatalogEntry(string &key_tableName, CatalogEntry &ce){
-            Keyify<string> key (key_tableName);
-            if(!catalog_tbl.IsThere(key)) {  Swapify<CatalogEntry> data (ce); catalog_tbl.Insert(key,data); return 1; }
+            Keyify<string> *key = new Keyify<string> (key_tableName); //ptr to keep it in mem
+            if(!catalog_tbl.IsThere(*key)) {  Swapify<CatalogEntry> data (ce); catalog_tbl.Insert(*key,data); return 1; }
             else { return 0; } //throw("ERROR")?
         }
         bool InsertNewAttributeEntry(string &key_attrbName, AttributeEntry &ae){
-            Keyify<string> key (key_attrbName);
-            if(!attrb_tbl.IsThere(key)) {  Swapify<AttributeEntry> data (ae); attrb_tbl.Insert(key,data); return 1; }
+            Keyify<string> *key = new Keyify<string> (key_attrbName); //ptr to keep it in mem
+            if(!attrb_tbl.IsThere(*key)) {  Swapify<AttributeEntry> data (ae); attrb_tbl.Insert(*key,data); return 1; }
             else { return 0; } //throw("ERROR")?
         }
         bool GetCatalogEntry(string &key_tableName, CatalogEntry &ce){
@@ -88,7 +132,24 @@ private:
             Keyify<string> key (key_attrbName);
             if(attrb_tbl.IsThere(key)){ ae = attrb_tbl.Find(key); return 1; }
             else return 0;
-        } 
+        }
+        void GetAllTables(vector<string> &tables){
+            catalog_tbl.MoveToStart();
+            while(!catalog_tbl.AtEnd()){
+                tables.push_back(catalog_tbl.CurrentKey());
+                catalog_tbl.Advance();
+            }
+        }
+        void GetAllAttributes(string &tableName, vector<string> &attributes){
+            /*Keyify<string> key(tableName);
+            attrb_tbl.MoveToStart();
+            while(!attrb_tbl.AtEnd()){
+                if(attrb_tbl.CurrentKey().IsEqual(key)){
+                    attributes.push_back(attrb_tbl.CurrentData().)
+                }
+            }*/
+            //might need to reconsider the structure of the table
+        }
     };
     DBAccess * _dbaccess;
     CatalogMap * _cmap;

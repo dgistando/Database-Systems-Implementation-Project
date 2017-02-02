@@ -25,11 +25,15 @@ bool Catalog::Save() {
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
-	return true;
+    CatalogEntry *ce;
+    if(_cmap->GetCatalogEntry(_table,*ce)){ _noTuples = ce->_noTuples; return 1; }
+    else return 0;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-
+    CatalogEntry *ce;
+    if(_cmap->GetCatalogEntry(_table, *ce)){ ce->_noTuples = _noTuples; }
+    else { /*throw("MADNESS");*/ } 
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
@@ -49,6 +53,7 @@ void Catalog::SetNoDistinct(string& _table, string& _attribute,
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
+    _cmap->GetAllTables(_tables);
 }
 
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
