@@ -1,37 +1,23 @@
 #include <iostream>
-#include "sqlite3.h"
-#include "stdio.h"
 
 #include "Schema.h"
 #include "Catalog.h"
 
+
+
 using namespace std;
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){
-   int i;
-   for(i = 0; i < argc; i++){
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
-}
 
 
 Catalog::Catalog(string& _fileName) {
-	sqlite3 *db;
-  char *zErrMsg = 0;
-  int  rc;
-  char *sql;
-
-  /* Open database */
-  rc = sqlite3_open("test.db", &db);
-  if( rc ){ fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db)); }
-	else{ fprintf(stdout, "Opened database successfully\n"); }
+    _dbaccess = new DBAccess(_fileName);
+    _cmap = new CatalogMap();
 }
 
 Catalog::~Catalog() {
-	//sql close
-	//save in database
+    delete _dbaccess;
+    delete _cmap;
+    Save();
 }
 
 bool Catalog::Save() {
@@ -39,11 +25,15 @@ bool Catalog::Save() {
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
-	return true;
+    CatalogEntry *ce;
+    if(_cmap->GetCatalogEntry(_table,*ce)){ _noTuples = ce->_noTuples; return true; }
+    else return false;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-
+    CatalogEntry *ce;
+    if(_cmap->GetCatalogEntry(_table, *ce)){ ce->_noTuples = _noTuples; }
+    else { /*throw("MADNESS");*/ } 
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
@@ -63,6 +53,7 @@ void Catalog::SetNoDistinct(string& _table, string& _attribute,
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
+    _cmap->GetAllTables(_tables);
 }
 
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
@@ -75,7 +66,10 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
 
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-	return true;
+    if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
+        _cmap->CreateTable(_table,_attributes,_attributeTypes)){
+        return true; }
+    else return false;
 }
 
 bool Catalog::DropTable(string& _table) {
