@@ -87,8 +87,14 @@ private:
                 
             } else return 0;
         }
-        bool CreateTable(string& _table, vector<string>& _attributes,
-            vector<string>& _attributeTypes){
+        bool CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes){
+            /* TO DO:
+             * Create something to check if the table was created* like bool
+             * Create something to check if the table was registered in Catalog& and Attribute* like bool
+             * After, check if either failed
+             * If table was created but not registered, pass true and write in the catalog when program is finished
+             * else ..?
+             */
             if(_isOpen){
                 string query = "CREATE TABLE " + _table + "(";
                 for(int i = 0; i < _attributes.size(); i++){
@@ -155,7 +161,10 @@ private:
         }
         bool GetCatalogEntry(string &key_tableName, CatalogEntry &ce){
             Keyify<string> key (key_tableName);
-            if(catalog_tbl.IsThere(key)){ ce = catalog_tbl.Find(key); return 1; }
+            if(catalog_tbl.IsThere(key)){ 
+                ce = (catalog_tbl.Find(key).operator CatalogEntry()); 
+                return 1; 
+            }
             else return 0;
         }
         bool GetAttributeEntry(string &key_attrbName, AttributeEntry &ae){
@@ -180,8 +189,15 @@ private:
             }*/
             //might need to reconsider the structure of the table
         }
-        bool CreateTable(string& _table, vector<string>& _attributes,
-            vector<string>& _attributeTypes){
+        bool CreateTable(string& _table, vector<string>& _attributes, vector<string>& _attributeTypes){
+            Swapify<CatalogEntry> *sce = new Swapify<CatalogEntry>(*new CatalogEntry(_table,10,"catalog"));
+            Keyify<string> *key = new Keyify<string>(_table);
+            catalog_tbl.Insert(*key,*sce);
+            for(int i = 0; i < _attributes.size(); i++){
+                Swapify<AttributeEntry> *sae = new Swapify<AttributeEntry>(*new AttributeEntry(_attributes.at(i),_table,_attributeTypes.at(i),0));
+                Keyify<string> *key = new Keyify<string>(_attributes.at(i));
+                attrb_tbl.Insert(*key,*sae);
+            }
             return true;
         }
     };

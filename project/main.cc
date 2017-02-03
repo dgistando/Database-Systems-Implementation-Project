@@ -19,6 +19,10 @@ int main () {
         vector<string> attrb; attrb.push_back("Name"); attrb.push_back("Age");
         vector<string> atype; atype.push_back("VARCHAR"); atype.push_back("INTEGER");
         ctl.CreateTable(tableName, attrb, atype);
+        unsigned int test = 0;
+        ctl.GetNoTuples(tableName,test);
+        cout << test;
+        cin >> test;
 	return 0;
 }
 int printMenu (){
