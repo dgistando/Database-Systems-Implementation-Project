@@ -57,8 +57,13 @@ private:
 //            }
             return 0;
         }
+        static int SimpleCallback(void *a_parameter, int argc, char **argv, char **colName){
+            return 0;
+        }
         
+        //sqlite3_exec(db, sql, NULL, NULL, NULL)
         //int rc = sqlite3_exec(_db, sql.c_str(), CatalogCallback, 0, &err);
+        
         bool ReadCatalog(){
             if(_isOpen){
                 sqlite3_stmt *stmt; char *query = "SELECT * FROM Catalog";
@@ -72,9 +77,7 @@ private:
                                 string s = (char*)sqlite3_column_text(stmt,i);
                             }
                         }
-                        if(rc != SQLITE_DONE){
-                            
-                        }
+                        if(rc == SQLITE_DONE){ break; }
                     }
                 }
             } else return 0;
@@ -82,6 +85,30 @@ private:
         bool WriteCatalog() {
             if(_isOpen){
                 
+            } else return 0;
+        }
+        bool CreateTable(string& _table, vector<string>& _attributes,
+            vector<string>& _attributeTypes){
+            if(_isOpen){
+                string query = "CREATE TABLE " + _table + "(";
+                for(int i = 0; i < _attributes.size(); i++){
+                    if(i != _attributes.size() - 1) { query += _attributes.at(i) + " " + _attributeTypes.at(i) + ","; }
+                    else { query += _attributes.at(i) + " " + _attributeTypes.at(i); }
+                } query += ");";
+                if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK)
+                {
+                    query = "INSERT INTO Catalog(name, numTuples,location) VALUES('" + _table + "',0,'test')";
+                    if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK)
+                    {
+                        for(int i = 0; i < _attributes.size(); i++){
+                            query = "INSERT INTO Attribute(name,tableName,type,distinctTuple) VALUES('" + _attributes.at(i) + "','" + _table + "','" + _attributeTypes.at(i) + "',0)";
+                            if(sqlite3_exec(_db,query.c_str(),0,0,0) == SQLITE_OK)
+                            {
+                                //?
+                            } else return 0;
+                        } return 1;
+                    } else return 0;
+                } else return 0;
             } else return 0;
         }
         
@@ -152,6 +179,10 @@ private:
                 }
             }*/
             //might need to reconsider the structure of the table
+        }
+        bool CreateTable(string& _table, vector<string>& _attributes,
+            vector<string>& _attributeTypes){
+            return true;
         }
     };
     DBAccess * _dbaccess;

@@ -29,3 +29,5 @@
 *.app
 
 project/\.idea/
+
+project/nbproject/

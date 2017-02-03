@@ -26,8 +26,8 @@ bool Catalog::Save() {
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
     CatalogEntry *ce;
-    if(_cmap->GetCatalogEntry(_table,*ce)){ _noTuples = ce->_noTuples; return 1; }
-    else return 0;
+    if(_cmap->GetCatalogEntry(_table,*ce)){ _noTuples = ce->_noTuples; return true; }
+    else return false;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
@@ -66,7 +66,10 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
 
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-	return true;
+    if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
+        _cmap->CreateTable(_table,_attributes,_attributeTypes)){
+        return true; }
+    else return false;
 }
 
 bool Catalog::DropTable(string& _table) {
