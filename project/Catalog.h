@@ -39,41 +39,44 @@ private:
             //delete _db;
         }
         static int CatalogCallback(void *a_parameter, int argc, char **argv, char **colName){
-            char *columnName[] = { "name", "numTuples", "location" };
-            for (int i = 0; i < argc; i++){
-               for (int j = 0; j < sizeof(columnName)/sizeof(columnName[0]); j++){
-                    if (strcmp (colName[i], columnName[j]) == 0) {
-                        switch (j) {
-                            case 0:
-                                //strncpy (pTbl1Record[iIndex].cKey, (argv[i] ? argv[i] : "NULL"), 19);
-                                break;
-                            case 1:
-                                //pTbl1Record[iIndex].iValue = atoi (argv[i] ? argv[i] : "0");
-                                break;
-                            case 2:
-                                
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    }
-               } 
-            }
+//            char *columnName[] = { "name", "numTuples", "location" };
+//            for (int i = 0; i < argc; i++){
+//                char *tableName = new char;
+//                char *location = new char;
+//                int *nuTuples = new int;
+//                for (int j = 0; j < sizeof(columnName)/sizeof(columnName[0]); j++){
+//                    if (strcmp (colName[i], columnName[j]) == 0) {
+//                    }
+//                } 
+//            }
             return 0;
         }
         static int AttributeCallback(void *a_parameter, int argc, char **argv, char **colName){
-            for (int i = 0; i < argc; i++){
-                
-            }
+//            for (int i = 0; i < argc; i++){
+//                
+//            }
             return 0;
         }
+        
+        //int rc = sqlite3_exec(_db, sql.c_str(), CatalogCallback, 0, &err);
         bool ReadCatalog(){
             if(_isOpen){
-                char * err;
-                string sql = "SELECT * FROM Catalog";
-                //int rc = sqlite3_exec(_db, sql.c_str(), CatalogCallback, 0, &err);
-                
+                sqlite3_stmt *stmt; char *query = "SELECT * FROM Catalog";
+                if(sqlite3_prepare(_db,query,-1,&stmt,0) == SQLITE_OK){
+                    int ctotal = sqlite3_column_count(stmt);
+                    int rc = 0;
+                    while(1){
+                        rc = sqlite3_step(stmt);
+                        if(rc == SQLITE_ROW){
+                            for(int i = 0; i < ctotal; i++){
+                                string s = (char*)sqlite3_column_text(stmt,i);
+                            }
+                        }
+                        if(rc != SQLITE_DONE){
+                            
+                        }
+                    }
+                }
             } else return 0;
         }
         bool WriteCatalog() {
