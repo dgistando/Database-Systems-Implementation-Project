@@ -13,14 +13,18 @@ namespace extensions
 
 
 Catalog::Catalog(string& _fileName) {
-    //open database
-    int rc = sqlite3_open_v2(_fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
-    if(rc == SQLITE_OK){ _dbOpen = 1; } else { _dbOpen = 0; }
-    //read database
-    if(_dbOpen){ ReadDatabase(); }
-    else cout << "Cannot open db!" << endl;
-}
+	sqlite3 *db;
+  char *zErrMsg = 0;
+  int  rc;
+  char *sql;
+  bool _isOpen;
+  rc = sqlite3_open_v2(_fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
+  if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
+  /* Open database */
 
+
+
+}
 Catalog::~Catalog() {
     WriteDatabse();
 }
