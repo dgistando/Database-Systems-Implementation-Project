@@ -35,6 +35,7 @@ private:
             _tableName = tableName; _noTuples = noTuples; _location = location;
         }
         ~CatalogEntry(){}
+        
     };
     class AttributeEntry{
     public:
@@ -61,8 +62,6 @@ private:
             if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
         }
         ~DBAccess(){
-            //write catalog
-            WriteCatalog();
             //delete _db;
         }
         static int CatalogCallback(void *a_parameter, int argc, char **argv, char **colName){
@@ -183,11 +182,13 @@ private:
             } catch(const char* msg) { return 0; }
             return 1;
         }
-        bool WriteCatalog() {
+        
+        bool WriteCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl) {
             if(_isOpen){
                 
             } else return 0;
         }
+        
         bool CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes){
             /* TO DO:
              * Create something to check if the table was created* like bool
@@ -218,7 +219,9 @@ private:
                 } else return 0;
             } else return 0;
         }
-        
+        bool DropTable(string& _table){
+            return 0;
+        }
     };
     class CatalogMap{
     private:
@@ -243,6 +246,7 @@ private:
 //            if(!attrb_tbl.IsThere(*key)) {  Swapify<AttributeEntry> data (ae); attrb_tbl.Insert(*key,data); return 1; }
 //            else { return 0; } //throw("ERROR")?
         }
+        
         bool GetCatalogEntry(string &key_tableName, CatalogEntry &ce){
             Keyify<string> key (key_tableName);
             if(catalog_tbl->IsThere(key)){ 
@@ -273,6 +277,21 @@ private:
                 attrb_tbl->Advance();
             }
         }
+        
+        void SetNoTuples(string& _table, unsigned int& _noTuples){
+            if(TableExists(_table)){
+                CatalogEntry ce;
+                if(GetCatalogEntry(_table,ce)){
+                    Keyify<string> key(_table);
+                    Swapify<CatalogEntry> sce (ce);
+                    catalog_tbl->Remove(key,key,sce);
+                    ce._noTuples = _noTuples;
+                    sce = Swapify<CatalogEntry> (ce);
+                    catalog_tbl->Insert(key,sce);
+                } else { /*throw("madness");*/}
+            } else { /*throw("madness");*/}
+        }
+        
         bool CreateTable(string& _table, vector<string>& _attributes, vector<string>& _attributeTypes){
             try{
                 CatalogEntry ce(_table,0,"catalog");
@@ -288,6 +307,8 @@ private:
                 return 1;
             } catch(const char* msg) { return 0; }
         }
+        
+        
         bool TableExists(string &_table){
             Keyify<string> key (_table);
             if(catalog_tbl->IsThere(key)){ return 1; }
@@ -300,6 +321,16 @@ private:
             attrb_tbl->Swap(_attrb_tbl);
             if(catalog_tbl->Length() == c_size && attrb_tbl->Length() == a_size){ return 1; }
             else return 0;
+        }
+    
+        void print(){
+            catalog_tbl->MoveToStart();
+            int i = catalog_tbl->Length();
+            while(!catalog_tbl->AtEnd()){
+                CatalogEntry ce = catalog_tbl->CurrentData().operator CatalogEntry();
+                cout << "Table: " << ce._tableName << " noTuples : " << ce._noTuples << " Location: " << ce._location << endl;
+                catalog_tbl->Advance();
+            }
         }
     };
     DBAccess * _dbaccess;

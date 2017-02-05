@@ -22,7 +22,11 @@ int main () {
 //        ctl.CreateTable(tableName, attrb, atype);
         unsigned int test = 0;
         ctl.GetNoTuples(tableName,test);
-        cout << "Number of Tuples: " << test << endl;
+        cout << "NoTuples read from catalog : " << test << endl;
+        test = 99;
+        ctl.SetNoTuples(tableName,test);
+        ctl.GetNoTuples(tableName,test);
+        cout << "NoTuples after SetTuples(" << test << ") : " << test << endl;
         vector<string> found_attrb;
         ctl.GetAttributes(tableName,found_attrb);
         for(int i = 0; i < found_attrb.size(); i++){
