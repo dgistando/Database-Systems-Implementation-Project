@@ -39,6 +39,7 @@ public:
 	 */
 	Catalog(string& _fileName);
 
+
 	/* Catalog destructor.
 	 * Store all the catalog data in the SQLite database.
 	 */
@@ -47,6 +48,9 @@ public:
 	/* Save the content of the in-memory catalog to the database.
 	 * Return true on success, false otherwise.
 	 */
+	void dbconnect(string& _fileName){
+		sqlite3_open(_fileName, )
+	};
 	bool Save();
 
 	/* Get/Set the number of tuples in _table.
