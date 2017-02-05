@@ -22,13 +22,14 @@ Catalog::Catalog(string& _fileName) {
   char *zErrMsg = 0;
   int  rc;
   char *sql;
-
+  bool _isOpen;
+  rc = sqlite3_open_v2(_fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
+  if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
   /* Open database */
-  rc = sqlite3_open("test.db", &db);
-  if( rc ){ fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db)); }
-	else{ fprintf(stdout, "Opened database successfully\n"); }
-}
 
+
+
+}
 Catalog::~Catalog() {
 	//sql close
 	//save in database
