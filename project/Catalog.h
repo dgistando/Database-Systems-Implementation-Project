@@ -37,10 +37,6 @@ public:
 	/* Save the content of the in-memory catalog to the database.
 	 * Return true on success, false otherwise.
 	 */
-	void dbconnect(string& _fileName){
-		sqlite3 *_db
-		sqlite3_open(_fileName, &_db, )
-	};
 	bool Save();
 
 	/* Get/Set the number of tuples in _table.

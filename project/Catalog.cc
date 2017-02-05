@@ -18,7 +18,7 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName){
 
 
 Catalog::Catalog(string& _fileName) {
-	sqlite3 *db;
+	sqlite3 *_db;
   char *zErrMsg = 0;
   int  rc;
   char *sql;
