@@ -27,17 +27,16 @@ Catalog::~Catalog() {
 }
 
 bool Catalog::Save() {
-
 }
-
+/*WORKS*/
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
     CatalogEntry ce;
     if(_cmap->GetCatalogEntry(_table,ce)){ _noTuples = ce._noTuples; return true; }
     else return false;
 }
-
+/*WORKS*/
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-        
+        _cmap->SetNoTuples(_table,_noTuples);
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
