@@ -12,6 +12,12 @@ using namespace std;
 Catalog::Catalog(string& _fileName) {
     _dbaccess = new DBAccess(_fileName);
     _cmap = new CatalogMap();
+    
+    
+    InefficientMap<Keyify<string>,Swapify<CatalogEntry> > catalog_tbl;
+    InefficientMap<Keyify<string>,Swapify<AttributeEntry> > attrb_tbl;
+    if(_dbaccess->ReadCatalog(catalog_tbl,attrb_tbl) && 
+            _cmap->CopyCatalog(catalog_tbl,attrb_tbl)){ _isCatalogActive = true; }
 }
 
 Catalog::~Catalog() {
@@ -70,7 +76,7 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
 /*WORKS UNCOMMENT*/
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-    if( /*_dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&*/
+    if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
         _cmap->CreateTable(_table,_attributes,_attributeTypes)){
         return true; }
     else return false;
