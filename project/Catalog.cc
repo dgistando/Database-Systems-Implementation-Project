@@ -25,15 +25,13 @@ bool Catalog::Save() {
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
-    CatalogEntry *ce;
-    if(_cmap->GetCatalogEntry(_table,*ce)){ _noTuples = ce->_noTuples; return true; }
+    CatalogEntry ce;
+    if(_cmap->GetCatalogEntry(_table,ce)){ _noTuples = ce._noTuples; return true; }
     else return false;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-    CatalogEntry *ce;
-    if(_cmap->GetCatalogEntry(_table, *ce)){ ce->_noTuples = _noTuples; }
-    else { /*throw("MADNESS");*/ } 
+        
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
@@ -56,23 +54,30 @@ void Catalog::GetTables(vector<string>& _tables) {
     _cmap->GetAllTables(_tables);
 }
 
+/*WORKS*/
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
-	return true;
+    if(_cmap->TableExists(_table)){
+        _cmap->GetTableAttributes(_table,_attributes);
+        return true;
+    }
+    else return false;
 }
 
 bool Catalog::GetSchema(string& _table, Schema& _schema) {
 	return true;
 }
 
+/*WORKS UNCOMMENT*/
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-    if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
+    if( /*_dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&*/
         _cmap->CreateTable(_table,_attributes,_attributeTypes)){
         return true; }
     else return false;
 }
 
 bool Catalog::DropTable(string& _table) {
+    
 	return true;
 }
 
