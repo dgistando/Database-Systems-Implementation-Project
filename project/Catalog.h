@@ -49,7 +49,8 @@ public:
 	 * Return true on success, false otherwise.
 	 */
 	void dbconnect(string& _fileName){
-		sqlite3_open(_fileName, )
+		sqlite3 *_db
+		sqlite3_open(_fileName, &_db, )
 	};
 	bool Save();
 
