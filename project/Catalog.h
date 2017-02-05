@@ -25,13 +25,40 @@ private:
 	 * Efficient data structures are recommended.
 	 * Avoid linear traversals when possible.
 	 */
+    class CatalogEntry{
+    public:
+        string _tableName;
+        int _noTuples;
+        string _location;
+        CatalogEntry(){}
+        CatalogEntry(string tableName, int noTuples, string location){
+            _tableName = tableName; _noTuples = noTuples; _location = location;
+        }
+        ~CatalogEntry(){}
+    };
+    class AttributeEntry{
+    public:
+        string _attrbName;
+        string _tableName;
+        string _type;
+        int _noDistinct;
+        AttributeEntry(){}
+        AttributeEntry(string attrbname, string tableName, string type, int noDistinct){
+            _attrbName = attrbname; _tableName = tableName; _type = type; _noDistinct = noDistinct; 
+        }
+        ~AttributeEntry(){}
+        bool isFromTable(string &_table){
+            if(_tableName == _table) { return 1; }
+            else return 0;
+        }
+    };
     class DBAccess{
     public:
         sqlite3 *_db;
         bool _isOpen;
         DBAccess(string &fileName){
             int rc = sqlite3_open_v2(fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
-            if(rc == SQLITE_OK){ _isOpen = 1; ReadCatalog(); } else { _isOpen = 0; }
+            if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
         }
         ~DBAccess(){
             //write catalog
@@ -61,26 +88,100 @@ private:
             return 0;
         }
         
-        //sqlite3_exec(db, sql, NULL, NULL, NULL)
-        //int rc = sqlite3_exec(_db, sql.c_str(), CatalogCallback, 0, &err);
         
-        bool ReadCatalog(){
+        bool ReadCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
             if(_isOpen){
+                if(ReadTable_Catalog(catalog_tbl) && ReadTable_Attribute(attrb_tbl)){ return 1; }
+                else return 0;
+            } else return 0;
+        }
+        bool ReadTable_Catalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl){
+            try{
                 sqlite3_stmt *stmt; char *query = "SELECT * FROM Catalog";
                 if(sqlite3_prepare(_db,query,-1,&stmt,0) == SQLITE_OK){
                     int ctotal = sqlite3_column_count(stmt);
                     int rc = 0;
-                    while(1){
+                    while(1){   //goes one row at the time
                         rc = sqlite3_step(stmt);
                         if(rc == SQLITE_ROW){
+                            
+                            string tableName = "";
+                            int noTuples = 0;
+                            string location = "";
+                            
                             for(int i = 0; i < ctotal; i++){
-                                string s = (char*)sqlite3_column_text(stmt,i);
+                                switch(i){
+                                    case 0:{ // catalog.tableName
+                                        tableName = (char*)sqlite3_column_text(stmt,i);
+                                        break;
+                                    }
+                                    case 1:{ // catalog.numTuples
+                                        noTuples = sqlite3_column_int(stmt,i);
+                                        break;
+                                    }
+                                    case 2:{ // catalog.location
+                                        location = (char*)sqlite3_column_text(stmt,i);
+                                        break;
+                                    }
+                                };
                             }
+                            Keyify<string> key(tableName);
+                            CatalogEntry ce(tableName,noTuples,location);
+                            Swapify<CatalogEntry> sce(ce);
+                            catalog_tbl.Insert(key,sce);
                         }
+                        if(rc == SQLITE_ERROR){ return 0; }
                         if(rc == SQLITE_DONE){ break; }
                     }
                 }
-            } else return 0;
+            }catch (const char* msg){ return 0; }
+            return 1;
+        }
+        bool ReadTable_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
+            try{
+                sqlite3_stmt *stmt; char *query = "SELECT * FROM Attribute";
+                if(sqlite3_prepare(_db,query,-1,&stmt,0) == SQLITE_OK){
+                    int ctotal = sqlite3_column_count(stmt);
+                    int rc = 0;
+                    while(1){   //goes one row at the time
+                        rc = sqlite3_step(stmt);
+                        if(rc == SQLITE_ROW){
+                            
+                            string name = "";
+                            string tableName = "";
+                            string type = "";
+                            int distinctTuple = 0;
+                            for(int i = 0; i < ctotal; i++){
+                                switch(i){
+                                    case 0:{ // attribute.name
+                                        name = (char*)sqlite3_column_text(stmt,i);
+                                        break;
+                                    }
+                                    case 1:{ // attribute.tableName
+                                        tableName = (char*)sqlite3_column_text(stmt,i);
+                                        break;
+                                    }
+                                    case 2:{ // attribute.type
+                                        type = (char*)sqlite3_column_text(stmt,i);
+                                        break;
+                                    }
+                                    case 3:{ // attribute.distinctTuple
+                                        distinctTuple = sqlite3_column_int(stmt,i);
+                                        break;
+                                    }
+                                };
+                            }
+                            Keyify<string> key(name);
+                            AttributeEntry ce(name,tableName,type,distinctTuple);
+                            Swapify<AttributeEntry> sce(ce);
+                            attrb_tbl.Insert(key,sce);
+                        }
+                        if(rc == SQLITE_ERROR){ return 0; }
+                        if(rc == SQLITE_DONE){ break; }
+                    }
+                }
+            } catch(const char* msg) { return 0; }
+            return 1;
         }
         bool WriteCatalog() {
             if(_isOpen){
@@ -118,33 +219,6 @@ private:
             } else return 0;
         }
         
-    };
-    class CatalogEntry{
-    public:
-        string _tableName;
-        int _noTuples;
-        string _location;
-        CatalogEntry(){}
-        CatalogEntry(string tableName, int noTuples, string location){
-            _tableName = tableName; _noTuples = noTuples; _location = location;
-        }
-        ~CatalogEntry(){}
-    };
-    class AttributeEntry{
-    public:
-        string _attrbName;
-        string _tableName;
-        string _type;
-        int _noDistinct;
-        AttributeEntry(){}
-        AttributeEntry(string attrbname, string tableName, string type, int noDistinct){
-            _attrbName = attrbname; _tableName = tableName; _type = type; _noDistinct = noDistinct; 
-        }
-        ~AttributeEntry(){}
-        bool isFromTable(string &_table){
-            if(_tableName == _table) { return 1; }
-            else return 0;
-        }
     };
     class CatalogMap{
     private:
@@ -219,9 +293,18 @@ private:
             if(catalog_tbl->IsThere(key)){ return 1; }
             else return 0;
         }
+        bool CopyCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &_catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &_attrb_tbl){
+            int c_size = _catalog_tbl.Length();
+            int a_size = _attrb_tbl.Length();
+            catalog_tbl->Swap(_catalog_tbl);
+            attrb_tbl->Swap(_attrb_tbl);
+            if(catalog_tbl->Length() == c_size && attrb_tbl->Length() == a_size){ return 1; }
+            else return 0;
+        }
     };
     DBAccess * _dbaccess;
     CatalogMap * _cmap;
+    bool _isCatalogActive;
 public:
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
@@ -294,6 +377,7 @@ public:
          * there is no Database connection
          */
         bool DatabaseOpen() { if(_dbaccess) { return _dbaccess->_isOpen; } else return 0; }
+        bool CatalogIsActive() { if (_isCatalogActive){ return 1; } else return 0; }
 
 	/* Overload printing operator for Catalog.
 	 * Print the content of the catalog in a friendly format:
