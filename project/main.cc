@@ -32,8 +32,6 @@ int main () {
         for(int i = 0; i < found_attrb.size(); i++){
             cout << found_attrb.at(i) << endl;
         }
+       
 	return 0;
-}
-int printMenu (){
-
 }
