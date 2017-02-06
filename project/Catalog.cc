@@ -21,12 +21,16 @@ Catalog::Catalog(string& _fileName) {
 }
 
 Catalog::~Catalog() {
+    cout << _cmap->PrintCatalog();
+    Save();
     delete _dbaccess;
     delete _cmap;
-    Save();
 }
 
 bool Catalog::Save() {
+    if(_dbaccess->WriteCatalog(_cmap->GetCatalogMapObject(),
+            _cmap->GetAttributeMapObject())){ return true; } 
+    else return false;
 }
 /*WORKS*/
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
@@ -86,6 +90,8 @@ bool Catalog::DropTable(string& _table) {
 	return true;
 }
 
+
 ostream& operator<<(ostream& _os, Catalog& _c) {
-	return _os;
+    _os << _c._cmap->PrintCatalog();
+    return _os;
 }

@@ -2,7 +2,8 @@
 #define _CATALOG_H
 
 #include <string>
-#include <string.h>
+#include <sstream> // needed to convcert stupid int to string ffs
+#include <set> // lazy sorting
 #include <vector>
 #include <iostream>
 
@@ -16,6 +17,13 @@
 
 
 using namespace std;
+
+namespace extensions
+{
+    template < typename T > string to_string( const T& n ){
+        ostringstream stm; stm << n; return stm.str() ;
+    }
+}
 
 
 class Catalog {
@@ -96,8 +104,8 @@ private:
         }
         bool ReadTable_Catalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl){
             try{
-                sqlite3_stmt *stmt; char *query = "SELECT * FROM Catalog";
-                if(sqlite3_prepare(_db,query,-1,&stmt,0) == SQLITE_OK){
+                sqlite3_stmt *stmt; string query = "SELECT * FROM Catalog";
+                if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
                     int ctotal = sqlite3_column_count(stmt);
                     int rc = 0;
                     while(1){   //goes one row at the time
@@ -133,13 +141,14 @@ private:
                         if(rc == SQLITE_DONE){ break; }
                     }
                 }
+                sqlite3_finalize(stmt);
             }catch (const char* msg){ return 0; }
             return 1;
         }
         bool ReadTable_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
             try{
-                sqlite3_stmt *stmt; char *query = "SELECT * FROM Attribute";
-                if(sqlite3_prepare(_db,query,-1,&stmt,0) == SQLITE_OK){
+                sqlite3_stmt *stmt; string query = "SELECT * FROM Attribute";
+                if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
                     int ctotal = sqlite3_column_count(stmt);
                     int rc = 0;
                     while(1){   //goes one row at the time
@@ -179,14 +188,61 @@ private:
                         if(rc == SQLITE_DONE){ break; }
                     }
                 }
+                sqlite3_finalize(stmt);
             } catch(const char* msg) { return 0; }
             return 1;
         }
         
         bool WriteCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl) {
             if(_isOpen){
-                
+                if(Write_Catalog(catalog_tbl) && Write_Attribute(attrb_tbl)){ return 1; }
+                else return 0;
             } else return 0;
+        }
+        bool Write_Catalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl){
+            int total = catalog_tbl.Length(), updated = 0;
+            try{
+                catalog_tbl.MoveToStart();
+                while(!catalog_tbl.AtEnd()){
+                    CatalogEntry ce = catalog_tbl.CurrentData().operator CatalogEntry();
+                    sqlite3_stmt *stmt;
+                    string query = "INSERT OR REPLACE INTO Catalog(name,numTuples,location)  VALUES (" //
+                            "'" + ce._tableName + "'," //
+                            "'" + extensions::to_string(ce._noTuples) + "'," //
+                            "'" + ce._location + "')";
+                    if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
+                        int rc = sqlite3_step(stmt);
+                        if(rc == SQLITE_DONE){ updated++;}
+                    }
+                    sqlite3_finalize(stmt);
+                    catalog_tbl.Advance();
+                }
+            } catch(const char* msg){ return 0; }
+            if(total == updated) return 1;
+            else return 0;
+        }
+        bool Write_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
+           int total = attrb_tbl.Length(), updated = 0;
+            try{
+                attrb_tbl.MoveToStart();
+                while(!attrb_tbl.AtEnd()){
+                    AttributeEntry ae = attrb_tbl.CurrentData().operator AttributeEntry();
+                    sqlite3_stmt *stmt;
+                    string query = "INSERT OR REPLACE INTO Attribute(name,tableName,type,distinctTuple)  VALUES (" //
+                            "'" + ae._attrbName + "'," //
+                            "'" + ae._tableName + "'," //
+                            "'" + ae._type + "'," //
+                            "'" + extensions::to_string(ae._noDistinct) + "')";
+                    if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
+                        int rc = sqlite3_step(stmt);
+                        if(rc == SQLITE_DONE){ updated++;}
+                    }
+                    sqlite3_finalize(stmt);
+                    attrb_tbl.Advance();
+                }
+            } catch(const char* msg){ return 0; }
+            if(total == updated) return 1;
+            else return 0; 
         }
         
         bool CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes){
@@ -236,6 +292,10 @@ private:
             delete catalog_tbl;
             delete attrb_tbl;
         }
+        
+        InefficientMap<Keyify<string>,Swapify<CatalogEntry> > & GetCatalogMapObject(){ return *catalog_tbl; }
+        InefficientMap<Keyify<string>,Swapify<AttributeEntry> > & GetAttributeMapObject() { return *attrb_tbl; }
+        
         bool InsertNewCatalogEntry(string &key_tableName, CatalogEntry &ce){
 //            Keyify<string> *key = new Keyify<string> (key_tableName); //ptr to keep it in mem
 //            if(!catalog_tbl.IsThere(*key)) {  Swapify<CatalogEntry> data (ce); catalog_tbl.Insert(*key,data); return 1; }
@@ -323,7 +383,7 @@ private:
             else return 0;
         }
     
-        void print(){
+        void TestPrint(){
             catalog_tbl->MoveToStart();
             int i = catalog_tbl->Length();
             while(!catalog_tbl->AtEnd()){
@@ -332,10 +392,44 @@ private:
                 catalog_tbl->Advance();
             }
         }
+        /*broken*/
+        string PrintCatalog(){
+            string retval = "";
+            catalog_tbl->MoveToStart();
+            while(!catalog_tbl->AtEnd()){
+                Swapify<CatalogEntry> entry = catalog_tbl->CurrentData();
+                CatalogEntry op = entry.operator CatalogEntry();
+                vector<string> attrbutes;
+                vector<AttributeEntry> attrb_obj;
+                GetTableAttributes(op._tableName,attrbutes);
+                for(int i = 0; i < attrbutes.size(); i++){
+                    AttributeEntry ae;
+                    GetAttributeEntry(attrbutes.at(i),ae);
+                    attrb_obj.push_back(ae);
+                }
+                retval = op._tableName + "\t" + extensions::to_string(op._noTuples) + "\t" + op._location + "\n";
+                set<string> bin;
+                for(int i = 0; i < attrb_obj.size(); i++){
+                    AttributeEntry ae = attrb_obj.at(i);
+                    string a_str = "\t" + ae._attrbName + "\t" + ae._type + "\t" + extensions::to_string(ae._noDistinct) + "\n";
+                    bin.insert(a_str);
+                }
+                set<string>::iterator iter = bin.begin();
+                while(iter != bin.end()){
+                    retval += *iter;
+                    iter++;
+                }
+                retval += "\n\n";
+                catalog_tbl->Advance();
+            }
+            return retval;
+        }
     };
+    
     DBAccess * _dbaccess;
     CatalogMap * _cmap;
     bool _isCatalogActive;
+    
 public:
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
