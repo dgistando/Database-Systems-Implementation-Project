@@ -1,87 +1,109 @@
 #include <iostream>
-#include "sqlite3.h"
-#include "stdio.h"
 
 #include "Schema.h"
 #include "Catalog.h"
 
+
+
 using namespace std;
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName){
-   int i;
-   for(i = 0; i < argc; i++){
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
-}
 
 
 Catalog::Catalog(string& _fileName) {
-	sqlite3 *db;
-  char *zErrMsg = 0;
-  int  rc;
-  char *sql;
-
-  /* Open database */
-  rc = sqlite3_open("test.db", &db);
-  if( rc ){ fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db)); }
-	else{ fprintf(stdout, "Opened database successfully\n"); }
+    _dbaccess = new DBAccess(_fileName);
+    _cmap = new CatalogMap();
+    
+    
+    InefficientMap<Keyify<string>,Swapify<CatalogEntry> > catalog_tbl;
+    InefficientMap<Keyify<string>,Swapify<TableSchema> > attrb_tbl;
+    if(_dbaccess->ReadCatalog(catalog_tbl,attrb_tbl) && 
+            _cmap->CopyCatalog(catalog_tbl,attrb_tbl)){ _isCatalogActive = true; }
 }
 
 Catalog::~Catalog() {
-	//sql close
-	//save in database
+    Save();
+    delete _dbaccess;
+    delete _cmap;
 }
 
 bool Catalog::Save() {
-
+    if(_dbaccess->WriteCatalog(_cmap->GetCatalogMapObject(),
+            _cmap->GetAttributeMapObject())){ return true; } 
+    else return false;
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
-	return true;
+    CatalogEntry ce;
+    if(_cmap->GetCatalogEntry(_table,ce)){ _noTuples = ce._noTuples; return true; }
+    else return false;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-
+        _cmap->SetNoTuples(_table,_noTuples);
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
-	return true; //where is the fie that contains data
+    CatalogEntry ce;
+    if(_cmap->GetCatalogEntry(_table,ce)){ _path = ce._location; return true; }
+    else return false;
 }
 
 void Catalog::SetDataFile(string& _table, string& _path) {
-
+    _cmap->SetLocationFile(_table,_path);
 }
 
 bool Catalog::GetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
-	return true;
+    AttributeEntry ae;
+    if(_cmap->GetAttributeEntry(_table,_attribute,ae)){ _noDistinct = ae._noDistinct; return true; }
+    else return false;
 }
 void Catalog::SetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
+    _cmap->SetNoDistinct(_table,_attribute,_noDistinct);
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
+    _cmap->GetAllTables(_tables);
 }
-
+/*not working check the CatalogMap method*/
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
-	return true;
+    if(_cmap->GetTableAttributes(_table,_attributes)){ return true; }
+    else return false;
 }
 
 bool Catalog::GetSchema(string& _table, Schema& _schema) {
-	return true;
+    return true;
 }
-
+/* Rewrite the if(db.create && cmap.create)
+ * In such a way that each task is done separately
+ * In order to have safe fallback on catalog in memory
+ */
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-	return true;
+    if(!_cmap->TableExists(_table)){
+        if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
+            _cmap->CreateTable(_table,_attributes,_attributeTypes)){
+            return true; }
+        else return false;
+    } else return false;
+}
+/* Rewrite the if(db.drop && cmap.drop)
+ * In such a way that each task is done separately
+ * In order to have safe fallback on catalog in memory
+ */
+bool Catalog::DropTable(string& _table) {
+    if(_cmap->TableExists(_table)){
+        if(_dbaccess->DropTable(_table) && 
+            _cmap->DropTable(_table)){
+            return true; }
+        else return false;
+    } else false;
+    return true;
 }
 
-bool Catalog::DropTable(string& _table) {
-	return true;
-}
 
 ostream& operator<<(ostream& _os, Catalog& _c) {
-	return _os;
+    //_os << _c._cmap->PrintCatalog();
+    return _os;
 }

@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include "stdio.h"
 
 #include "Schema.h"
 #include "Catalog.h"
@@ -10,70 +11,44 @@ using namespace std;
 
 int main () {
 	string db_name = "";
-	cout << "Enter the database: ";
-	cin >> db_name;
-	if(db_name != ""){
-
-	}
-
-
+	printf("Enter the database: "); cin >> db_name;
+	Catalog ctl = Catalog(db_name);
+        if(!ctl.DatabaseOpen()){ printf("Database connection was not established. Closing..."); return 0; }
+        if(!ctl.CatalogIsActive()){ printf("Unable to read catalog! Closing..."); return 0;}
+        // create table User
+        string tableName = "User";
+        vector<string> attrb; attrb.push_back("Name"); attrb.push_back("Age");
+        vector<string> atype; atype.push_back("VARCHAR"); atype.push_back("INTEGER");        
+        ctl.CreateTable(tableName, attrb, atype);
+        string tableName1 = "Customer";
+        vector<string> attrb1; attrb1.push_back("Name"); attrb1.push_back("Gender");attrb1.push_back("Age");
+        vector<string> atype1; atype1.push_back("VARCHAR"); atype1.push_back("VARCHAR"); atype1.push_back("INTEGER");        
+        ctl.CreateTable(tableName1, attrb1, atype1);
+        //get all tables
+        vector<string> tbls;
+        ctl.GetTables(tbls);
+        for(int i = 0; i < tbls.size(); i++){ cout << tbls.at(i) << endl; }
+        //get attributes
+        vector<string> attr;
+        ctl.GetAttributes(tableName,attr);
+        for(int i = 0; i < attr.size(); i++){ cout << attr.at(i) << endl; }
+        //get tuples
+//        unsigned int test = 0;
+//        ctl.GetNoTuples(tableName,test);
+//        cout << "NoTuples read from catalog : " << test << endl;
+//        //set tuples
+//        test = 99;
+//        ctl.SetNoTuples(tableName,test);
+//        //get tupples
+//        ctl.GetNoTuples(tableName,test);
+//        cout << "NoTuples after SetTuples(" << test << ") : " << test << endl;
+        //delete User table;
+        ctl.DropTable(tableName);
+//        vector<string> found_attrb;
+//        ctl.GetAttributes(tableName,found_attrb);
+//        for(int i = 0; i < found_attrb.size(); i++){
+//            cout << found_attrb.at(i) << endl;
+//        }
+       
 	return 0;
 }
-int printMenu (){
-
-}
-	/*string table = "region", attribute, type;
-	vector<string> attributes, types;
-	vector<unsigned int> distincts;
-
-	attribute = "r_regionkey"; attributes.push_back(attribute);
-	type = "INTEGER"; types.push_back(type);
-	distincts.push_back(5);
-	attribute = "r_name"; attributes.push_back(attribute);
-	type = "STRING"; types.push_back(type);
-	distincts.push_back(5);
-	attribute = "r_comment"; attributes.push_back(attribute);
-	type = "STRING"; types.push_back(type);
-	distincts.push_back(5);
->>>>>>> 896694c1687c4835843ebce474e6e864a715c0aa:project/main.cc
-
-attribute = "r_regionkey"; attributes.push_back(attribute);
-type = "INTEGER"; types.push_back(type);
-distincts.push_back(5);
-attribute = "r_name"; attributes.push_back(attribute);
-type = "STRING"; types.push_back(type);
-distincts.push_back(5);
-attribute = "r_comment"; attributes.push_back(attribute);
-type = "STRING"; types.push_back(type);
-distincts.push_back(5);
-
-Schema s(attributes, types, distincts);
-Schema s1(s), s2; s2 = s1;
-
-string a1 = "r_regionkey", b1 = "regionkey";
-string a2 = "r_name", b2 = "name";
-string a3 = "r_commen", b3 = "comment";
-
-s1.RenameAtt(a1, b1);
-s1.RenameAtt(a2, b2);
-s1.RenameAtt(a3, b3);
-
-s2.Append(s1);
-
-vector<int> keep;
-keep.push_back(5);
-keep.push_back(0);
-s2.Project(keep);
-
-cout << s << endl;
-cout << s1 << endl;
-cout << s2 << endl;
-
-
-string dbFile = "catalog.sqlite";
-Catalog c(dbFile);
-
-<<<<<<< HEAD:main.cc
-c.CreateTable(table, attributes, types);
-
-cout << c << endl;*/

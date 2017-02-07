@@ -6,7 +6,7 @@ ifdef linux
 	tag = -n
 endif
 
-main.out:	Schema.o Catalog.o main.o
+main.out: Schema.o Catalog.o main.o 
 	$(CC) -o main.out main.o Catalog.o Schema.o -lsqlite3
 	
 main.o:	main.cc
