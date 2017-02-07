@@ -21,7 +21,6 @@ Catalog::Catalog(string& _fileName) {
 }
 
 Catalog::~Catalog() {
-    cout << _cmap->PrintCatalog();
     Save();
     delete _dbaccess;
     delete _cmap;
@@ -32,38 +31,42 @@ bool Catalog::Save() {
             _cmap->GetAttributeMapObject())){ return true; } 
     else return false;
 }
-/*WORKS*/
+
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
     CatalogEntry ce;
     if(_cmap->GetCatalogEntry(_table,ce)){ _noTuples = ce._noTuples; return true; }
     else return false;
 }
-/*WORKS*/
+
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
         _cmap->SetNoTuples(_table,_noTuples);
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
-	return true; //where is the fie that contains data
+    CatalogEntry ce;
+    if(_cmap->GetCatalogEntry(_table,ce)){ _path = ce._location; return true; }
+    else return false;
 }
 
 void Catalog::SetDataFile(string& _table, string& _path) {
-
+    _cmap->SetLocationFile(_table,_path);
 }
 
 bool Catalog::GetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
-	return true;
+    AttributeEntry ae;
+    if(_cmap->GetAttributeEntry(_table,_attribute,ae)){ _noDistinct = ae._noDistinct; return true; }
+    else return false;
 }
 void Catalog::SetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
+    _cmap->SetNoDistinct(_table,_attribute,_noDistinct);
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
     _cmap->GetAllTables(_tables);
 }
-
-/*WORKS*/
+/*not working check the CatalogMap method*/
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
     if(_cmap->TableExists(_table)){
         _cmap->GetTableAttributes(_table,_attributes);
@@ -73,25 +76,37 @@ bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
 }
 
 bool Catalog::GetSchema(string& _table, Schema& _schema) {
-	return true;
+    return true;
 }
-
-/*WORKS UNCOMMENT*/
+/* Rewrite the if(db.create && cmap.create)
+ * In such a way that each task is done separately
+ * In order to have safe fallback on catalog in memory
+ */
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
 	vector<string>& _attributeTypes) {
-    if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
-        _cmap->CreateTable(_table,_attributes,_attributeTypes)){
-        return true; }
-    else return false;
+    if(!_cmap->TableExists(_table)){
+        if( _dbaccess->CreateTable(_table,_attributes,_attributeTypes) &&
+            _cmap->CreateTable(_table,_attributes,_attributeTypes)){
+            return true; }
+        else return false;
+    } else return false;
 }
-
+/* Rewrite the if(db.drop && cmap.drop)
+ * In such a way that each task is done separately
+ * In order to have safe fallback on catalog in memory
+ */
 bool Catalog::DropTable(string& _table) {
-    
-	return true;
+    if(_cmap->TableExists(_table)){
+        if(_dbaccess->DropTable(_table) && 
+            _cmap->DropTable(_table)){
+            return true; }
+        else return false;
+    } else false;
+    return true;
 }
 
 
 ostream& operator<<(ostream& _os, Catalog& _c) {
-    _os << _c._cmap->PrintCatalog();
+    //_os << _c._cmap->PrintCatalog();
     return _os;
 }

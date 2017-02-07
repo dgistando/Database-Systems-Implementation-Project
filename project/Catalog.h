@@ -72,28 +72,6 @@ private:
         ~DBAccess(){
             //delete _db;
         }
-        static int CatalogCallback(void *a_parameter, int argc, char **argv, char **colName){
-//            char *columnName[] = { "name", "numTuples", "location" };
-//            for (int i = 0; i < argc; i++){
-//                char *tableName = new char;
-//                char *location = new char;
-//                int *nuTuples = new int;
-//                for (int j = 0; j < sizeof(columnName)/sizeof(columnName[0]); j++){
-//                    if (strcmp (colName[i], columnName[j]) == 0) {
-//                    }
-//                } 
-//            }
-            return 0;
-        }
-        static int AttributeCallback(void *a_parameter, int argc, char **argv, char **colName){
-//            for (int i = 0; i < argc; i++){
-//                
-//            }
-            return 0;
-        }
-        static int SimpleCallback(void *a_parameter, int argc, char **argv, char **colName){
-            return 0;
-        }
         
         
         bool ReadCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
@@ -147,6 +125,7 @@ private:
         }
         bool ReadTable_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
             try{
+                
                 sqlite3_stmt *stmt; string query = "SELECT * FROM Attribute";
                 if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
                     int ctotal = sqlite3_column_count(stmt);
@@ -179,7 +158,8 @@ private:
                                     }
                                 };
                             }
-                            Keyify<string> key(name);
+                            string key_str = tableName + "_" + name;
+                            Keyify<string> key(key_str);
                             AttributeEntry ce(name,tableName,type,distinctTuple);
                             Swapify<AttributeEntry> sce(ce);
                             attrb_tbl.Insert(key,sce);
@@ -276,6 +256,9 @@ private:
             } else return 0;
         }
         bool DropTable(string& _table){
+            if(_isOpen){
+                
+            }
             return 0;
         }
     };
@@ -296,30 +279,29 @@ private:
         InefficientMap<Keyify<string>,Swapify<CatalogEntry> > & GetCatalogMapObject(){ return *catalog_tbl; }
         InefficientMap<Keyify<string>,Swapify<AttributeEntry> > & GetAttributeMapObject() { return *attrb_tbl; }
         
-        bool InsertNewCatalogEntry(string &key_tableName, CatalogEntry &ce){
-//            Keyify<string> *key = new Keyify<string> (key_tableName); //ptr to keep it in mem
-//            if(!catalog_tbl.IsThere(*key)) {  Swapify<CatalogEntry> data (ce); catalog_tbl.Insert(*key,data); return 1; }
-//            else { return 0; } //throw("ERROR")?
-        }
-        bool InsertNewAttributeEntry(string &key_attrbName, AttributeEntry &ae){
-//            Keyify<string> *key = new Keyify<string> (key_attrbName); //ptr to keep it in mem
-//            if(!attrb_tbl.IsThere(*key)) {  Swapify<AttributeEntry> data (ae); attrb_tbl.Insert(*key,data); return 1; }
-//            else { return 0; } //throw("ERROR")?
-        }
         
+        /* If table exists, gets the CatalogEntry and return true
+         * Otherwise return false
+         */
         bool GetCatalogEntry(string &key_tableName, CatalogEntry &ce){
             Keyify<string> key (key_tableName);
             if(catalog_tbl->IsThere(key)){ 
                 ce = catalog_tbl->Find(key).operator CatalogEntry();
                 return 1; 
-            }
-            else return 0;
+            } else return 0;
         }
-        bool GetAttributeEntry(string &key_attrbName, AttributeEntry &ae){
-//            Keyify<string> key (key_attrbName);
-//            if(attrb_tbl.IsThere(key)){ ae = attrb_tbl.Find(key); return 1; }
-//            else return 0;
+        bool GetAttributeEntry(string &tableName, string &attrbName, AttributeEntry &ae){
+            string key_str = tableName + "_" + attrbName;
+            Keyify<string> key (key_str);
+            if(attrb_tbl->IsThere(key)){ 
+                ae = attrb_tbl->Find(key).operator AttributeEntry();
+                return 1; 
+            } else return 0;
         }
+        
+        /*  Linearly iterates through the catalog
+         *  Pushes map keys (table name) into the vector to return
+         */
         void GetAllTables(vector<string> &tables){
 //            catalog_tbl.MoveToStart();
 //            while(!catalog_tbl.AtEnd()){
@@ -328,27 +310,50 @@ private:
 //            }
         }
         void GetTableAttributes(string &tableName, vector<string> &attributes){
-            Keyify<string> key(tableName);
-            attrb_tbl->MoveToStart();
-            while(!attrb_tbl->AtEnd()){
-                if(attrb_tbl->CurrentData().operator AttributeEntry().isFromTable(tableName)){
-                    attributes.push_back(attrb_tbl->CurrentKey().operator string());
-                }
-                attrb_tbl->Advance();
-            }
+            
+//            Keyify<string> key(tableName);
+//            attrb_tbl->MoveToStart();
+//            while(!attrb_tbl->AtEnd()){
+//                if(attrb_tbl->CurrentData().operator AttributeEntry().isFromTable(tableName)){
+//                    attributes.push_back(attrb_tbl->CurrentKey().operator string());
+//                }
+//                attrb_tbl->Advance();
+//            }
         }
-        
+
+        void SetLocationFile(string &_table, string &_path){
+            CatalogEntry ce;
+            if(GetCatalogEntry(_table,ce)){
+                Keyify<string> key(_table);
+                Swapify<CatalogEntry> sce (ce);
+                catalog_tbl->Remove(key,key,sce);
+                ce._location = _path;
+                sce = Swapify<CatalogEntry> (ce);
+                catalog_tbl->Insert(key,sce);
+            } else { /*throw("Madness")*/ }
+        }
         void SetNoTuples(string& _table, unsigned int& _noTuples){
-            if(TableExists(_table)){
-                CatalogEntry ce;
-                if(GetCatalogEntry(_table,ce)){
-                    Keyify<string> key(_table);
-                    Swapify<CatalogEntry> sce (ce);
-                    catalog_tbl->Remove(key,key,sce);
-                    ce._noTuples = _noTuples;
-                    sce = Swapify<CatalogEntry> (ce);
-                    catalog_tbl->Insert(key,sce);
-                } else { /*throw("madness");*/}
+            CatalogEntry ce;
+            if(GetCatalogEntry(_table,ce)){
+                Keyify<string> key(_table);
+                Swapify<CatalogEntry> sce (ce);
+                catalog_tbl->Remove(key,key,sce);
+                ce._noTuples = _noTuples;
+                sce = Swapify<CatalogEntry> (ce);
+                catalog_tbl->Insert(key,sce);
+            } else { /*throw("madness");*/}
+        }
+        void SetNoDistinct(string& _table, string& _attribute,
+            unsigned int& _noDistinct){
+            AttributeEntry ae;
+            if(GetAttributeEntry(_table,_attribute,ae)){
+                string key_str = _table + "_" + _attribute;
+                Keyify<string> key(key_str);
+                Swapify<AttributeEntry> sae(ae);
+                attrb_tbl->Remove(key,key,sae);
+                ae._noDistinct = _noDistinct;
+                sae = Swapify<AttributeEntry>(ae);
+                attrb_tbl->Insert(key,sae);
             } else { /*throw("madness");*/}
         }
         
@@ -367,7 +372,9 @@ private:
                 return 1;
             } catch(const char* msg) { return 0; }
         }
-        
+        bool DropTable(string& _table){
+            
+        }
         
         bool TableExists(string &_table){
             Keyify<string> key (_table);
@@ -394,35 +401,35 @@ private:
         }
         /*broken*/
         string PrintCatalog(){
-            string retval = "";
-            catalog_tbl->MoveToStart();
-            while(!catalog_tbl->AtEnd()){
-                Swapify<CatalogEntry> entry = catalog_tbl->CurrentData();
-                CatalogEntry op = entry.operator CatalogEntry();
-                vector<string> attrbutes;
-                vector<AttributeEntry> attrb_obj;
-                GetTableAttributes(op._tableName,attrbutes);
-                for(int i = 0; i < attrbutes.size(); i++){
-                    AttributeEntry ae;
-                    GetAttributeEntry(attrbutes.at(i),ae);
-                    attrb_obj.push_back(ae);
-                }
-                retval = op._tableName + "\t" + extensions::to_string(op._noTuples) + "\t" + op._location + "\n";
-                set<string> bin;
-                for(int i = 0; i < attrb_obj.size(); i++){
-                    AttributeEntry ae = attrb_obj.at(i);
-                    string a_str = "\t" + ae._attrbName + "\t" + ae._type + "\t" + extensions::to_string(ae._noDistinct) + "\n";
-                    bin.insert(a_str);
-                }
-                set<string>::iterator iter = bin.begin();
-                while(iter != bin.end()){
-                    retval += *iter;
-                    iter++;
-                }
-                retval += "\n\n";
-                catalog_tbl->Advance();
-            }
-            return retval;
+//            string retval = "";
+//            catalog_tbl->MoveToStart();
+//            while(!catalog_tbl->AtEnd()){
+//                Swapify<CatalogEntry> entry = catalog_tbl->CurrentData();
+//                CatalogEntry op = entry.operator CatalogEntry();
+//                vector<string> attrbutes;
+//                vector<AttributeEntry> attrb_obj;
+//                GetTableAttributes(op._tableName,attrbutes);
+//                for(int i = 0; i < attrbutes.size(); i++){
+//                    AttributeEntry ae;
+//                    GetAttributeEntry(attrbutes.at(i),ae);
+//                    attrb_obj.push_back(ae);
+//                }
+//                retval = op._tableName + "\t" + extensions::to_string(op._noTuples) + "\t" + op._location + "\n";
+//                set<string> bin;
+//                for(int i = 0; i < attrb_obj.size(); i++){
+//                    AttributeEntry ae = attrb_obj.at(i);
+//                    string a_str = "\t" + ae._attrbName + "\t" + ae._type + "\t" + extensions::to_string(ae._noDistinct) + "\n";
+//                    bin.insert(a_str);
+//                }
+//                set<string>::iterator iter = bin.begin();
+//                while(iter != bin.end()){
+//                    retval += *iter;
+//                    iter++;
+//                }
+//                retval += "\n\n";
+//                catalog_tbl->Advance();
+//            }
+//            return retval;
         }
     };
     
