@@ -61,6 +61,16 @@ private:
             else return 0;
         }
     };
+    class TableSchema{
+    public:
+        vector<AttributeEntry> _attrbs;
+        TableSchema(){ }
+        ~TableSchema(){ }
+        string GetTableName(){
+            if(_attrbs.size() > 0){ return _attrbs.at(0)._tableName; }
+            else return "";
+        }
+    };
     class DBAccess{
     public:
         sqlite3 *_db;
@@ -70,11 +80,11 @@ private:
             if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
         }
         ~DBAccess(){
-            //delete _db;
+            //delete _db; throws an error
         }
         
         
-        bool ReadCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
+        bool ReadCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<TableSchema> > &attrb_tbl){
             if(_isOpen){
                 if(ReadTable_Catalog(catalog_tbl) && ReadTable_Attribute(attrb_tbl)){ return 1; }
                 else return 0;
@@ -123,9 +133,9 @@ private:
             }catch (const char* msg){ return 0; }
             return 1;
         }
-        bool ReadTable_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
+        bool ReadTable_Attribute(InefficientMap<Keyify<string>,Swapify<TableSchema> > &attrb_tbl){
             try{
-                
+                TableSchema ts;
                 sqlite3_stmt *stmt; string query = "SELECT * FROM Attribute";
                 if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
                     int ctotal = sqlite3_column_count(stmt);
@@ -158,22 +168,23 @@ private:
                                     }
                                 };
                             }
-                            string key_str = tableName + "_" + name;
-                            Keyify<string> key(key_str);
                             AttributeEntry ce(name,tableName,type,distinctTuple);
-                            Swapify<AttributeEntry> sce(ce);
-                            attrb_tbl.Insert(key,sce);
+                            ts._attrbs.push_back(ce);
                         }
                         if(rc == SQLITE_ERROR){ return 0; }
                         if(rc == SQLITE_DONE){ break; }
                     }
                 }
+                string key_str = ts.GetTableName();
+                Keyify<string> key(key_str);
+                Swapify<TableSchema> sts(ts);
+                attrb_tbl.Insert(key,sts);
                 sqlite3_finalize(stmt);
             } catch(const char* msg) { return 0; }
             return 1;
         }
         
-        bool WriteCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl) {
+        bool WriteCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &catalog_tbl,InefficientMap<Keyify<string>,Swapify<TableSchema> > &attrb_tbl) {
             if(_isOpen){
                 if(Write_Catalog(catalog_tbl) && Write_Attribute(attrb_tbl)){ return 1; }
                 else return 0;
@@ -201,28 +212,31 @@ private:
             if(total == updated) return 1;
             else return 0;
         }
-        bool Write_Attribute(InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &attrb_tbl){
-           int total = attrb_tbl.Length(), updated = 0;
+        bool Write_Attribute(InefficientMap<Keyify<string>,Swapify<TableSchema> > &attrb_tbl){
+           //int total = attrb_tbl.Length(), updated = 0;
             try{
                 attrb_tbl.MoveToStart();
                 while(!attrb_tbl.AtEnd()){
-                    AttributeEntry ae = attrb_tbl.CurrentData().operator AttributeEntry();
-                    sqlite3_stmt *stmt;
-                    string query = "INSERT OR REPLACE INTO Attribute(name,tableName,type,distinctTuple)  VALUES (" //
-                            "'" + ae._attrbName + "'," //
-                            "'" + ae._tableName + "'," //
-                            "'" + ae._type + "'," //
-                            "'" + extensions::to_string(ae._noDistinct) + "')";
-                    if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
-                        int rc = sqlite3_step(stmt);
-                        if(rc == SQLITE_DONE){ updated++;}
+                    TableSchema ts = attrb_tbl.CurrentData().operator TableSchema();
+                    for(int i = 0; i < ts._attrbs.size(); i++){
+                        sqlite3_stmt *stmt;
+                        string query = "INSERT OR REPLACE INTO Attribute(name,tableName,type,distinctTuple)  VALUES (" //
+                            "'" + ts._attrbs.at(i)._attrbName + "'," //
+                            "'" + ts._attrbs.at(i)._tableName + "'," //
+                            "'" + ts._attrbs.at(i)._type + "'," //
+                            "'" + extensions::to_string(ts._attrbs.at(i)._noDistinct) + "')";
+                        if(sqlite3_prepare(_db,query.c_str(),-1,&stmt,0) == SQLITE_OK){
+                            int rc = sqlite3_step(stmt);
+                            if(rc == SQLITE_DONE){ /*updated++*/ }
+                        }
+                        sqlite3_finalize(stmt);
                     }
-                    sqlite3_finalize(stmt);
                     attrb_tbl.Advance();
                 }
             } catch(const char* msg){ return 0; }
-            if(total == updated) return 1;
-            else return 0; 
+            //if(total == updated) return 1;
+            //else return 0;
+           return 1;
         }
         
         bool CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes){
@@ -239,15 +253,12 @@ private:
                     if(i != _attributes.size() - 1) { query += _attributes.at(i) + " " + _attributeTypes.at(i) + ","; }
                     else { query += _attributes.at(i) + " " + _attributeTypes.at(i); }
                 } query += ");";
-                if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK)
-                {
+                if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
                     query = "INSERT INTO Catalog(name, numTuples,location) VALUES('" + _table + "',0,'test')";
-                    if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK)
-                    {
+                    if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
                         for(int i = 0; i < _attributes.size(); i++){
                             query = "INSERT INTO Attribute(name,tableName,type,distinctTuple) VALUES('" + _attributes.at(i) + "','" + _table + "','" + _attributeTypes.at(i) + "',0)";
-                            if(sqlite3_exec(_db,query.c_str(),0,0,0) == SQLITE_OK)
-                            {
+                            if(sqlite3_exec(_db,query.c_str(),0,0,0) == SQLITE_OK){
                                 //?
                             } else return 0;
                         } return 1;
@@ -256,20 +267,31 @@ private:
             } else return 0;
         }
         bool DropTable(string& _table){
+            /* some of the return 0; can be a partial success
+             * if such system can be set in space than it can be cross-checked with catalog
+             */
             if(_isOpen){
-                
-            }
-            return 0;
+                string query = "DROP TABLE " +_table + ";";
+                if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
+                    query = "DELETE FROM Catalog WHERE name = '" + _table + "'";
+                    if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
+                        query = "DELETE FROM Attribute WHERE tableName = '" + _table + "'";
+                        if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
+                            return 1;
+                        } else return 0;
+                    } else return 0;
+                } else return 0;
+            } else return 0;
         }
     };
     class CatalogMap{
     private:
          InefficientMap<Keyify<string>,Swapify<CatalogEntry> > *catalog_tbl;
-         InefficientMap<Keyify<string>,Swapify<AttributeEntry> > *attrb_tbl;
+         InefficientMap<Keyify<string>,Swapify<TableSchema> > *attrb_tbl;
     public:
         CatalogMap(){
             catalog_tbl = new InefficientMap<Keyify<string>,Swapify<CatalogEntry> > ();
-            attrb_tbl = new InefficientMap<Keyify<string>,Swapify<AttributeEntry> > ();
+            attrb_tbl = new InefficientMap<Keyify<string>,Swapify<TableSchema> > ();
         }
         ~CatalogMap(){
             delete catalog_tbl;
@@ -277,7 +299,7 @@ private:
         }
         
         InefficientMap<Keyify<string>,Swapify<CatalogEntry> > & GetCatalogMapObject(){ return *catalog_tbl; }
-        InefficientMap<Keyify<string>,Swapify<AttributeEntry> > & GetAttributeMapObject() { return *attrb_tbl; }
+        InefficientMap<Keyify<string>,Swapify<TableSchema> > & GetAttributeMapObject() { return *attrb_tbl; }
         
         
         /* If table exists, gets the CatalogEntry and return true
@@ -291,34 +313,33 @@ private:
             } else return 0;
         }
         bool GetAttributeEntry(string &tableName, string &attrbName, AttributeEntry &ae){
-            string key_str = tableName + "_" + attrbName;
-            Keyify<string> key (key_str);
-            if(attrb_tbl->IsThere(key)){ 
-                ae = attrb_tbl->Find(key).operator AttributeEntry();
-                return 1; 
-            } else return 0;
+//            string key_str = tableName + "_" + attrbName;
+//            Keyify<string> key (key_str);
+//            if(attrb_tbl->IsThere(key)){ 
+//                ae = attrb_tbl->Find(key).operator AttributeEntry();
+//                return 1; 
+//            } else return 0;
         }
         
         /*  Linearly iterates through the catalog
          *  Pushes map keys (table name) into the vector to return
          */
         void GetAllTables(vector<string> &tables){
-//            catalog_tbl.MoveToStart();
-//            while(!catalog_tbl.AtEnd()){
-//                tables.push_back(catalog_tbl.CurrentKey());
-//                catalog_tbl.Advance();
-//            }
+            catalog_tbl->MoveToStart();
+            while(!catalog_tbl->AtEnd()){
+                tables.push_back(catalog_tbl->CurrentKey().operator string());
+                catalog_tbl->Advance();
+            }
         }
-        void GetTableAttributes(string &tableName, vector<string> &attributes){
-            
-//            Keyify<string> key(tableName);
-//            attrb_tbl->MoveToStart();
-//            while(!attrb_tbl->AtEnd()){
-//                if(attrb_tbl->CurrentData().operator AttributeEntry().isFromTable(tableName)){
-//                    attributes.push_back(attrb_tbl->CurrentKey().operator string());
-//                }
-//                attrb_tbl->Advance();
-//            }
+        bool GetTableAttributes(string &tableName, vector<string> &attributes){
+            Keyify<string> key(tableName);
+            if(attrb_tbl->IsThere(key)){
+                TableSchema ts = attrb_tbl->Find(key).operator TableSchema();
+                for(int i = 0; i < ts._attrbs.size(); i++){
+                    attributes.push_back(ts._attrbs.at(i)._attrbName);
+                }
+                return 1;
+            } else return 0;
         }
 
         void SetLocationFile(string &_table, string &_path){
@@ -343,37 +364,47 @@ private:
                 catalog_tbl->Insert(key,sce);
             } else { /*throw("madness");*/}
         }
-        void SetNoDistinct(string& _table, string& _attribute,
-            unsigned int& _noDistinct){
-            AttributeEntry ae;
-            if(GetAttributeEntry(_table,_attribute,ae)){
-                string key_str = _table + "_" + _attribute;
-                Keyify<string> key(key_str);
-                Swapify<AttributeEntry> sae(ae);
-                attrb_tbl->Remove(key,key,sae);
-                ae._noDistinct = _noDistinct;
-                sae = Swapify<AttributeEntry>(ae);
-                attrb_tbl->Insert(key,sae);
-            } else { /*throw("madness");*/}
+        void SetNoDistinct(string& _table, string& _attribute,unsigned int& _noDistinct){
+//            AttributeEntry ae;
+//            if(GetAttributeEntry(_table,_attribute,ae)){
+//                string key_str = _table + "_" + _attribute;
+//                Keyify<string> key(key_str);
+//                Swapify<AttributeEntry> sae(ae);
+//                attrb_tbl->Remove(key,key,sae);
+//                ae._noDistinct = _noDistinct;
+//                sae = Swapify<AttributeEntry>(ae);
+//                attrb_tbl->Insert(key,sae);
+//            } else { /*throw("madness");*/}
         }
         
         bool CreateTable(string& _table, vector<string>& _attributes, vector<string>& _attributeTypes){
             try{
+                TableSchema ts;
                 CatalogEntry ce(_table,0,"catalog");
                 Swapify<CatalogEntry> sce(ce);
                 Keyify<string> key(_table);
                 catalog_tbl->Insert(key,sce);
                 for(int i = 0; i < _attributes.size(); i++){
                     AttributeEntry ae (_attributes.at(i),_table,_attributeTypes.at(i),0);
-                    Swapify<AttributeEntry> sae (ae);
-                    Keyify<string> key_a (_attributes.at(i));
-                    attrb_tbl->Insert(key_a,sae);
+                    ts._attrbs.push_back(ae);
                 }
+                key = Keyify<string>(_table); // have to recreate it because it loses value after insert
+                Swapify<TableSchema> sts(ts);
+                attrb_tbl->Insert(key,sts);
                 return 1;
             } catch(const char* msg) { return 0; }
         }
         bool DropTable(string& _table){
-            
+            try{
+                TableSchema ts;
+                CatalogEntry ce("",0,"");
+                Swapify<CatalogEntry> sce(ce);
+                Keyify<string> key(_table);
+                catalog_tbl->Remove(key,key,sce);
+                Swapify<TableSchema> sts(ts);
+                attrb_tbl->Remove(key,key,sts);
+                return 1;
+            } catch(const char* msg) { return 0; }
         }
         
         bool TableExists(string &_table){
@@ -381,7 +412,7 @@ private:
             if(catalog_tbl->IsThere(key)){ return 1; }
             else return 0;
         }
-        bool CopyCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &_catalog_tbl,InefficientMap<Keyify<string>,Swapify<AttributeEntry> > &_attrb_tbl){
+        bool CopyCatalog(InefficientMap<Keyify<string>,Swapify<CatalogEntry> > &_catalog_tbl,InefficientMap<Keyify<string>,Swapify<TableSchema> > &_attrb_tbl){
             int c_size = _catalog_tbl.Length();
             int a_size = _attrb_tbl.Length();
             catalog_tbl->Swap(_catalog_tbl);
@@ -390,15 +421,6 @@ private:
             else return 0;
         }
     
-        void TestPrint(){
-            catalog_tbl->MoveToStart();
-            int i = catalog_tbl->Length();
-            while(!catalog_tbl->AtEnd()){
-                CatalogEntry ce = catalog_tbl->CurrentData().operator CatalogEntry();
-                cout << "Table: " << ce._tableName << " noTuples : " << ce._noTuples << " Location: " << ce._location << endl;
-                catalog_tbl->Advance();
-            }
-        }
         /*broken*/
         string PrintCatalog(){
 //            string retval = "";

@@ -15,7 +15,7 @@ Catalog::Catalog(string& _fileName) {
     
     
     InefficientMap<Keyify<string>,Swapify<CatalogEntry> > catalog_tbl;
-    InefficientMap<Keyify<string>,Swapify<AttributeEntry> > attrb_tbl;
+    InefficientMap<Keyify<string>,Swapify<TableSchema> > attrb_tbl;
     if(_dbaccess->ReadCatalog(catalog_tbl,attrb_tbl) && 
             _cmap->CopyCatalog(catalog_tbl,attrb_tbl)){ _isCatalogActive = true; }
 }
@@ -68,10 +68,7 @@ void Catalog::GetTables(vector<string>& _tables) {
 }
 /*not working check the CatalogMap method*/
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
-    if(_cmap->TableExists(_table)){
-        _cmap->GetTableAttributes(_table,_attributes);
-        return true;
-    }
+    if(_cmap->GetTableAttributes(_table,_attributes)){ return true; }
     else return false;
 }
 
