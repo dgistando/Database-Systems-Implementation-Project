@@ -21,9 +21,49 @@ int main (int argc, char* argv[]) {
 	int aNo = atoi(argv[3]);
 
 	Catalog catalog(dbFile);
+	string tName = "table1";
+	string aName = "attr3";
 	//cout << catalog << endl; cout.flush();
+	unsigned int tuples;
+	catalog.GetNoTuples(tName, tuples);
+	cout << tName << " tuples = " << tuples << endl;
 
+	string path;
+	catalog.GetDataFile(tName, path);
+	cout << tName << " path = " << path << endl;
+	
+	unsigned int distinct;
+	catalog.GetNoDistinct(tName, aName, distinct);
+	cout << tName << "." << aName << " distinct = " << distinct << endl;
+	
+	cout<<"Tables"<<endl;
+	vector<string> tables;
+	catalog.GetTables(tables);
+	for (vector<string>::iterator it = tables.begin();it != tables.end(); it++) {
+		cout << *it << endl;
+	}	
+	
+	cout<<"attributes for "<<tName<<" "<<endl;
+	vector<string> atts;
+	catalog.GetAttributes(tName, atts);
+	for (vector<string>::iterator it = atts.begin(); it != atts.end(); it++) {
+		cout << *it << " ";
+	}
+	cout << endl;
+	
+	cout<<"Schema "<<endl;
+	Schema schema;
+	catalog.GetSchema(tName, schema);
+	cout << schema << endl;
 
+	cout<<"Setting tuples: "<<endl;
+	tuples = 99;
+	catalog.SetNoTuples(tName, tuples);
+	
+	catalog.GetNoTuples(tName, tuples);
+	cout << tName << " tuples = " << tuples << endl;
+
+	
 	////////////////////////////////
 	/*for (int i = 0; i < tNo; i++) {
 		char tN[20];// sprintf(tN, "T_%d", i);

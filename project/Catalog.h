@@ -35,13 +35,6 @@ private:
         }
         ~CatalogEntry(){}
 		
-		void setNoTuples(int _noTuples){
-			noTuples = _noTuples;
-		}
-		
-		void setLocation(string _location){
-			location = _location;
-		}
     };
 	
 	

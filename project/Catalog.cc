@@ -154,13 +154,25 @@ bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
 	//check map for key
-	Keyify<string> key(_table); 
-	CatalogEntry ce;
+	string location; GetDataFile(_table, location);
+	Keyify<string> key(_table);
+	Keyify<string> newKey(_table);
+	Swapify<CatalogEntry> ValueEntry(CatalogEntry(
+					//name
+					_table,
+					//numTuple
+					_noTuples,
+					//location
+					location
+				));
+	
 	//Not sure if works. Maybe delete and insert if not.
 	if(catalog->IsThere(key)){
-		ce = catalog->Find(key);
-		ce.setNoTuples(_noTuples);
+		if(catalog->Remove(key, newKey, ValueEntry)){
+			catalog->Insert(newKey, ValueEntry);
+		}
 	}
+	
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
@@ -172,13 +184,13 @@ bool Catalog::GetDataFile(string& _table, string& _path) {
 
 void Catalog::SetDataFile(string& _table, string& _path) {
 	//check map for key
-	Keyify<string> key(_table); 
+	/*Keyify<string> key(_table); 
 	CatalogEntry ce;
 	//Not sure if works. Maybe delete and insert if not.(Just to be sure)
 	if(catalog->IsThere(key)){
 		ce = catalog->Find(key);
 		ce.setLocation(_path);
-	}
+	}*/
 }
 
 bool Catalog::GetNoDistinct(string& _table, string& _attribute,
@@ -187,7 +199,7 @@ bool Catalog::GetNoDistinct(string& _table, string& _attribute,
 	Schema sc = attributes->Find(keys);
 	_noDistinct = sc.GetDistincts(_attribute);
 	if(_noDistinct == -1){ 
-		return false; 
+		return false;
 	}else{
 		return true;
 	}
@@ -195,11 +207,11 @@ bool Catalog::GetNoDistinct(string& _table, string& _attribute,
 
 void Catalog::SetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
-	Keyify<string> keys(_table); 
+	/*Keyify<string> keys(_table); 
 	Schema sc = attributes->Find(keys);
 	//STOPPED HERE!!!
 	//
-	//
+	//*/
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
