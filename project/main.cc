@@ -17,8 +17,8 @@ int main (int argc, char* argv[]) {
 //	}
 
 	string dbFile = "catalog";//argv[1];
-	int tNo = 2;//atoi(argv[2]);
-	int aNo = 2;//atoi(argv[3]);
+	int tNo = 5;//atoi(argv[2]);
+	int aNo = 5;//atoi(argv[3]);
 
 	Catalog catalog(dbFile);
 	cout << catalog << endl; cout.flush();
@@ -134,6 +134,5 @@ int main (int argc, char* argv[]) {
 			cout << "DROP TABLE " << tName << " FAIL" << endl;
 		}
 	}
-
 	return 0;
 }
