@@ -42,6 +42,8 @@ public:
         unsigned int _noTuples;
         string _nameTable;
         string _location;
+        bool _toCreate;
+        bool _toDelete;
 	// default constructor
 	Schema() {}
 	// full constructor

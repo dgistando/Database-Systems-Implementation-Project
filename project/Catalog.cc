@@ -159,6 +159,8 @@ bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<str
         s._noTuples = 0;
         s._location = "";
         s._nameTable = _table;
+        s._toCreate = true;
+        s._toDelete = false;
         Swapify<Schema> ss(s);
         catalog_tbl.Insert(key,ss);
         return true;
@@ -169,6 +171,8 @@ bool Catalog::DropTable(string& _table) {
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
         Schema s = catalog_tbl.Find(key);
+        s._toDelete = true;
+        s._toCreate = false;
         
         Keyify<string> key(_table);
         vector<string> a;
@@ -181,17 +185,21 @@ bool Catalog::DropTable(string& _table) {
 }
 
 ostream& operator<<(ostream& _os, Catalog& _c) {
-    string s;
+    string str = "";
     _c.catalog_tbl.MoveToStart();
     while(!_c.catalog_tbl.AtEnd()){
         Schema s = _c.catalog_tbl.CurrentData().operator Schema();
-        //s += s._nameTable + "\t" + s._noTuples + "\t" + s._location + "\n";
-        set<string> bin;
+        str += ("\n" + s._nameTable + "\t" + extensions::to_string(s._noTuples) + "\t" + s._location + "\n");
+        vector<string> bin;
         for(int i = 0; i < s.GetAtts().size(); i++){
-            
+            Attribute a = s.GetAtts().at(i);
+            bin.push_back("\t" + a.name + "\t" + extensions::to_string(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
+        sort(bin.begin(),bin.end());
+        for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
         _c.catalog_tbl.Advance();
     }
+    _os << str;
     return _os;
 }
 
@@ -273,6 +281,8 @@ bool Catalog::ReadDatabase(){
                         s._nameTable = tableName;
                         s._location = location;
                         s._noTuples = noTuples;
+                        s._toDelete = false;
+                        s._toCreate = false;
                         Keyify<string> key(tableName);
                         Swapify<Schema> data(s);
                         catalog_tbl.Insert(key,data);
@@ -286,5 +296,7 @@ bool Catalog::ReadDatabase(){
     return 1;
 }
 bool Catalog::WriteDatabse(){
-    
+    if(_dbOpen){
+        
+    } else return false;
 }

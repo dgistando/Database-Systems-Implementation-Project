@@ -51,6 +51,8 @@ Schema::Schema(const Schema& _other) {
         _location = _other._location;
         _noTuples = _other._noTuples;
         _nameTable = _other._nameTable;
+        _toCreate = _other._toCreate;
+        _toDelete = _other._toDelete;
 }
 
 Schema& Schema::operator=(const Schema& _other) {
@@ -61,6 +63,8 @@ Schema& Schema::operator=(const Schema& _other) {
         _location = _other._location;
         _noTuples = _other._noTuples;
         _nameTable = _other._nameTable;
+        _toCreate = _other._toCreate;
+        _toDelete = _other._toDelete;
         
         
 	for (int i = 0; i < _other.atts.size(); i++) {
@@ -72,9 +76,11 @@ Schema& Schema::operator=(const Schema& _other) {
 }
 
 void Schema::Swap(Schema& _other) {
-    _location = _other._location;
-    _noTuples = _other._noTuples;
-    _nameTable = _other._nameTable;
+        _location = _other._location;
+        _noTuples = _other._noTuples;
+        _nameTable = _other._nameTable;
+        _toCreate = _other._toCreate;
+        _toDelete = _other._toDelete;
 	atts.swap(_other.atts);
 }
 
