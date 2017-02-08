@@ -44,6 +44,9 @@ Schema::Schema(vector<string>& _attributes,	vector<string>& _attributeTypes,
 }
 
 Schema::Schema(const Schema& _other) {
+    _location = _other._location;
+    _noTuples = _other._noTuples;
+    _nameTable = _other._nameTable;
 	for (int i = 0; i < _other.atts.size(); i++) {
 		Attribute a; a = _other.atts[i];
 		atts.push_back(a);

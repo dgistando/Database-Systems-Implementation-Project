@@ -36,6 +36,7 @@ bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
+    
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
