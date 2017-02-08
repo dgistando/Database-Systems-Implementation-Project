@@ -23,17 +23,25 @@ private:
 	class CatalogEntry{
     public:
         string tableName;
-        int noTuples;
+        unsigned int noTuples;
         string location;
 		
         CatalogEntry(){}
 		
-        CatalogEntry(string _tableName, int _noTuples, string _location){
+        CatalogEntry(string _tableName, unsigned int _noTuples, string _location){
             tableName = _tableName ; 
 			noTuples = _noTuples;
 			location = _location ;
         }
         ~CatalogEntry(){}
+		
+		void setNoTuples(int _noTuples){
+			noTuples = _noTuples;
+		}
+		
+		void setLocation(string _location){
+			location = _location;
+		}
     };
 	
 	

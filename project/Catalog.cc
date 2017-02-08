@@ -121,6 +121,7 @@ Catalog::Catalog(string& _fileName) {cout<<"Catalog constructor"<<endl;
 
 	//Example Retreival
 	/*cout<<"TEST"<<endl;
+	//I know this isnt the cleanest way to do it//
 	Keyify<string> key("table1"); 
 	CatalogEntry ce = catalog->Find(key);
 	cout<<ce.location<<endl;	
@@ -152,7 +153,14 @@ bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-	
+	//check map for key
+	Keyify<string> key(_table); 
+	CatalogEntry ce;
+	//Not sure if works. Maybe delete and insert if not.
+	if(catalog->IsThere(key)){
+		ce = catalog->Find(key);
+		ce.setNoTuples(_noTuples);
+	}
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
@@ -163,7 +171,14 @@ bool Catalog::GetDataFile(string& _table, string& _path) {
 } 
 
 void Catalog::SetDataFile(string& _table, string& _path) {
-	
+	//check map for key
+	Keyify<string> key(_table); 
+	CatalogEntry ce;
+	//Not sure if works. Maybe delete and insert if not.(Just to be sure)
+	if(catalog->IsThere(key)){
+		ce = catalog->Find(key);
+		ce.setLocation(_path);
+	}
 }
 
 bool Catalog::GetNoDistinct(string& _table, string& _attribute,
@@ -180,12 +195,22 @@ bool Catalog::GetNoDistinct(string& _table, string& _attribute,
 
 void Catalog::SetNoDistinct(string& _table, string& _attribute,
 	unsigned int& _noDistinct) {
-	
-	
+	Keyify<string> keys(_table); 
+	Schema sc = attributes->Find(keys);
+	//STOPPED HERE!!!
+	//
+	//
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
-	
+	catalog->MoveToStart();
+	if(catalog->AtStart()){
+		while(!catalog->AtEnd()){
+			CatalogEntry ce = catalog->CurrentData();
+			_tables.push_back(ce.tableName);
+			catalog->Advance();
+		}
+	}
 }
 
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
@@ -202,6 +227,7 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
 	Keyify<string> keys(_table); 
 	Schema sc = attributes->Find(keys);
 	_schema = sc;
+	return true;
 }
 
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
