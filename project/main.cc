@@ -1,83 +1,139 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <cstdlib>
+#include <cstdio>
 
 #include "Schema.h"
 #include "Catalog.h"
 
 using namespace std;
-namespace extensions
-{
-    template < typename T > string to_string( const T& n ){
-        ostringstream stm; stm << n; return stm.str() ;
-    }
-}
 
 
-int main () {
-    string dbname = "";
-    cout << "Enter Databse name:";
-    cin >> dbname;
-    Catalog ctl(dbname);
-    if(ctl._dbOpen){
-        
-    }
-    
-    string tableName1 = "Test";
-    vector<string> attrb1; attrb1.push_back("a0"); attrb1.push_back("a2");
-    vector<string> atype1; atype1.push_back("STRING"); atype1.push_back("INTEGER");
-    ctl.CreateTable(tableName1,attrb1,atype1);
-    
-    
-    
-    string tableName = "User";
-    unsigned int noTuples = 1;
-    if(ctl.GetNoTuples(tableName,noTuples))
-    { cout << "Before: " << extensions::to_string(noTuples) << endl; }
-    noTuples = 101;
-    ctl.SetNoTuples(tableName,noTuples);
-    if(ctl.GetNoTuples(tableName,noTuples))
-    { cout << "After: " << extensions::to_string(noTuples) << endl; }
-    //test data
-    
-    
-    string newLoc = "";
-    if(ctl.GetDataFile(tableName,newLoc))
-    { cout << "Before: " << newLoc << endl; }
-    newLoc = "Mars";
-    ctl.SetDataFile(tableName,newLoc);
-    if(ctl.GetDataFile(tableName,newLoc))
-    { cout << "After: " << newLoc << endl; }
-    //tets no dist
-    
-    
-    
-    string attrbName = "id";
-    unsigned int noDist= 0;
-    if(ctl.GetNoDistinct(tableName,attrbName,noDist))
-    { cout << "Before: " << extensions::to_string(noDist) << endl; }
-    noDist= 777;
-    ctl.SetNoDistinct(tableName,attrbName,noDist);
-    if(ctl.GetNoDistinct(tableName,attrbName,noDist))
-    { cout << "After: " << extensions::to_string(noDist) << endl; }
-    //test get Tables
-    
-    vector<string> tbls;
-    ctl.GetTables(tbls);
-    for(int i = 0; i < tbls.size(); i++){ cout << "Table : " << tbls.at(i) << endl; }
-    
-    vector<string> attrb;
-    if(ctl.GetAttributes(tableName,attrb)){
-        for(int i = 0; i < attrb.size(); i++){ cout << "Attribute : " << attrb.at(i) << endl; } }
-    
-  
-        vector<string> a;
-        vector<string> b;
-        vector<unsigned int> c;
-    Schema s(a,b,c);
-    ctl.GetSchema(tableName,s);
-    cout << s << endl;
-    
-    cout << ctl;
-    return 0;
+int main (int argc, char* argv[]) {
+//	if (argc != 4) {
+//		cout << "Usage: main [sqlite_file] [no_tables] [no_atts]" << endl;
+//		return -1;
+//	}
+
+	string dbFile = "catalog";//argv[1];
+	int tNo = 2;//atoi(argv[2]);
+	int aNo = 2;//atoi(argv[3]);
+
+	Catalog catalog(dbFile);
+	cout << catalog << endl; cout.flush();
+
+
+	////////////////////////////////
+	for (int i = 0; i < tNo; i++) {
+		char tN[20]; sprintf(tN, "T_%d", i);
+		string tName = tN;
+
+		int taNo = i * aNo;
+		vector<string> atts;
+		vector<string> types;
+		for (int j = 0; j < taNo; j++) {
+			char aN[20]; sprintf(aN, "A_%d_%d", i, j);
+			string aName = aN;
+			atts.push_back(aN);
+
+			string aType;
+			int at = j % 3;
+			if (0 == at) aType = "Integer";
+			else if (1 == at) aType = "Float";
+			else if (2 == at) aType = "String";
+			types.push_back(aType);
+		}
+
+		bool ret = catalog.CreateTable(tName, atts, types);
+		if (true == ret) {
+			cout << "CREATE TABLE " << tName << " OK" << endl;
+
+			for (int j = 0; j < taNo; j++) {
+				unsigned int dist = i * 10 + j;
+				string aN = atts[j];
+				catalog.SetNoDistinct(tName, atts[j], dist);
+			}
+
+			unsigned int tuples = i * 1000;
+			catalog.SetNoTuples(tName, tuples);
+
+			string path = "/home/user/DATA/" + tName + ".dat";
+			catalog.SetDataFile(tName, path);
+		}
+		else {
+			cout << "CREATE TABLE " << tName << " FAIL" << endl;
+		}
+	}
+
+
+	////////////////////////////////
+	catalog.Save();
+	cout << catalog << endl; cout.flush();
+
+
+	////////////////////////////////
+	vector<string> tables;
+	catalog.GetTables(tables);
+	for (vector<string>::iterator it = tables.begin();
+		 it != tables.end(); it++) {
+		cout << *it << endl;
+	}
+	cout << endl;
+
+
+//	////////////////////////////////
+//	for (int i = 0; i < 1000; i++) {
+//		int r = rand() % tNo + 1;
+//		char tN[20]; sprintf(tN, "T_%d", r);
+//		string tName = tN;
+//
+//		unsigned int tuples;
+//		catalog.GetNoTuples(tName, tuples);
+//		cout << tName << " tuples = " << tuples << endl;
+//
+//		string path;
+//		catalog.GetDataFile(tName, path);
+//		cout << tName << " path = " << path << endl;
+//
+//		vector<string> atts;
+//		catalog.GetAttributes(tName, atts);
+//		for (vector<string>::iterator it = atts.begin();
+//			 it != atts.end(); it++) {
+//			cout << *it << " ";
+//		}
+//		cout << endl;
+//
+//		Schema schema;
+//		catalog.GetSchema(tName, schema);
+//		cout << schema << endl;
+//
+//		////////////////////////////////
+//		for (int j = 0; j < 10; j++) {
+//			int s = rand() % (r * aNo) + 1;
+//			char aN[20]; sprintf(aN, "A_%d_%d", r, s);
+//			string aName = aN;
+//
+//			unsigned int distinct;
+//			catalog.GetNoDistinct(tName, aName, distinct);
+//			cout << tName << "." << aName << " distinct = " << distinct << endl;
+//		}
+//	}
+
+
+	////////////////////////////////
+	for (int i = 0; i < 5; i++) {
+		char tN[20]; sprintf(tN, "T_%d", i);
+		string tName = tN;
+
+		bool ret = catalog.DropTable(tName);
+		if (true == ret) {
+			cout << "DROP TABLE " << tName << " OK" << endl;
+		}
+		else {
+			cout << "DROP TABLE " << tName << " FAIL" << endl;
+		}
+	}
+
+	return 0;
 }
