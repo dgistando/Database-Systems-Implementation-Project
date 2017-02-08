@@ -21,6 +21,7 @@ Catalog::Catalog(string& _fileName) {
 }
 
 Catalog::~Catalog() {
+    WriteDatabse();
 }
 
 bool Catalog::Save() {
@@ -164,6 +165,7 @@ bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<str
         s._location = "";
         s._nameTable = _table;
         s._toCreate = true;
+        s._edited = false;
         Swapify<Schema> ss(s);
         catalog_tbl.Insert(key,ss);
         return true;
@@ -174,9 +176,12 @@ bool Catalog::DropTable(string& _table) {
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
         Schema s = catalog_tbl.Find(key);
-        s._toCreate = false;
-        Swapify<string> data(_table);
-        tables_toDrop.Insert(key,data);
+        
+        if(!s._toCreate){
+            s._toCreate = false;
+            Swapify<string> data(_table);
+            tables_toDrop.Insert(key,data);
+        }
         
         Keyify<string> key(_table);
         vector<string> a;
@@ -184,8 +189,8 @@ bool Catalog::DropTable(string& _table) {
         vector<unsigned int> c;
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
-        catalog_tbl.Remove(key,key,ss);
-        return true;
+        if(catalog_tbl.Remove(key,key,ss)) { return true; }
+        else return false;
     } else return false;
 }
 
@@ -201,7 +206,7 @@ ostream& operator<<(ostream& _os, Catalog& _c) {
             bin.push_back("\t" + a.name + "\t" + _c.ParseType(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
         sort(bin.begin(),bin.end());
-        for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
+        for(int i = 0; i < bin.size(); i++){ _os << bin.at(i); }
         _c.catalog_tbl.Advance();
          _os << str;
     }
@@ -287,6 +292,7 @@ bool Catalog::ReadDatabase(){
                         s._location = location;
                         s._noTuples = noTuples;
                         s._toCreate = false;
+                        s._edited = false;
                         Keyify<string> key(tableName);
                         Swapify<Schema> data(s);
                         catalog_tbl.Insert(key,data);
@@ -301,7 +307,7 @@ bool Catalog::ReadDatabase(){
 }
 bool Catalog::WriteDatabse(){
     if(_dbOpen){
-        //DeleteTables();
+        DeleteTables();
         catalog_tbl.MoveToStart();
         while(!catalog_tbl.AtEnd()){
             Schema s = catalog_tbl.CurrentData().operator Schema();
@@ -355,7 +361,20 @@ bool Catalog::WriteSchema(Schema& s){
                     "'" + ParseType(a.type) + "'," //
                     "'" + extensions::to_string(a.noDistinct) + "');";
             if(sqlite3_exec(_db,query_Attribute.c_str(),0,0,0) == SQLITE_OK){
-                //good?
+                string table_name = s._nameTable;
+                
+                Keyify<string> key(table_name);
+                vector<string> a;
+                vector<string> b;
+                vector<unsigned int> c;
+                Schema empty(a,b,c);
+                Swapify<Schema> ss(empty);
+                catalog_tbl.Remove(key,key,ss);
+                
+                s._edited = false;
+                s._toCreate = false;
+                Swapify<Schema> sol(s);
+                catalog_tbl.Insert(key,sol);
             }
             else return 0;
         }
