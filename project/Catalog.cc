@@ -24,6 +24,7 @@ Catalog::~Catalog() {
 }
 
 bool Catalog::Save() {
+    WriteDatabse();
 }
 
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
@@ -48,6 +49,7 @@ void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
         Swapify<Schema> ss(empty);
         if(catalog_tbl.Remove(key,key,ss)){
             s._noTuples = _noTuples;
+            s._edited = true;
             Swapify<Schema> sol(s);
             catalog_tbl.Insert(key,sol);
         }
@@ -76,6 +78,7 @@ void Catalog::SetDataFile(string& _table, string& _path) {
         Swapify<Schema> ss(empty);
         if(catalog_tbl.Remove(key,key,ss)){
             s._location = _path;
+            s._edited = true;
             Swapify<Schema> sol(s);
             catalog_tbl.Insert(key,sol);
         }
@@ -114,6 +117,7 @@ void Catalog::SetNoDistinct(string& _table, string& _attribute, unsigned int& _n
         for(int i = 0; i < s.GetAtts().size(); i++){
             if(_attribute == s.GetAtts().at(i).name){
                 s.GetAtts().at(i).noDistinct = _noDistinct;
+                s._edited = true;
                 Swapify<Schema> sol(s);
                 catalog_tbl.Insert(key,sol);
             }
@@ -160,7 +164,6 @@ bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<str
         s._location = "";
         s._nameTable = _table;
         s._toCreate = true;
-        s._toDelete = false;
         Swapify<Schema> ss(s);
         catalog_tbl.Insert(key,ss);
         return true;
@@ -171,8 +174,9 @@ bool Catalog::DropTable(string& _table) {
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
         Schema s = catalog_tbl.Find(key);
-        s._toDelete = true;
         s._toCreate = false;
+        Swapify<string> data(_table);
+        tables_toDrop.Insert(key,data);
         
         Keyify<string> key(_table);
         vector<string> a;
@@ -181,25 +185,26 @@ bool Catalog::DropTable(string& _table) {
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
         catalog_tbl.Remove(key,key,ss);
+        return true;
     } else return false;
 }
 
 ostream& operator<<(ostream& _os, Catalog& _c) {
-    string str = "";
     _c.catalog_tbl.MoveToStart();
     while(!_c.catalog_tbl.AtEnd()){
+        string str = "";
         Schema s = _c.catalog_tbl.CurrentData().operator Schema();
         str += ("\n" + s._nameTable + "\t" + extensions::to_string(s._noTuples) + "\t" + s._location + "\n");
         vector<string> bin;
         for(int i = 0; i < s.GetAtts().size(); i++){
             Attribute a = s.GetAtts().at(i);
-            bin.push_back("\t" + a.name + "\t" + extensions::to_string(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
+            bin.push_back("\t" + a.name + "\t" + _c.ParseType(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
         sort(bin.begin(),bin.end());
         for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
         _c.catalog_tbl.Advance();
+         _os << str;
     }
-    _os << str;
     return _os;
 }
 
@@ -281,7 +286,6 @@ bool Catalog::ReadDatabase(){
                         s._nameTable = tableName;
                         s._location = location;
                         s._noTuples = noTuples;
-                        s._toDelete = false;
                         s._toCreate = false;
                         Keyify<string> key(tableName);
                         Swapify<Schema> data(s);
@@ -297,6 +301,80 @@ bool Catalog::ReadDatabase(){
 }
 bool Catalog::WriteDatabse(){
     if(_dbOpen){
-        
+        //DeleteTables();
+        catalog_tbl.MoveToStart();
+        while(!catalog_tbl.AtEnd()){
+            Schema s = catalog_tbl.CurrentData().operator Schema();
+            if(s._edited && !s._toCreate){ EditTable(s); } 
+            else if (s._toCreate){ CreateNewTable(s); }
+            catalog_tbl.Advance();
+      }
     } else return false;
+}
+bool Catalog::CreateNewTable(Schema& s){
+    return WriteSchema(s);
+}
+bool Catalog::EditTable(Schema& s){
+    return WriteSchema(s);
+}
+bool Catalog::DeleteTables(){
+    int total = tables_toDrop.Length(),
+            dropped = 0;
+    tables_toDrop.MoveToStart();
+    while(!tables_toDrop.AtEnd()){
+        string table_toDrop = tables_toDrop.CurrentData().operator string();
+        if(DeleteTable(table_toDrop)){ dropped++;}
+        tables_toDrop.Advance();
+    }
+    if(dropped == total){ return 1;}
+    else return 0;
+}
+bool Catalog::DeleteTable(string& _tableName){
+    //string query = "DROP TABLE " + _tableName + ";";
+    //if(sqlite3_exec(_db,query.c_str(),0,0,0)== SQLITE_OK){
+        string query_deleteFrom_Catalog = "DELETE FROM Catalog WHERE name = '" + _tableName + "'"; 
+        if(sqlite3_exec(_db,query_deleteFrom_Catalog.c_str(),0,0,0)== SQLITE_OK){ 
+            string query_deleteFrom_Attribute = "DELETE FROM Attribute WHERE tableName = '" + _tableName + "'"; 
+            if(sqlite3_exec(_db,query_deleteFrom_Attribute.c_str(),0,0,0)== SQLITE_OK){ 
+                return 1; 
+            } else return 0;
+        } else return 0; 
+    //}
+}
+bool Catalog::WriteSchema(Schema& s){
+    string query_Catalog = "INSERT OR REPLACE INTO Catalog(name,numTuples,location) VALUES(" //
+            "'" + s._nameTable + "'," //
+            "'" + extensions::to_string(s._noTuples) + "'," //
+            "'" + s._location + "');";
+    if(sqlite3_exec(_db,query_Catalog.c_str(),0,0,0) == SQLITE_OK){
+        for(int i = 0; i < s.GetAtts().size(); i++){
+            Attribute a = s.GetAtts().at(i);
+            string query_Attribute = "INSERT OR REPLACE INTO Attribute(name,tableName,type,distinctTuple)  VALUES (" //
+                    "'" + a.name + "'," //
+                    "'" + s._nameTable + "'," //
+                    "'" + ParseType(a.type) + "'," //
+                    "'" + extensions::to_string(a.noDistinct) + "');";
+            if(sqlite3_exec(_db,query_Attribute.c_str(),0,0,0) == SQLITE_OK){
+                //good?
+            }
+            else return 0;
+        }
+    } else return 0;
+    return 1;
+}
+string Catalog::ParseType(Type& type){
+    switch(type){
+        case Integer:{
+            return "Integer";
+        }
+        case Float:{
+            return "Float";
+        }
+        case String:{
+            return "String";
+        }
+        default:{
+            return "Unknown";
+        }
+    }
 }

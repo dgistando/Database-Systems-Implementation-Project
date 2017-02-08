@@ -43,7 +43,7 @@ public:
         string _nameTable;
         string _location;
         bool _toCreate;
-        bool _toDelete;
+        bool _edited;
 	// default constructor
 	Schema() {}
 	// full constructor
