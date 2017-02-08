@@ -39,7 +39,6 @@ void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
         Schema s = catalog_tbl.Find(key);
-        s._noTuples = _noTuples;
         
         Keyify<string> key(_table);
         vector<string> a;
@@ -103,40 +102,97 @@ void Catalog::SetNoDistinct(string& _table, string& _attribute, unsigned int& _n
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
         Schema s = catalog_tbl.Find(key);
-        Swapify<Schema> ss(s);
+        
+        Keyify<string> key(_table);
+        vector<string> a;
+        vector<string> b;
+        vector<unsigned int> c;
+        Schema empty(a,b,c);
+        Swapify<Schema> ss(empty);
+        
         catalog_tbl.Remove(key,key,ss);
         for(int i = 0; i < s.GetAtts().size(); i++){
             if(_attribute == s.GetAtts().at(i).name){
                 s.GetAtts().at(i).noDistinct = _noDistinct;
+                Swapify<Schema> sol(s);
+                catalog_tbl.Insert(key,sol);
             }
         }
-        ss = Swapify<Schema>(s);
-        catalog_tbl.Insert(key,ss);
     }
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
+    catalog_tbl.MoveToStart();
+    while(!catalog_tbl.AtEnd()){
+        _tables.push_back(catalog_tbl.CurrentKey().operator string()); 
+        catalog_tbl.Advance();
+    }
 }
 
 bool Catalog::GetAttributes(string& _table, vector<string>& _attributes) {
-	return true;
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key).operator Schema();
+        for(int i = 0; i < s.GetAtts().size(); i++){
+            _attributes.push_back(s.GetAtts().at(i).name);
+        }
+        return true;
+    } else return false;
 }
 
 bool Catalog::GetSchema(string& _table, Schema& _schema) {
-	return true;
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        _schema = catalog_tbl.Find(key).operator Schema();
+        return true;
+    } return false;
 }
 
-bool Catalog::CreateTable(string& _table, vector<string>& _attributes,
-	vector<string>& _attributeTypes) {
-	return true;
+/* To do check if the attributes are unique
+ */
+bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes) {
+    Keyify<string> key(_table);
+    if(!catalog_tbl.IsThere(key)){
+        vector<unsigned int> d;
+        for(int i = 0; i < _attributes.size(); i++){ d.push_back(0); }
+        Schema s(_attributes,_attributeTypes,d);
+        s._noTuples = 0;
+        s._location = "";
+        s._nameTable = _table;
+        Swapify<Schema> ss(s);
+        catalog_tbl.Insert(key,ss);
+        return true;
+    } else return false;
 }
 
 bool Catalog::DropTable(string& _table) {
-	return true;
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        
+        Keyify<string> key(_table);
+        vector<string> a;
+        vector<string> b;
+        vector<unsigned int> c;
+        Schema empty(a,b,c);
+        Swapify<Schema> ss(empty);
+        catalog_tbl.Remove(key,key,ss);
+    } else return false;
 }
 
 ostream& operator<<(ostream& _os, Catalog& _c) {
-	return _os;
+    string s;
+    _c.catalog_tbl.MoveToStart();
+    while(!_c.catalog_tbl.AtEnd()){
+        Schema s = _c.catalog_tbl.CurrentData().operator Schema();
+        //s += s._nameTable + "\t" + s._noTuples + "\t" + s._location + "\n";
+        set<string> bin;
+        for(int i = 0; i < s.GetAtts().size(); i++){
+            
+        }
+        _c.catalog_tbl.Advance();
+    }
+    return _os;
 }
 
 bool Catalog::ReadDatabase(){

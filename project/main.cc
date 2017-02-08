@@ -22,9 +22,14 @@ int main () {
     if(ctl._dbOpen){
         
     }
-    ctl.catalog_tbl.MoveToStart();
-    ctl.catalog_tbl.Advance();
-    cout << "THIS "  << ctl.catalog_tbl.CurrentData().operator Schema().GetAtts().size() << endl;
+    
+    string tableName1 = "Test";
+    vector<string> attrb1; attrb1.push_back("a0"); attrb1.push_back("a2");
+    vector<string> atype1; atype1.push_back("STRING"); atype1.push_back("INTEGER");
+    ctl.CreateTable(tableName1,attrb1,atype1);
+    
+    
+    
     string tableName = "User";
     unsigned int noTuples = 1;
     if(ctl.GetNoTuples(tableName,noTuples))
@@ -35,9 +40,6 @@ int main () {
     { cout << "After: " << extensions::to_string(noTuples) << endl; }
     //test data
     
-    ctl.catalog_tbl.MoveToStart();
-    ctl.catalog_tbl.Advance();
-    cout << "THIS "  << ctl.catalog_tbl.CurrentData().operator Schema().GetAtts().size() << endl;
     
     string newLoc = "";
     if(ctl.GetDataFile(tableName,newLoc))
@@ -48,9 +50,6 @@ int main () {
     { cout << "After: " << newLoc << endl; }
     //tets no dist
     
-    ctl.catalog_tbl.MoveToStart();
-    ctl.catalog_tbl.Advance();
-    cout << "THIS "  << ctl.catalog_tbl.CurrentData().operator Schema().GetAtts().size() << endl;
     
     
     string attrbName = "id";
@@ -61,5 +60,24 @@ int main () {
     ctl.SetNoDistinct(tableName,attrbName,noDist);
     if(ctl.GetNoDistinct(tableName,attrbName,noDist))
     { cout << "After: " << extensions::to_string(noDist) << endl; }
+    //test get Tables
+    
+    vector<string> tbls;
+    ctl.GetTables(tbls);
+    for(int i = 0; i < tbls.size(); i++){ cout << "Table : " << tbls.at(i) << endl; }
+    
+    vector<string> attrb;
+    if(ctl.GetAttributes(tableName,attrb)){
+        for(int i = 0; i < attrb.size(); i++){ cout << "Attribute : " << attrb.at(i) << endl; } }
+    
+  
+        vector<string> a;
+        vector<string> b;
+        vector<unsigned int> c;
+    Schema s(a,b,c);
+    ctl.GetSchema(tableName,s);
+    cout << s;
+    
+    
     return 0;
 }
