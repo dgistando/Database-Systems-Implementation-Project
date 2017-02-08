@@ -3,7 +3,7 @@
 
 #include <string>
 #include <sstream> // needed to convcert stupid int to string ffs
-#include <set> // lazy sorting
+#include <algorithm> // lazy sorting
 #include <vector>
 #include <iostream>
 
@@ -29,6 +29,7 @@ public:
     bool _dbOpen;
     sqlite3 * _db;
     InefficientMap<Keyify<string>,Swapify<Schema> > catalog_tbl;
+    InefficientMap<Keyify<string>,Swapify<string> > tables_toDrop;
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
 	 * _fileName is a SQLite database containing data on tables and their attributes.
@@ -108,10 +109,15 @@ public:
 	 */
 	friend ostream& operator<<(ostream& _os, Catalog& _c);
         
-        /* Useless shit
-         */
+        
         bool ReadDatabase();
         bool WriteDatabse();
+        bool DeleteTables();
+        bool DeleteTable(string& _stringName);
+        bool CreateNewTable(Schema& s);
+        bool EditTable(Schema& s);
+        bool WriteSchema(Schema& s);
+        string ParseType(Type& type);
 };
 
 #endif //_CATALOG_H
