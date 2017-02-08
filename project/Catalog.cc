@@ -29,29 +29,90 @@ bool Catalog::Save() {
 bool Catalog::GetNoTuples(string& _table, unsigned int& _noTuples) {
     Keyify<string> key(_table);
     if(catalog_tbl.IsThere(key)){
-        Schema s = catalog_tbl.Find(key).operator Schema();
+        Schema s = catalog_tbl.Find(key);
         _noTuples = s._noTuples;
         return true;
     } else return false;
 }
 
 void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
-    
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        s._noTuples = _noTuples;
+        
+        Keyify<string> key(_table);
+        vector<string> a;
+        vector<string> b;
+        vector<unsigned int> c;
+        Schema empty(a,b,c);
+        Swapify<Schema> ss(empty);
+        if(catalog_tbl.Remove(key,key,ss)){
+            s._noTuples = _noTuples;
+            Swapify<Schema> sol(s);
+            catalog_tbl.Insert(key,sol);
+        }
+    }
 }
 
 bool Catalog::GetDataFile(string& _table, string& _path) {
-	return true;
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        _path = s._location;
+        return true;
+    } else return false;
 }
 
 void Catalog::SetDataFile(string& _table, string& _path) {
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        
+        Keyify<string> key(_table);
+        vector<string> a;
+        vector<string> b;
+        vector<unsigned int> c;
+        Schema empty(a,b,c);
+        Swapify<Schema> ss(empty);
+        if(catalog_tbl.Remove(key,key,ss)){
+            s._location = _path;
+            Swapify<Schema> sol(s);
+            catalog_tbl.Insert(key,sol);
+        }
+    }
 }
 
-bool Catalog::GetNoDistinct(string& _table, string& _attribute,
-	unsigned int& _noDistinct) {
-	return true;
+bool Catalog::GetNoDistinct(string& _table, string& _attribute,unsigned int& _noDistinct) {
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        vector<Attribute> a = s.GetAtts();
+        int size = a.size();
+        for(int i = 0; i < size; i++){
+            if(_attribute == s.GetAtts().at(i).name){
+                _noDistinct = s.GetAtts().at(i).noDistinct;
+                return true;
+            }
+        }
+        //this means the table did not have attribute with that name
+        return false; // shud we have this here?
+    } else return false;
 }
-void Catalog::SetNoDistinct(string& _table, string& _attribute,
-	unsigned int& _noDistinct) {
+void Catalog::SetNoDistinct(string& _table, string& _attribute, unsigned int& _noDistinct) {
+    Keyify<string> key(_table);
+    if(catalog_tbl.IsThere(key)){
+        Schema s = catalog_tbl.Find(key);
+        Swapify<Schema> ss(s);
+        catalog_tbl.Remove(key,key,ss);
+        for(int i = 0; i < s.GetAtts().size(); i++){
+            if(_attribute == s.GetAtts().at(i).name){
+                s.GetAtts().at(i).noDistinct = _noDistinct;
+            }
+        }
+        ss = Swapify<Schema>(s);
+        catalog_tbl.Insert(key,ss);
+    }
 }
 
 void Catalog::GetTables(vector<string>& _tables) {
@@ -87,16 +148,16 @@ bool Catalog::ReadDatabase(){
                 int rc = 0;
                 while(1){
                     rc = sqlite3_step(stmt);
+                    
+                    string tableName;
+                    int noTuples = 0;
+                    string location;
+                    vector<string> attrbNames;
+                    vector<string> attrbTypes;
+                    vector<unsigned int> attrbDistinct;
+                    Schema s;
+                    
                     if(rc == SQLITE_ROW){
-                        
-                        
-                        string tableName;
-                        int noTuples = 0;
-                        string location;
-                        vector<string> attrbNames;
-                        vector<string> attrbTypes;
-                        vector<unsigned int> attrbDistinct;
-                        
                         for(int i = 0; i < ctotal; i++){
                             switch(i){
                                 case 0:{ // catalog.tableName
@@ -152,7 +213,7 @@ bool Catalog::ReadDatabase(){
                                 if(rc1 == SQLITE_DONE){ break; }
                             }
                         } sqlite3_finalize(att_stmt);
-                        Schema s(attrbNames,attrbTypes,attrbDistinct);
+                        s = Schema(attrbNames,attrbTypes,attrbDistinct);
                         s._nameTable = tableName;
                         s._location = location;
                         s._noTuples = noTuples;

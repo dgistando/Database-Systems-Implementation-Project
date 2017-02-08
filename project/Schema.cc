@@ -44,19 +44,25 @@ Schema::Schema(vector<string>& _attributes,	vector<string>& _attributeTypes,
 }
 
 Schema::Schema(const Schema& _other) {
-    _location = _other._location;
-    _noTuples = _other._noTuples;
-    _nameTable = _other._nameTable;
 	for (int i = 0; i < _other.atts.size(); i++) {
 		Attribute a; a = _other.atts[i];
 		atts.push_back(a);
 	}
+        _location = _other._location;
+        _noTuples = _other._noTuples;
+        _nameTable = _other._nameTable;
 }
 
 Schema& Schema::operator=(const Schema& _other) {
 	// handle self-assignment first
+   
 	if (this == &_other) return *this;
-
+        
+        _location = _other._location;
+        _noTuples = _other._noTuples;
+        _nameTable = _other._nameTable;
+        
+        
 	for (int i = 0; i < _other.atts.size(); i++) {
 		Attribute a; a = _other.atts[i];
 		atts.push_back(a);
@@ -66,6 +72,9 @@ Schema& Schema::operator=(const Schema& _other) {
 }
 
 void Schema::Swap(Schema& _other) {
+    _location = _other._location;
+    _noTuples = _other._noTuples;
+    _nameTable = _other._nameTable;
 	atts.swap(_other.atts);
 }
 

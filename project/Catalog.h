@@ -108,6 +108,8 @@ public:
 	 */
 	friend ostream& operator<<(ostream& _os, Catalog& _c);
         
+        /* Useless shit
+         */
         bool ReadDatabase();
         bool WriteDatabse();
 };
