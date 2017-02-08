@@ -76,8 +76,8 @@ int main () {
         vector<unsigned int> c;
     Schema s(a,b,c);
     ctl.GetSchema(tableName,s);
-    cout << s;
+    cout << s << endl;
     
-    
+    cout << ctl;
     return 0;
 }

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <sstream> // needed to convcert stupid int to string ffs
-#include <set> // lazy sorting
+#include <algorithm> // lazy sorting
 #include <vector>
 #include <iostream>
 
