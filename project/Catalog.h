@@ -5,20 +5,50 @@
 #include <vector>
 #include <iostream>
 
+#include "sqlite3.h"
 #include "Schema.h"
+
+#include "TwoWayList.cc"
+#include "InefficientMap.cc"
+#include "Swapify.cc"
+#include "Keyify.cc"
 
 using namespace std;
 
 
 class Catalog {
 private:
+	sqlite3* db;
+
+	class CatalogEntry{
+    public:
+        string tableName;
+        int noTuples;
+        string location;
+		
+        CatalogEntry(){}
+		
+        CatalogEntry(string _tableName, int _noTuples, string _location){
+            tableName = _tableName ; 
+			noTuples = _noTuples;
+			location = _location ;
+        }
+        ~CatalogEntry(){}
+    };
+	
+	
+	
 	/* Data structures to keep catalog data in memory.
 	 * A series of data structures you may find useful are included.
 	 * Efficient data structures are recommended.
 	 * Avoid linear traversals when possible.
 	 */
+	InefficientMap<Keyify<string>, Swapify<CatalogEntry> >* catalog;
+	InefficientMap<Keyify<string>, Swapify<Schema> >* attributes;
+
 
 public:
+	
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
 	 * _fileName is a SQLite database containing data on tables and their attributes.
