@@ -157,6 +157,7 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
  */
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes) {
     Keyify<string> key(_table);
+    if(_attributes.size() == 0){ return false; } // u shall not pass need more attrb
     if(!catalog_tbl.IsThere(key)){
         vector<unsigned int> d;
         for(int i = 0; i < _attributes.size(); i++){ d.push_back(0); }
