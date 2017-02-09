@@ -18,6 +18,7 @@ Catalog::Catalog(string& _fileName) {
     if(rc == SQLITE_OK){ _dbOpen = 1; } else { _dbOpen = 0; }
     //read database
     if(_dbOpen){ ReadDatabase(); }
+    else cout << "Cannot open db!" << endl;
 }
 
 Catalog::~Catalog() {
@@ -207,7 +208,7 @@ ostream& operator<<(ostream& _os, Catalog& _c) {
             bin.push_back("\t" + a.name + "\t" + _c.ParseType(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
         sort(bin.begin(),bin.end());
-        for(int i = 0; i < bin.size(); i++){ _os << bin.at(i); }
+        for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
         _c.catalog_tbl.Advance();
          _os << str;
     }
@@ -319,6 +320,7 @@ bool Catalog::WriteDatabse(){
     } else return false;
 }
 bool Catalog::CreateNewTable(Schema& s){
+    //write query to 
     return WriteSchema(s);
 }
 bool Catalog::EditTable(Schema& s){
@@ -333,7 +335,10 @@ bool Catalog::DeleteTables(){
         if(DeleteTable(table_toDrop)){ dropped++;}
         tables_toDrop.Advance();
     }
-    if(dropped == total){ return 1;}
+    if(dropped == total){
+        InefficientMap<Keyify<string>,Swapify<string> > empty;
+        tables_toDrop.Swap(empty);
+        return 1;}
     else return 0;
 }
 bool Catalog::DeleteTable(string& _tableName){

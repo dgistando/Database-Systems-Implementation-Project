@@ -120,7 +120,9 @@ int main (int argc, char* argv[]) {
 		}
 	}
 
-
+        
+       // cout << catalog << endl;
+        
 	////////////////////////////////
 	for (int i = 0; i < 5; i++) {
 		char tN[20]; sprintf(tN, "T_%d", i);
