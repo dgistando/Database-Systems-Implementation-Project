@@ -11,14 +11,15 @@ using namespace std;
 
 
 int main (int argc, char* argv[]) {
-//	if (argc != 4) {
-//		cout << "Usage: main [sqlite_file] [no_tables] [no_atts]" << endl;
-//		return -1;
-//	}
+    
+	if (argc != 4) {
+		cout << "Usage: main [sqlite_file] [no_tables] [no_atts]" << endl;
+		return -1;
+	}
 
-	string dbFile = "catalog";//argv[1];
-	int tNo = 5;//atoi(argv[2]);
-	int aNo = 5;//atoi(argv[3]);
+	string dbFile = argv[1];
+	int tNo = atoi(argv[2]);
+	int aNo = atoi(argv[3]);
 
 	Catalog catalog(dbFile);
 	cout << catalog << endl; cout.flush();
@@ -121,7 +122,7 @@ int main (int argc, char* argv[]) {
 	}
 
         
-       // cout << catalog << endl;
+        cout << catalog << endl;
         
 	////////////////////////////////
 	for (int i = 0; i < 5; i++) {

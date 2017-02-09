@@ -207,7 +207,7 @@ ostream& operator<<(ostream& _os, Catalog& _c) {
             Attribute a = s.GetAtts().at(i);
             bin.push_back("\t" + a.name + "\t" + _c.ParseType(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
-        sort(bin.begin(),bin.end());
+        //sort(bin.begin(),bin.end());
         for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
         _c.catalog_tbl.Advance();
          _os << str;
