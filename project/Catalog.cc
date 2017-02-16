@@ -18,6 +18,7 @@ Catalog::Catalog(string& _fileName) {
     if(rc == SQLITE_OK){ _dbOpen = 1; } else { _dbOpen = 0; }
     //read database
     if(_dbOpen){ ReadDatabase(); }
+    else cout << "Cannot open db!" << endl;
 }
 
 Catalog::~Catalog() {
@@ -48,6 +49,7 @@ void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
         vector<unsigned int> c;
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
+        
         if(catalog_tbl.Remove(key,key,ss)){
             s._noTuples = _noTuples;
             s._edited = true;
@@ -77,6 +79,7 @@ void Catalog::SetDataFile(string& _table, string& _path) {
         vector<unsigned int> c;
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
+        
         if(catalog_tbl.Remove(key,key,ss)){
             s._location = _path;
             s._edited = true;
@@ -157,9 +160,13 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
  */
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes) {
     Keyify<string> key(_table);
+<<<<<<< HEAD
     if(_attributes.size() == 0){
         return false;
     }
+=======
+    if(_attributes.size() == 0){ return false; } // u shall not pass need more attrb
+>>>>>>> Daniel
     if(!catalog_tbl.IsThere(key)){
         vector<unsigned int> d;
         for(int i = 0; i < _attributes.size(); i++){ d.push_back(0); }
@@ -208,8 +215,8 @@ ostream& operator<<(ostream& _os, Catalog& _c) {
             Attribute a = s.GetAtts().at(i);
             bin.push_back("\t" + a.name + "\t" + _c.ParseType(a.type) + "\t" + extensions::to_string(a.noDistinct) + "\n");
         }
-        sort(bin.begin(),bin.end());
-        for(int i = 0; i < bin.size(); i++){ _os << bin.at(i); }
+        //sort(bin.begin(),bin.end());
+        for(int i = 0; i < bin.size(); i++){ str += bin.at(i); }
         _c.catalog_tbl.Advance();
          _os << str;
     }
@@ -321,6 +328,7 @@ bool Catalog::WriteDatabse(){
     } else return false;
 }
 bool Catalog::CreateNewTable(Schema& s){
+    //write query to 
     return WriteSchema(s);
 }
 bool Catalog::EditTable(Schema& s){
@@ -335,7 +343,10 @@ bool Catalog::DeleteTables(){
         if(DeleteTable(table_toDrop)){ dropped++;}
         tables_toDrop.Advance();
     }
-    if(dropped == total){ return 1;}
+    if(dropped == total){
+        InefficientMap<Keyify<string>,Swapify<string> > empty;
+        tables_toDrop.Swap(empty);
+        return 1;}
     else return 0;
 }
 bool Catalog::DeleteTable(string& _tableName){

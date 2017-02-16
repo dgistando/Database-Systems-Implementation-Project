@@ -8,6 +8,10 @@
 #include "Schema.h"
 #include "File.h"
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Daniel
 using namespace std;
 
 
