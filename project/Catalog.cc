@@ -49,6 +49,7 @@ void Catalog::SetNoTuples(string& _table, unsigned int& _noTuples) {
         vector<unsigned int> c;
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
+        
         if(catalog_tbl.Remove(key,key,ss)){
             s._noTuples = _noTuples;
             s._edited = true;
@@ -78,6 +79,7 @@ void Catalog::SetDataFile(string& _table, string& _path) {
         vector<unsigned int> c;
         Schema empty(a,b,c);
         Swapify<Schema> ss(empty);
+        
         if(catalog_tbl.Remove(key,key,ss)){
             s._location = _path;
             s._edited = true;
