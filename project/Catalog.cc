@@ -21,6 +21,9 @@ Catalog::Catalog(string& _fileName) {
     else cout << "Cannot open db!" << endl;
 }
 
+
+
+}
 Catalog::~Catalog() {
     WriteDatabse();
 }

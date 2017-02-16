@@ -39,6 +39,7 @@ public:
 	 */
 	Catalog(string& _fileName);
 
+
 	/* Catalog destructor.
 	 * Store all the catalog data in the SQLite database.
 	 */
