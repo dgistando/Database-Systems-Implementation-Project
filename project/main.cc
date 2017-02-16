@@ -2,14 +2,13 @@
 #include <string>
 
 #include "Catalog.h"
-<<<<<<< HEAD
-#include "QueryParser.h"
-=======
+
+
+
 extern "C" {
 #include "QueryParser.h"
 }
-//stuff
->>>>>>> Daniel
+
 #include "QueryOptimizer.h"
 #include "QueryCompiler.h"
 #include "RelOp.h"
@@ -24,19 +23,18 @@ extern struct AndList* predicate; // the predicate in WHERE
 extern struct NameList* groupingAtts; // grouping attributes
 extern struct NameList* attsToSelect; // the attributes in SELECT
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
-<<<<<<< HEAD
+
 
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
 
 
-=======
-
-extern "C" {int yyparse();} //<-- this was uncommented
-extern "C" int yylex_destroy();
 
 
->>>>>>> Daniel
+
+
+
+
 int main () {
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
