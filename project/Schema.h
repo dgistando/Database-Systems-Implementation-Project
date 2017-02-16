@@ -38,8 +38,12 @@ class Schema {
 private:
 	// attributes in schema
 	vector<Attribute> atts;
-
 public:
+        unsigned int _noTuples;
+        string _nameTable;
+        string _location;
+        bool _toCreate;
+        bool _edited;
 	// default constructor
 	Schema() {}
 	// full constructor
