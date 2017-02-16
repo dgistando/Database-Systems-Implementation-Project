@@ -5,6 +5,7 @@
 extern "C" {
 #include "QueryParser.h"
 }
+//stuff
 #include "QueryOptimizer.h"
 #include "QueryCompiler.h"
 #include "RelOp.h"
