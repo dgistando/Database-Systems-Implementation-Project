@@ -1,57 +1,68 @@
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
 
-#include "Schema.h"
 #include "Catalog.h"
+extern "C" {
+#include "QueryParser.h"
+}
+//stuff
+#include "QueryOptimizer.h"
+#include "QueryCompiler.h"
+#include "RelOp.h"
 
 using namespace std;
 
 
+// these data structures hold the result of the parsing
+extern struct FuncOperator* finalFunction; // the aggregate function
+extern struct TableList* tables; // the list of tables in the query
+extern struct AndList* predicate; // the predicate in WHERE
+extern struct NameList* groupingAtts; // grouping attributes
+extern struct NameList* attsToSelect; // the attributes in SELECT
+extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
+
+extern "C" {int yyparse();} //<-- this was uncommented
+extern "C" int yylex_destroy();
+
+
 int main () {
-	string table = "region", attribute, type;
-	vector<string> attributes, types;
-	vector<unsigned int> distincts;
-
-	attribute = "r_regionkey"; attributes.push_back(attribute);
-	type = "INTEGER"; types.push_back(type);
-	distincts.push_back(5);
-	attribute = "r_name"; attributes.push_back(attribute);
-	type = "STRING"; types.push_back(type);
-	distincts.push_back(5);
-	attribute = "r_comment"; attributes.push_back(attribute);
-	type = "STRING"; types.push_back(type);
-	distincts.push_back(5);
-
-	Schema s(attributes, types, distincts);
-	Schema s1(s), s2; s2 = s1;
-
-	string a1 = "r_regionkey", b1 = "regionkey";
-	string a2 = "r_name", b2 = "name";
-	string a3 = "r_commen", b3 = "comment";
-
-	s1.RenameAtt(a1, b1);
-	s1.RenameAtt(a2, b2);
-	s1.RenameAtt(a3, b3);
-
-	s2.Append(s1);
-
-	vector<int> keep;
-	keep.push_back(5);
-	keep.push_back(0);
-	s2.Project(keep);
-
-	cout << s << endl;
-	cout << s1 << endl;
-	cout << s2 << endl;
-
-
+	// this is the catalog
 	string dbFile = "catalog.sqlite";
-	Catalog c(dbFile);
+	Catalog catalog(dbFile);
 
-	c.CreateTable(table, attributes, types);
+	// this is the query optimizer
+	// it is not invoked directly but rather passed to the query compiler
+	QueryOptimizer optimizer(catalog);
 
-	cout << c << endl;
+	// this is the query compiler
+	// it includes the catalog and the query optimizer
+	QueryCompiler compiler(catalog, optimizer);
+
+
+	// the query parser is accessed directly through yyparse
+	// this populates the extern data structures
+	int parse = -1;
+	if (yyparse () == 0) {
+		cout << "OK!" << endl;
+		parse = 0;
+	}
+	else {
+		cout << "Error: Query is not correct!" << endl;
+		parse = -1;
+	}
+
+	yylex_destroy();
+
+	if (parse != 0) return -1;
+
+	// at this point we have the parse tree in the ParseTree data structures
+	// we are ready to invoke the query compiler with the given query
+	// the result is the execution tree built from the parse tree and optimized
+	QueryExecutionTree queryTree;
+	compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+		groupingAtts, distinctAtts, queryTree);
+
+	cout << queryTree << endl;
 
 	return 0;
 }
