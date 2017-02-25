@@ -11,25 +11,61 @@
 #include "Schema.h"
 
 #include "TwoWayList.cc"
+<<<<<<< HEAD
 #include "Keyify.h"
 #include "Swapify.cc"
 #include "InefficientMap.cc"
+=======
+#include "InefficientMap.cc"
+#include "Swapify.cc"
+#include "Keyify.cc"
+>>>>>>> c04b4f53c8cd227b4f2bb66b5bf33e560e308393
 
 using namespace std;
 
 
 class Catalog {
 private:
+	sqlite3* db;
+
+	class CatalogEntry{
+    public:
+        string tableName;
+        unsigned int noTuples;
+        string location;
+		
+        CatalogEntry(){}
+		
+        CatalogEntry(string _tableName, unsigned int _noTuples, string _location){
+            tableName = _tableName ; 
+			noTuples = _noTuples;
+			location = _location ;
+        }
+        ~CatalogEntry(){}
+		
+    };
+	
+	
+	
 	/* Data structures to keep catalog data in memory.
 	 * A series of data structures you may find useful are included.
 	 * Efficient data structures are recommended.
 	 * Avoid linear traversals when possible.
 	 */
+<<<<<<< HEAD
 public:
     bool _dbOpen;
     sqlite3 * _db;
     InefficientMap<Keyify<string>,Swapify<Schema> > catalog_tbl;
     InefficientMap<Keyify<string>,Swapify<string> > tables_toDrop;
+=======
+	InefficientMap<Keyify<string>, Swapify<CatalogEntry> >* catalog;
+	InefficientMap<Keyify<string>, Swapify<Schema> >* attributes;
+
+
+public:
+	
+>>>>>>> c04b4f53c8cd227b4f2bb66b5bf33e560e308393
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
 	 * _fileName is a SQLite database containing data on tables and their attributes.
@@ -38,7 +74,6 @@ public:
 	 * All the functions work with the in-memory data structures.
 	 */
 	Catalog(string& _fileName);
-
 
 	/* Catalog destructor.
 	 * Store all the catalog data in the SQLite database.
