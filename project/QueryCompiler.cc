@@ -24,9 +24,52 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	QueryExecutionTree& _queryTree) {
 
 	// create a SCAN operator for each table in the query
+	vector<Scan> scans;
+	string table;
+	unsigned int noDistinct, noTuples;
+	while(_tables->next != NULL){
+		table = _tables->tableName;
+		Schema schema;
+		catalog->GetSchema(table, schema);
 
-	// push-down selections: create a SELECT operator wherever necessary
+		DBFile db;
 
+		scans.push_back(Scan(schema, db));
+
+		// push-down selections: create a SELECT operator wherever necessary
+		Comparison compare;
+		if(ConditionOnSchema(*_predicate, schema)){
+			//if so, pass all selection preticates.
+			while(_predicate-> rightAnd != NULL){
+				ComparisonOp* cOp = _predicate->left;
+				
+				//NAME op (FLOAT,INTEGER) ex: p.size < 50
+				if(cOp->left->code == NAME && cOp->code != EQUALS && cOp->right->code != NAME)
+				{
+					std::string s(cOp->left->value);
+					catalog->GetNoDistinct(table, s, noDistinct);
+					noDistinct /= 3;
+					catalog->SetNoDistinct(table, s, noDistinct);
+				}
+				else if(cOp->left->code == NAME && cOp->code == EQUALS && cOp->right->code != NAME)
+				{
+					std::string s(cOp->left->value);
+					catalog->GetNoTuples(table, noTuples);
+					catalog->GetNoDistinct(table, s, noDistinct);
+					noTuples /= noDistinct;
+					catalog->SetNoTuples(table, noTuples);
+				}
+
+				_predicate = _predicate->rightAnd;
+			}
+		}
+
+		_tables = _tables->next;
+	}
+
+
+	
+	
 	// call the optimizer to compute the join order
 	OptimizationTree* root;
 	optimizer->Optimize(_tables, _predicate, root);

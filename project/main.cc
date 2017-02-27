@@ -65,7 +65,7 @@ extern "C" int yylex_destroy();
 
 int main () {
 	// this is the catalog
-	string dbFile = "catalog.sqlite";
+	string dbFile = "catalog";
 	Catalog catalog(dbFile);
 
 	// this is the query optimizer
