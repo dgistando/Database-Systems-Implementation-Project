@@ -49,4 +49,31 @@ extern "C" int yylex_destroy();
 
 
 int main () {
+<<<<<<< HEAD
+=======
+	// this is the catalog
+	string dbFile = "catalog";
+	Catalog catalog(dbFile);
+
+	// this is the query optimizer
+	// it is not invoked directly but rather passed to the query compiler
+	QueryOptimizer optimizer(catalog);
+
+	// this is the query compiler
+	// it includes the catalog and the query optimizer
+	QueryCompiler compiler(catalog, optimizer);
+
+
+	// the query parser is accessed directly through yyparse
+	// this populates the extern data structures
+	int parse = -1;
+	if (yyparse () == 0) {
+		cout << "OK!" << endl;
+		parse = 0;
+	}
+	else {
+		cout << "Error: Query is not correct!" << endl;
+		parse = -1;
+	}
+>>>>>>> david
 
