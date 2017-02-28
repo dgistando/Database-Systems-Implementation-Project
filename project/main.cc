@@ -88,6 +88,7 @@ int main () {
 		cout << "Error: Query is not correct!" << endl;
 		parse = -1;
 	}
+}
 
 	yylex_destroy();
 

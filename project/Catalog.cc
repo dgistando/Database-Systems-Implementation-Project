@@ -22,9 +22,6 @@ Catalog::Catalog(string& _fileName) {
   if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
   /* Open database */
 
-
-
-}
 Catalog::~Catalog() {
     //for query execution you dont need to write back to the database;
     //WriteDatabse();

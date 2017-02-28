@@ -36,6 +36,12 @@ public:
 	virtual ~QueryOptimizer();
 
 	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
+        /* Computes permutations
+         * Use output as your return value
+         * pass bin.size(0 as size_bin
+         */
+        void Permute(vector<vector<string> >& output,vector<string> bin,int size_bin);
+        int Factorial(int n);
 };
 
 #endif // _QUERY_OPTIMIZER_H
