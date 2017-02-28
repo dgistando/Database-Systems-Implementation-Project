@@ -13,20 +13,71 @@ using namespace std;
 
 QueryCompiler::QueryCompiler(Catalog& _catalog, QueryOptimizer& _optimizer) :
 	catalog(&_catalog), optimizer(&_optimizer) {
+	catalog = &_catalog;
+	optimizer = &_optimizer;
 }
 
 QueryCompiler::~QueryCompiler() {
+
 }
 
 void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	FuncOperator* _finalFunction, AndList* _predicate,
 	NameList* _groupingAtts, int& _distinctAtts,
 	QueryExecutionTree& _queryTree) {
+	cout<<"COMPILING.."<<endl;
 
+	//preprocessing 1
+	
 	// create a SCAN operator for each table in the query
+	vector<Scan> scans;
+	string table;
 
-	// push-down selections: create a SELECT operator wherever necessary
+	unsigned int noDistinct, noTuples;
+	while(_tables != NULL){
+		table = _tables->tableName;
+		Schema schema;
+		catalog->GetSchema(table, schema);
 
+		DBFile db;
+
+		scans.push_back(Scan(schema, db));
+
+		// push-down selections: create a SELECT operator wherever necessary
+		Comparison compare;
+		if(ConditionOnSchema(*_predicate, schema)){
+			//if so, pass all selection preticates.
+			while(_predicate != NULL){
+				ComparisonOp* cOp = _predicate->left;
+				
+				//NAME op (FLOAT,INTEGER) ex: p.size < 50
+				if(cOp->left->code == NAME && cOp->code != EQUALS && cOp->right->code != NAME)
+				{
+					std::string s(cOp->left->value);
+					cout<<"selection: "<<s<<endl;
+					catalog->GetNoDistinct(table, s, noDistinct);
+					noDistinct /= 3;
+					catalog->SetNoDistinct(table, s, noDistinct);
+				}
+				else if(cOp->left->code == NAME && cOp->code == EQUALS && cOp->right->code != NAME)
+				{
+					std::string s(cOp->left->value);
+					cout<<"selection=: "<<s<<endl;
+					catalog->GetNoTuples(table, noTuples);
+					catalog->GetNoDistinct(table, s, noDistinct);
+					noTuples /= noDistinct;
+					catalog->SetNoTuples(table, noTuples);
+				}
+
+				_predicate = _predicate->rightAnd;
+			}
+		}
+
+		_tables = _tables->next;
+	}
+
+
+	
 	// call the optimizer to compute the join order
 	OptimizationTree* root;
 	optimizer->Optimize(_tables, _predicate, root);

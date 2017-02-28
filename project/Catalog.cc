@@ -22,7 +22,8 @@ Catalog::Catalog(string& _fileName) {
 }
 
 Catalog::~Catalog() {
-    WriteDatabse();
+    //for query execution you dont need to write back to the database;
+    //WriteDatabse();
 }
 
 bool Catalog::Save() {
