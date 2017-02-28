@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.2"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -147,7 +147,7 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE YYSTYPE;
+
 union YYSTYPE
 {
 #line 23 "QueryParser.y" /* yacc.c:355  */
@@ -164,6 +164,8 @@ union YYSTYPE
 
 #line 166 "QueryParser.c" /* yacc.c:355  */
 };
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -177,7 +179,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 181 "QueryParser.c" /* yacc.c:358  */
+#line 183 "QueryParser.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -1289,7 +1291,7 @@ yyreduce:
 	predicate = (yyvsp[0].myAndList);	
 	groupingAtts = NULL;
 }
-#line 1293 "QueryParser.c" /* yacc.c:1646  */
+#line 1295 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 3:
@@ -1299,7 +1301,7 @@ yyreduce:
 	predicate = (yyvsp[-3].myAndList);	
 	groupingAtts = (yyvsp[0].myNames);
 }
-#line 1303 "QueryParser.c" /* yacc.c:1646  */
+#line 1305 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 4:
@@ -1308,7 +1310,7 @@ yyreduce:
 	attsToSelect = (yyvsp[0].myNames);
 	distinctAtts = 0;
 }
-#line 1312 "QueryParser.c" /* yacc.c:1646  */
+#line 1314 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 5:
@@ -1316,7 +1318,7 @@ yyreduce:
     {
 	attsToSelect = NULL;
 }
-#line 1320 "QueryParser.c" /* yacc.c:1646  */
+#line 1322 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 6:
@@ -1326,7 +1328,7 @@ yyreduce:
 	finalFunction = NULL;
 	attsToSelect = (yyvsp[0].myNames);
 }
-#line 1330 "QueryParser.c" /* yacc.c:1646  */
+#line 1332 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 7:
@@ -1337,7 +1339,7 @@ yyreduce:
 	attsToSelect = (yyvsp[0].myNames);
 	finalFunction = NULL;
 }
-#line 1341 "QueryParser.c" /* yacc.c:1646  */
+#line 1343 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 8:
@@ -1345,7 +1347,7 @@ yyreduce:
     {
 	finalFunction = (yyvsp[-1].myOperator);
 }
-#line 1349 "QueryParser.c" /* yacc.c:1646  */
+#line 1351 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 9:
@@ -1355,7 +1357,7 @@ yyreduce:
 	(yyval.myNames)->name = (yyvsp[0].actualChars);
 	(yyval.myNames)->next = NULL;
 }
-#line 1359 "QueryParser.c" /* yacc.c:1646  */
+#line 1361 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 10:
@@ -1365,7 +1367,7 @@ yyreduce:
 	(yyval.myNames)->name = (yyvsp[0].actualChars);
 	(yyval.myNames)->next = (yyvsp[-2].myNames);
 }
-#line 1369 "QueryParser.c" /* yacc.c:1646  */
+#line 1371 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 11:
@@ -1375,7 +1377,7 @@ yyreduce:
 	(yyval.myTables)->tableName = (yyvsp[0].actualChars);
 	(yyval.myTables)->next = NULL;
 }
-#line 1379 "QueryParser.c" /* yacc.c:1646  */
+#line 1381 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 12:
@@ -1385,7 +1387,7 @@ yyreduce:
 	(yyval.myTables)->tableName = (yyvsp[0].actualChars);
 	(yyval.myTables)->next = (yyvsp[-2].myTables);
 }
-#line 1389 "QueryParser.c" /* yacc.c:1646  */
+#line 1391 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 13:
@@ -1400,7 +1402,7 @@ yyreduce:
 	(yyval.myOperator)->right = (yyvsp[0].myOperator);
 	(yyval.myOperator)->code = (yyvsp[-1].whichOne);	
 }
-#line 1404 "QueryParser.c" /* yacc.c:1646  */
+#line 1406 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 14:
@@ -1412,7 +1414,7 @@ yyreduce:
 	(yyval.myOperator)->right = (yyvsp[0].myOperator);
 	(yyval.myOperator)->code = (yyvsp[-1].whichOne);
 }
-#line 1416 "QueryParser.c" /* yacc.c:1646  */
+#line 1418 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 15:
@@ -1420,7 +1422,7 @@ yyreduce:
     {
 	(yyval.myOperator) = (yyvsp[-1].myOperator);
 }
-#line 1424 "QueryParser.c" /* yacc.c:1646  */
+#line 1426 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 16:
@@ -1431,7 +1433,7 @@ yyreduce:
 	(yyval.myOperator)->leftOperand = (yyvsp[0].myOperand);
 	(yyval.myOperator)->right = NULL;	
 }
-#line 1435 "QueryParser.c" /* yacc.c:1646  */
+#line 1437 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 17:
@@ -1443,7 +1445,7 @@ yyreduce:
 	(yyval.myOperator)->right = NULL;	
 	(yyval.myOperator)->code = '-';
 }
-#line 1447 "QueryParser.c" /* yacc.c:1646  */
+#line 1449 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 18:
@@ -1451,7 +1453,7 @@ yyreduce:
     {
 	(yyval.whichOne) = '-';
 }
-#line 1455 "QueryParser.c" /* yacc.c:1646  */
+#line 1457 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 19:
@@ -1459,7 +1461,7 @@ yyreduce:
     {
 	(yyval.whichOne) = '+';
 }
-#line 1463 "QueryParser.c" /* yacc.c:1646  */
+#line 1465 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 20:
@@ -1467,7 +1469,7 @@ yyreduce:
     {
 	(yyval.whichOne) = '*';
 }
-#line 1471 "QueryParser.c" /* yacc.c:1646  */
+#line 1473 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 21:
@@ -1475,7 +1477,7 @@ yyreduce:
     {
 	(yyval.whichOne) = '/';
 }
-#line 1479 "QueryParser.c" /* yacc.c:1646  */
+#line 1481 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 22:
@@ -1491,7 +1493,7 @@ yyreduce:
         // hang the AndList off of the right
         (yyval.myAndList)->rightAnd = (yyvsp[0].myAndList);
 }
-#line 1495 "QueryParser.c" /* yacc.c:1646  */
+#line 1497 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 23:
@@ -1502,7 +1504,7 @@ yyreduce:
         (yyval.myAndList)->left = (yyvsp[0].myComparison);
         (yyval.myAndList)->rightAnd = NULL;
 }
-#line 1506 "QueryParser.c" /* yacc.c:1646  */
+#line 1508 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 24:
@@ -1513,7 +1515,7 @@ yyreduce:
         (yyval.myComparison)->left = (yyvsp[-2].myBoolOperand);
         (yyval.myComparison)->right = (yyvsp[0].myBoolOperand);
 }
-#line 1517 "QueryParser.c" /* yacc.c:1646  */
+#line 1519 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 25:
@@ -1523,7 +1525,7 @@ yyreduce:
         (yyval.myComparison) = (struct ComparisonOp*) malloc (sizeof (struct ComparisonOp));
         (yyval.myComparison)->code = LESS_THAN;
 }
-#line 1527 "QueryParser.c" /* yacc.c:1646  */
+#line 1529 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 26:
@@ -1533,7 +1535,7 @@ yyreduce:
         (yyval.myComparison) = (struct ComparisonOp*) malloc (sizeof (struct ComparisonOp));
         (yyval.myComparison)->code = GREATER_THAN;
 }
-#line 1537 "QueryParser.c" /* yacc.c:1646  */
+#line 1539 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 27:
@@ -1543,7 +1545,7 @@ yyreduce:
         (yyval.myComparison) = (struct ComparisonOp*) malloc (sizeof (struct ComparisonOp));
         (yyval.myComparison)->code = EQUALS;
 }
-#line 1547 "QueryParser.c" /* yacc.c:1646  */
+#line 1549 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 28:
@@ -1554,7 +1556,7 @@ yyreduce:
         (yyval.myBoolOperand)->code = STRING;
         (yyval.myBoolOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1558 "QueryParser.c" /* yacc.c:1646  */
+#line 1560 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 29:
@@ -1565,7 +1567,7 @@ yyreduce:
         (yyval.myBoolOperand)->code = FLOAT;
         (yyval.myBoolOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1569 "QueryParser.c" /* yacc.c:1646  */
+#line 1571 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 30:
@@ -1576,7 +1578,7 @@ yyreduce:
         (yyval.myBoolOperand)->code = INTEGER;
         (yyval.myBoolOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1580 "QueryParser.c" /* yacc.c:1646  */
+#line 1582 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 31:
@@ -1587,7 +1589,7 @@ yyreduce:
         (yyval.myBoolOperand)->code = NAME;
         (yyval.myBoolOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1591 "QueryParser.c" /* yacc.c:1646  */
+#line 1593 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 32:
@@ -1598,7 +1600,7 @@ yyreduce:
         (yyval.myOperand)->code = FLOAT;
         (yyval.myOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1602 "QueryParser.c" /* yacc.c:1646  */
+#line 1604 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 33:
@@ -1609,7 +1611,7 @@ yyreduce:
         (yyval.myOperand)->code = INTEGER;
         (yyval.myOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1613 "QueryParser.c" /* yacc.c:1646  */
+#line 1615 "QueryParser.c" /* yacc.c:1646  */
     break;
 
   case 34:
@@ -1620,11 +1622,11 @@ yyreduce:
         (yyval.myOperand)->code = NAME;
         (yyval.myOperand)->value = (yyvsp[0].actualChars);
 }
-#line 1624 "QueryParser.c" /* yacc.c:1646  */
+#line 1626 "QueryParser.c" /* yacc.c:1646  */
     break;
 
 
-#line 1628 "QueryParser.c" /* yacc.c:1646  */
+#line 1630 "QueryParser.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

@@ -21,9 +21,6 @@ Catalog::Catalog(string& _fileName) {
     else cout << "Cannot open db!" << endl;
 }
 
-
-
-}
 Catalog::~Catalog() {
     //for query execution you dont need to write back to the database;
     //WriteDatabse();

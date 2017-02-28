@@ -37,7 +37,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	while(_tables != NULL){
 		table = _tables->tableName;
 		Schema schema;
-		catalog->GetSchema(table, schema);
+		catalog->GetSchema(table, schema); // GetSchema returns a boolean, better check because if it dont exists it returns NULL;
 
 		DBFile db;
 

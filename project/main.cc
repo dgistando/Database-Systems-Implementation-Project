@@ -49,8 +49,6 @@ extern "C" int yylex_destroy();
 
 
 int main () {
-<<<<<<< HEAD
-=======
 	// this is the catalog
 	string dbFile = "catalog";
 	Catalog catalog(dbFile);
@@ -75,5 +73,5 @@ int main () {
 		cout << "Error: Query is not correct!" << endl;
 		parse = -1;
 	}
->>>>>>> david
+}
 
