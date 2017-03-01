@@ -43,21 +43,38 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
             string _table = _tables->tableName;
             catalog->GetSchema(_table,_schema);
             
+            cout << _schema << endl;
             
             if(ConditionOnSchema(*_predicate, _schema)){
                 Record _record;
                 CNF _cnf;
                 if(_cnf.ExtractCNF(*_predicate,_schema,_record)){
-                    for(int i = 0; i < _cnf.numAnds; i++){
+                    RelationalOp * _rOp;
+                    Select _select(_schema,_cnf,_record,_rOp);
+                    while(_predicate != NULL){
+                        ComparisonOp* cOp = _predicate->left;
+
                         //NAME op (FLOAT,INTEGER) ex: p.size < 50
-                        if(_cnf.andList[i].operand1 == Left && _cnf.andList[i].operand2 == Literal && _cnf.andList[i].op != Equals)
+                        if(cOp->left->code == NAME && cOp->code != EQUALS && cOp->right->code != NAME)
                         {
-                            cout << "SELECT1" << _cnf.andList[i].whichAtt1 <<  _cnf.andList[i].whichAtt2 << endl;
+                            string _attributeName(cOp->left->value);
+                            cout<<"selection: "<<_attributeName<<endl;
+//                                catalog->GetNoDistinct(table, s, noDistinct);
+//                                noDistinct /= 3;
+//                                //catalog->SetNoDistinct(table, s, noDistinct);
+                            _schema._noTuples /= 3;
+
                         }
-                        else if(_cnf.andList[i].operand1 == Left && _cnf.andList[i].operand2 == Literal && _cnf.andList[i].op == Equals)
+                        else if(cOp->left->code == NAME && cOp->code == EQUALS && cOp->right->code != NAME)
                         {
-                            cout << "SELECT2" << _cnf.andList[i].whichAtt1 <<  _cnf.andList[i].whichAtt2 << endl;
+                            string _attributeName(cOp->left->value);
+                            cout<<"selection=: "<<_attributeName<<endl;
+                            unsigned int _noDistinct = 0;
+                            catalog->GetNoDistinct(_table,_attributeName,_noDistinct);
+                            _schema._noTuples /= _noDistinct;
                         }
+
+                        _predicate = _predicate->rightAnd;
                     }
                 }
             }
