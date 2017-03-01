@@ -5,14 +5,6 @@
 
 
 
-extern "C" {
-#include "QueryParser.h"
-}
-
-#include "QueryOptimizer.h"
-#include "QueryCompiler.h"
-#include "RelOp.h"
-
 using namespace std;
 
 
@@ -23,7 +15,6 @@ extern struct AndList* predicate; // the predicate in WHERE
 extern struct NameList* groupingAtts; // grouping attributes
 extern struct NameList* attsToSelect; // the attributes in SELECT
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
-
 
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
@@ -37,7 +28,7 @@ extern "C" int yylex_destroy();
 
 int main () {
 	// this is the catalog
-	string dbFile = "catalog.sqlite";
+	string dbFile = "catalog";
 	Catalog catalog(dbFile);
 
 	// this is the query optimizer
