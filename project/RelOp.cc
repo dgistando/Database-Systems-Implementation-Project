@@ -17,7 +17,6 @@ Scan::Scan(Schema& _schema, DBFile& _file) {
 }
 
 Scan::~Scan() {
-cout<<"destruct";
 }
 
 ostream& Scan::print(ostream& _os) {
@@ -36,7 +35,6 @@ Select::Select(Schema& _schema, CNF& _predicate, Record& _constants,
 }
 
 Select::~Select() {
-cout<<"destruct";
 	delete producer;
 }
 
@@ -57,7 +55,6 @@ Project::Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 }
 
 Project::~Project() {
-cout<<"destruct";
 	delete producer;
 }
 
@@ -79,7 +76,6 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 }
 
 Join::~Join() {
-cout<<"destruct";
 	delete left;
 	delete right;
 }
@@ -96,7 +92,6 @@ DuplicateRemoval::DuplicateRemoval(Schema& _schema, RelationalOp* _producer) {
 }
 
 DuplicateRemoval::~DuplicateRemoval() {
-cout<<"destruct";
 	delete producer;
 }
 
@@ -116,7 +111,6 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 }
 
 Sum::~Sum() {
-	cout<<"destruct";
 delete producer;
 
 }
@@ -137,7 +131,6 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 }
 
 GroupBy::~GroupBy() {
-cout<<"destruct";
 	delete producer;
 }
 
@@ -153,7 +146,6 @@ WriteOut::WriteOut(Schema& _schema, string& _outFile, RelationalOp* _producer) {
 }
 
 WriteOut::~WriteOut() {
-cout<<"destruct";
 	delete producer;
 }
 
