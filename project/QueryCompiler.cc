@@ -42,30 +42,27 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
             Schema _schema;
             string _table = _tables->tableName;
             catalog->GetSchema(_table,_schema);
-            Scan * _scan = new Scan(_schema,_db);
-            _scans.push_back(*_scan);
             
-            AndList* AndListCopy = new AndList();
-            AndListCopy = _predicate;
+            cout << _schema << endl;
             
-            Record _record;
-            CNF _cnf;
+            if(ConditionOnSchema(*_predicate, _schema)){
+                Record _record;
+                CNF _cnf;
+                if(_cnf.ExtractCNF(*_predicate,_schema,_record)){
+                    RelationalOp * _rOp;
+                    Select _select(_schema,_cnf,_record,_rOp);
+                    while(_predicate != NULL){
+                        ComparisonOp* cOp = _predicate->left;
 
-
-            if(_cnf.ExtractCNF(*AndListCopy,_schema,_record) == 0){
-                Select _select(_schema,_cnf,_record,_scan);
-                while(AndListCopy != NULL){
-                    if(ConditionOnSchema(*AndListCopy, _schema)){
-                        ComparisonOp* cOp = AndListCopy->left;
-
-                
                         //NAME op (FLOAT,INTEGER) ex: p.size < 50
                         if(cOp->left->code == NAME && cOp->code != EQUALS && cOp->right->code != NAME)
                         {
                             string _attributeName(cOp->left->value);
                             cout<<"selection: "<<_attributeName<<endl;
+//                                catalog->GetNoDistinct(table, s, noDistinct);
+//                                noDistinct /= 3;
+//                                //catalog->SetNoDistinct(table, s, noDistinct);
                             _schema._noTuples /= 3;
-                           
 
                         }
                         else if(cOp->left->code == NAME && cOp->code == EQUALS && cOp->right->code != NAME)
@@ -76,13 +73,14 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                             catalog->GetNoDistinct(_table,_attributeName,_noDistinct);
                             _schema._noTuples /= _noDistinct;
                         }
+
+                        _predicate = _predicate->rightAnd;
                     }
-                    AndListCopy = AndListCopy->rightAnd;
                 }
             }
             
-            
-            
+            Scan _scan(_schema,_db);
+            _scans.push_back(_scan);
             _tables =_tables->next;
         } _tables = head;
 //        while(_tables != NULL){
@@ -161,22 +159,22 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
         _tables = head;
 	optimizer->Optimize(_tables, _predicate, root);
 	// create join operators based on the optimal order computed by the optimizer
-//       _tables = head;
-//       while(_tables->next != NULL && _tables->next != NULL){
-//           
-////           table = _tables->tableName;
-////           string table2 = _tables->next->tableName;
-////           Schema schema_one, schema_two, schema_out;
-////           CNF _cnf;
-////           catalog->GetSchema(table,schema_one);
-////           catalog->GetSchema(table2,schema_two);
-////           _cnf.ExtractCNF(_predicate,schema_one,schema_two);
-////           RelationalOp * _left = new RelationalOp();
-////           RelationalOp * _right = new RelationalOp();
-////           Join _join(schema_one,schema_two,schema_out,_cnf,_left,_right);
-//           //end
-//           _tables = _tables->next;
-//       }
+       _tables = head;
+       while(_tables->next != NULL && _tables->next != NULL){
+           
+//           table = _tables->tableName;
+//           string table2 = _tables->next->tableName;
+//           Schema schema_one, schema_two, schema_out;
+//           CNF _cnf;
+//           catalog->GetSchema(table,schema_one);
+//           catalog->GetSchema(table2,schema_two);
+//           _cnf.ExtractCNF(_predicate,schema_one,schema_two);
+//           RelationalOp * _left = new RelationalOp();
+//           RelationalOp * _right = new RelationalOp();
+//           Join _join(schema_one,schema_two,schema_out,_cnf,_left,_right);
+           //end
+           _tables = _tables->next;
+       }
         
 	// create the remaining operators based on the query
 
