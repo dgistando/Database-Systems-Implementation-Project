@@ -10,31 +10,9 @@ extern "C" {
 #include "QueryCompiler.h"
 #include "RelOp.h"
 
+
 using namespace std;
-int printMenu (Catalog cname){
-	int answer;
-	cout << "MENU: " << endl;
-	cout << endl;
-	cout << "1) CREATE TABLE" << endl;
-	cout << "2) DROP TABLE" << endl;
-	cout << "3) VIEW CATALOG" << endl;
-	cout << "4) SAVE DATABSE" << endl;
-	cin >> answer;
-/*	switch(answer){
-		case 1:
-			cname.CreateTable();
-			break;
-		case 2:
-			cname.DropTable();
-			break;
-		case 3:
-			//multiple functions here?
-			break;
-		case 4:
-			cname.Save();
-			break;
-	} */
-}
+
 
 // these data structures hold the result of the parsing
 extern struct FuncOperator* finalFunction; // the aggregate function
@@ -44,7 +22,7 @@ extern struct NameList* groupingAtts; // grouping attributes
 extern struct NameList* attsToSelect; // the attributes in SELECT
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 
-extern "C" {int yyparse();} //<-- this was uncommented
+extern "C" int yyparse();
 extern "C" int yylex_destroy();
 
 
@@ -73,5 +51,19 @@ int main () {
 		cout << "Error: Query is not correct!" << endl;
 		parse = -1;
 	}
-}
 
+	yylex_destroy();
+
+	if (parse != 0) return -1;
+
+	// at this point we have the parse tree in the ParseTree data structures
+	// we are ready to invoke the query compiler with the given query
+	// the result is the execution tree built from the parse tree and optimized
+	QueryExecutionTree queryTree;
+	compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+		groupingAtts, distinctAtts, queryTree);
+
+	cout << queryTree << endl;
+
+	return 0;
+}
