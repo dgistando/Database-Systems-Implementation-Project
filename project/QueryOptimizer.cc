@@ -32,6 +32,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
         for(int i = 0; i < Factorial(_root->tables.size()); i++){
             for(int j = 0; j < permutations.at(i).size(); j++){
                 _root->leftChild = new OptimizationTree();
+                //_root->leftChild.
                 //if(_root->leftChild is empty ) { Optimize();}
                 _root->rightChild = new OptimizationTree();
                 //if(_root->rightChild is empty ) { Optimize();}

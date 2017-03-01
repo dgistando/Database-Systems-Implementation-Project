@@ -81,9 +81,33 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	// call the optimizer to compute the join order
 	OptimizationTree* root;
 	optimizer->Optimize(_tables, _predicate, root);
-
 	// create join operators based on the optimal order computed by the optimizer
-
+        
+        
+        
+        
+        
+        
+        
+        int cost = 0;
+        while(_tables->next != NULL){ // NOTE: check if this and the next one
+            table = _tables->tableName;
+            if(cost == 0){
+                unsigned int noTuples = 0;
+                if(catalog->GetNoTuples(table,noTuples)){
+                    table = _tables->next->tableName;
+                    unsigned int noTuples2 = 0;
+                    if(catalog->GetNoTuples(table,noTuples2)){ cost  = noTuples * noTuples2; }
+                }
+            } else {
+                unsigned int noTuples = 0;
+                table = _tables->next->tableName;
+                if (catalog->GetNoTuples(table,noTuples)){
+                    cost *= noTuples;
+                }
+            }
+            _tables = _tables->next;
+        }
 	// create the remaining operators based on the query
 
 	// connect everything in the query execution tree and return
