@@ -26,22 +26,24 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
 	//get dimensions
 	//run matrix chain
 	//rebuild tableList
-        if(_root->tables.size() != 0){ return; }
-        vector<vector<string> > permutations;
-        Permute(permutations,_root->tables,_root->tables.size());
-        for(int i = 0; i < Factorial(_root->tables.size()); i++){
-            for(int j = 0; j < permutations.at(i).size(); j++){
-                _root->leftChild = new OptimizationTree();
-                //_root->leftChild.
-                //if(_root->leftChild is empty ) { Optimize();}
-                _root->rightChild = new OptimizationTree();
-                //if(_root->rightChild is empty ) { Optimize();}
-                //int cost = _root->leftChild->noTuples + _root->rightChild->noTuples;
-                //if(j != 1) { cost += }
-            }
-        } 
+//        if(_root->tables.size() != 0){ return; }
+//        vector<vector<string> > permutations;
+//        Permute(permutations,_root->tables,_root->tables.size());
+//        for(int i = 0; i < Factorial(_root->tables.size()); i++){
+//            for(int j = 0; j < permutations.at(i).size(); j++){
+//                _root->leftChild = new OptimizationTree();
+//                //_root->leftChild.
+//                //if(_root->leftChild is empty ) { Optimize();}
+//                _root->rightChild = new OptimizationTree();
+//                //if(_root->rightChild is empty ) { Optimize();}
+//                //int cost = _root->leftChild->noTuples + _root->rightChild->noTuples;
+//                //if(j != 1) { cost += }
+//            }
+//        } 
+        
 	
 }
+
 int QueryOptimizer::Factorial(int n){if(n < 0) { return 0; } return !n ? 1 : n * Factorial(n - 1); }
 void QueryOptimizer::Permute(vector<vector<string> >& output, vector<string> bin,int size_bin){
     if(size_bin == 1){ output.push_back(bin); return; }

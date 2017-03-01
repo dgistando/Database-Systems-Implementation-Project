@@ -3,55 +3,17 @@
 
 #include "Catalog.h"
 
-using namespace std;
-int printMenu (Catalog cname){
-	int answer;
-	cout << "MENU: " << endl;
-	cout << endl;
-	cout << "1) CREATE TABLE" << endl;
-	cout << "2) DROP TABLE" << endl;
-	cout << "3) VIEW CATALOG" << endl;
-	cout << "4) SAVE DATABSE" << endl;
-	cin >> answer;
-/*	switch(answer){
-		case 1:
-			cname.CreateTable();
-			break;
-		case 2:
-			cname.DropTable();
-			break;
-		case 3:
-			//multiple functions here?
-			break;
-		case 4:
-			cname.Save();
-			break;
-	} */
-}
-
-int main () {
-	string db_name = "";
-	cout << "Enter the database: ";
-	cin >> db_name;
-	if(db_name != ""){
-		Catalog cname = Catalog(db_name);
-		printMenu(cname);
-//<<<<<<< HEAD
-	//drop a table,
-//=======
-	}
-
-//>>>>>>> refs/remotes/origin/master
 
 using namespace std;
 
-	return 0;
-}
 
-	/*string table = "region", attribute, type;
-	vector<string> attributes, types;
-	vector<unsigned int> distincts;
-
+// these data structures hold the result of the parsing
+extern struct FuncOperator* finalFunction; // the aggregate function
+extern struct TableList* tables; // the list of tables in the query
+extern struct AndList* predicate; // the predicate in WHERE
+extern struct NameList* groupingAtts; // grouping attributes
+extern struct NameList* attsToSelect; // the attributes in SELECT
+extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
@@ -88,7 +50,6 @@ int main () {
 		cout << "Error: Query is not correct!" << endl;
 		parse = -1;
 	}
-}
 
 	yylex_destroy();
 
