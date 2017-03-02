@@ -31,8 +31,8 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	
 	// create a SCAN operator for each table in the query
         vector<Scan> _scans;
-        vector<Select> _selects;
-        vector<Join> _joins;
+        //vector<Select> _selects;
+        //vector<Join> _joins;
         //saving the head
         TableList* head = new TableList();
         head = _tables;

@@ -54,8 +54,8 @@ public:
         void CalculateCosts(TableList* _tables, AndList* _predicate);
         void CalculateSize(TableList* _tables, AndList* _predicate);
         void PrintTables();
-        void RegenerateTree(string tabList, OptimizationTree* & root);
-        void RegenerateLeaf(string tabList, OptimizationTree* & root);
+        void RegenerateTree(string _tableIndecies, OptimizationTree* & root);
+        void RegenerateLeaf(string _tableIndecies, OptimizationTree* & root);
         void Partition(string _tableIndecies);
         void PrintOptimizationTree(OptimizationTree* & root);
         /* Computes permutations

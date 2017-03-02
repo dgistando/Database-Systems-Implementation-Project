@@ -108,16 +108,16 @@ void QueryOptimizer::CalculateCosts(TableList* _tables, AndList* _predicate){
     }
 }
 void QueryOptimizer::PrintTables(){
-        cout<<"\nTables:\n";
-	for (int i=0; i<mapKey.size(); i++) cout<<mapKey.at(i).tableName<<"\t"<<mapKey.at(i).key<<endl;
+        cout<<"\n\t-Table List:-\n";
+	for (int i=0; i<mapKey.size(); i++) cout<<"TableName: "<<mapKey.at(i).tableName<<"\tMapKey: "<<mapKey.at(i).key<<endl;
 	cout<<endl;
-
+        cout<<"-\t-SIZE-\t\t\t-COST-"<<endl;
 	for (std::map<string, opt>::iterator it=initial.begin(); it!=initial.end(); ++it)
 	{
-		cout<<it->first<<"\t"<<it->second.size<<"\t"<<it->second.cost<<"\t"<<it->second.key<<endl;
+		cout<<it->first<<"-\t-"<<it->second.size<<"-\t\t-"<<it->second.cost<<"-"<<endl;
 	}
 
-	cout<<"\n====\n";
+	cout<<"\n------------------------------------------------\n";
 }
 void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
     TableList * _tempTables = _tables; int check = 0;
@@ -186,19 +186,19 @@ void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
 void QueryOptimizer::PrintOptimizationTree(OptimizationTree* & root)
 {
 
-    if (root -> leftChild == NULL && root -> rightChild == NULL) { cout<<root -> tables[0]<<endl<<endl; return; }
+    if (root -> leftChild == NULL && root -> rightChild == NULL) { cout<<"TableName: "<<root -> tables[0]<<endl<<endl; return; }
     PrintOptimizationTree(root->leftChild);
     PrintOptimizationTree(root->rightChild);
 
 }
 void QueryOptimizer::Partition(string _tableIndecies){
-    string copy = _tableIndecies;
+    string _copyIndecies = _tableIndecies;
     unsigned long long min_cost = LLONG_MAX,cost,size;
-    string order;
+    string key;
 
-    sort(copy.begin(), copy.end());
+    sort(_copyIndecies.begin(), _copyIndecies.end());
 
-    map<string,opt>::iterator it = initial.find(copy);
+    map<string,opt>::iterator it = initial.find(_copyIndecies);
     if(it != initial.end()) return;
 
     int N = _tableIndecies.size();
@@ -208,50 +208,40 @@ void QueryOptimizer::Partition(string _tableIndecies){
     {	
             for (int j = 0; j <= N - 2; j++)
             {
-                    string left="";
-
-                    for (int ind = 0; ind <= j; ind++) left+= _tableIndecies[ind];
-                    Partition(left);
-
-                    string right="";
-
-                    for (int ind = j+1; ind < N; ind++) right+= _tableIndecies[ind];
-                    Partition(right);
-
+                    string left=""; for (int ind = 0; ind <= j; ind++) left+= _tableIndecies[ind]; Partition(left);
+                    string right=""; for (int ind = j+1; ind < N; ind++) right+= _tableIndecies[ind]; Partition(right);
                     sort(left.begin(), left.end());
                     sort(right.begin(), right.end());
-
                     cost = initial[left].cost + initial[right].cost;
-
                     if (j!=0) cost += initial[left].size;
                     if (j!=N-2) cost += initial[right].size;
-
                     if (cost < min_cost){
                             size = initial[left].size*initial[right].size;
-                            order = initial[left].key + "," + initial[right].key;
+                            key = initial[left].key + "," + initial[right].key;
                             min_cost = cost;
                     }
             }
             lastPerm = Permute(_tableIndecies);
     }
-    initial[copy].key = order;
-    initial[copy].size = size;
-    initial[copy].cost = min_cost;
+    initial[_copyIndecies].key = key;
+    initial[_copyIndecies].size = size;
+    initial[_copyIndecies].cost = min_cost;
 }
-void QueryOptimizer::RegenerateTree(string tabList, OptimizationTree*& root){
-    RegenerateLeaf(tabList,root);
+void QueryOptimizer::RegenerateTree(string _tableIndecies, OptimizationTree*& root){
+    RegenerateLeaf(_tableIndecies,root);
 }
-void QueryOptimizer::RegenerateLeaf(string tabList, OptimizationTree* & root)
+void QueryOptimizer::RegenerateLeaf(string _tableIndecies, OptimizationTree* & root)
 {
 	string left,right;
-	int pos = tabList.find(",");
+	int pos = _tableIndecies.find(",");
 
 	if (pos != string::npos)
 	{
-		left = tabList.substr(0,pos);
-		right = tabList.substr(tabList.find(",")+1);
-
-		//cout<<"left  "<<left<<"   right   "<<right<<endl;
+		left = _tableIndecies.substr(0,pos);
+		right = _tableIndecies.substr(_tableIndecies.find(",")+1);
+                cout<<"------------------------------------"<<endl;
+		cout<<"-Left Leaf: "<<left<<" -Right Leaf: "<<right<<endl;
+                cout<<"------------------------------------"<<endl;
 		root -> leftChild = new OptimizationTree;
 		RegenerateTree(left, root -> leftChild);
 		root -> rightChild = new OptimizationTree;
@@ -260,12 +250,11 @@ void QueryOptimizer::RegenerateLeaf(string tabList, OptimizationTree* & root)
 		
 	}
 		
-	for (int i=0; i<tabList.size(); i++)
-		root -> tables.push_back(final[ {tabList[i]} ]);
+	for (int i=0; i<_tableIndecies.size(); i++){ root -> tables.push_back(final[ {_tableIndecies[i]} ]); }
 	
-	if (tabList.size() == 1)
+	if (_tableIndecies.size() == 1)
 	{
-		root -> noTuples = initial[tabList].size;
+		root -> noTuples = initial[_tableIndecies].size;
 		root -> leftChild = NULL;
 		root -> rightChild = NULL;
 		return;
@@ -275,13 +264,13 @@ void QueryOptimizer::RegenerateLeaf(string tabList, OptimizationTree* & root)
 	root -> leftChild -> leftChild = NULL;
 	root -> leftChild -> rightChild = NULL;
 	root -> leftChild -> tables.push_back(root -> tables[0]);
-	root -> leftChild -> noTuples = initial[{tabList[0]}].size;
+	root -> leftChild -> noTuples = initial[{_tableIndecies[0]}].size;
 	
 	root -> rightChild = new OptimizationTree;
 	root -> rightChild -> leftChild = NULL;
 	root -> rightChild -> rightChild = NULL;
 	root -> rightChild -> tables.push_back(root -> tables[1]);
-	root -> rightChild -> noTuples = initial[{tabList[1]}].size;
+	root -> rightChild -> noTuples = initial[{_tableIndecies[1]}].size;
 
 }
 bool QueryOptimizer::Permute(string& array)
