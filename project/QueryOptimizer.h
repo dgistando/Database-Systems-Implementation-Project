@@ -17,8 +17,8 @@ struct mapkey{
     string key;
 };
 struct opt{
-    unsigned int size;
-    unsigned int cost;
+    unsigned long long size;
+    unsigned long long cost;
     Schema schema;
     string key;
 };
@@ -48,12 +48,15 @@ public:
 	virtual ~QueryOptimizer();
 
 	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
+        void treeGenerator(string tabList, OptimizationTree* & root);
         void Partition(string _tableIndecies);
+        void treeDisp(OptimizationTree* & root);
         /* Computes permutations
          * Use output as your return value
          * pass bin.size(0 as size_bin
          */
         void Permute(vector<vector<string> >& output,vector<string> bin,int size_bin);
+        bool Permute(string& array);
         int Factorial(int n);
 };
 

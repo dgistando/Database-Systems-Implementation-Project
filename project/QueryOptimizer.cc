@@ -42,7 +42,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
 
         //Schema _schema; Its above
         Record _record;
-        unsigned int _div = 0;
+        unsigned long long _div = 0;
         //catalog->GetSChema(tableName,_schema); Its above
         if(_cnf.ExtractCNF(*_predicate,_schema,_record) == 0){
             if(_cnf.numAnds > 0){
@@ -64,9 +64,9 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
                     }
                 }
                 }
+                initial[_key].cost /= _div;
             }
         }
-        initial[_key].cost /= _div;
         
         mapkey node;
         node.tableName = _tableName;
@@ -76,6 +76,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
         index++;
         _tempTables = _tempTables->next;
     }
+    cout << "check" << endl;
     _tempTables = _tables; int check = 0;
     while (_tempTables->next != NULL){
         if (check == 0 && _tempTables->next == NULL) { break; } check = 1;
@@ -88,7 +89,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
         _tempTablesTwo = _tempTables->next;//next table
         while(_tempTablesTwo != NULL){
             Schema _schemaTwo;
-            unsigned int _tupsOne, _tupsTwo, _noDisOne, _noDisTwo;
+            unsigned long long _tupsOne, _tupsTwo, _noDisOne, _noDisTwo;
             string _tableNameTwo = _tempTablesTwo->tableName;
             catalog->GetSchema(_tableNameTwo,_schemaTwo);
 
@@ -135,8 +136,36 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
     for(int i = 0; i < mapKey.size(); i++){ keys += mapKey.at(i).key; }
     Partition(keys);
     
-}
+    _root = new OptimizationTree;
+    _root -> leftChild = NULL;
+    _root -> rightChild = NULL;
+    for (int i = 0; i < keys.size(); i++) 
+    {
+            _root -> tables.push_back(final[ {keys[i]} ] );
+    }
 
+    cout<<endl<<endl;
+    _root -> noTuples = initial[keys].size;
+    keys = initial[keys].key;
+
+    treeGenerator(keys, _root);
+
+    cout<<"\n\nDisplaying Tree\n\n";
+    treeDisp(_root);
+}
+void QueryOptimizer::treeDisp(OptimizationTree* & root)
+{
+
+    if (root -> leftChild == NULL && root -> rightChild == NULL) 
+    {
+            cout<<root -> tables[0]<<endl;		
+            cout<<endl;
+            return;
+    }
+    treeDisp(root->leftChild);
+    treeDisp(root->rightChild);
+
+}
 
 void QueryOptimizer::Partition(string _tableIndecies){
     string copy = _tableIndecies;
@@ -181,14 +210,75 @@ void QueryOptimizer::Partition(string _tableIndecies){
                     }
             }
 
-            //lastPerm = permutation(tables);
+            lastPerm = Permute(_tableIndecies);
     }
 
     initial[copy].key = order;
     initial[copy].size = size;
     initial[copy].cost = min_cost;
 }
+void QueryOptimizer::treeGenerator(string tabList, OptimizationTree* & root)
+{
+	string left,right;
+	int pos = tabList.find(",");
 
+	if (pos != string::npos)
+	{
+		left = tabList.substr(0,pos);
+		right = tabList.substr(tabList.find(",")+1);
+
+		cout<<"left  "<<left<<"   right   "<<right<<endl;
+		root -> leftChild = new OptimizationTree;
+		treeGenerator(left, root -> leftChild);
+		root -> rightChild = new OptimizationTree;
+		treeGenerator(right, root -> rightChild);
+		return;
+		
+	}
+		
+	for (int i=0; i<tabList.size(); i++)
+		root -> tables.push_back(final[ {tabList[i]} ]);
+	
+	if (tabList.size() == 1)
+	{
+		root -> noTuples = initial[tabList].size;
+		root -> leftChild = NULL;
+		root -> rightChild = NULL;
+		return;
+	}
+	
+	root -> leftChild = new OptimizationTree;
+	root -> leftChild -> leftChild = NULL;
+	root -> leftChild -> rightChild = NULL;
+	root -> leftChild -> tables.push_back(root -> tables[0]);
+	root -> leftChild -> noTuples = initial[{tabList[0]}].size;
+	
+	root -> rightChild = new OptimizationTree;
+	root -> rightChild -> leftChild = NULL;
+	root -> rightChild -> rightChild = NULL;
+	root -> rightChild -> tables.push_back(root -> tables[1]);
+	root -> rightChild -> noTuples = initial[{tabList[1]}].size;
+
+}
+bool QueryOptimizer::Permute(string& array)
+{
+    int k = -1, l = 0;
+    for (int i = 0; i < array.size()-1; i++)
+            if(array[i]<array[i+1]) k = i;	
+
+    if (k == -1) return false;		
+
+    for (int i = k+1; i < array.size(); i++)
+            if(array[k]<array[i]) l = i;	
+
+    swap(array[k],array[l]);
+
+    int count = 1, temp = k+1;
+    for (int i=0; i<(array.size()-k-1)/2; i++,count++,temp++)
+            swap(array[temp],array[array.size()-count]);
+
+    return true;
+}
 int QueryOptimizer::Factorial(int n){if(n < 0) { return 0; } return !n ? 1 : n * Factorial(n - 1); }
 void QueryOptimizer::Permute(vector<vector<string> >& output, vector<string> bin,int size_bin){
     if(size_bin == 1){ output.push_back(bin); return; }
