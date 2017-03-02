@@ -21,6 +21,7 @@ struct opt{
     unsigned long long cost;
     Schema schema;
     string key;
+    bool singleTable;
 };
 // data structure used by the optimizer to compute join ordering
 struct OptimizationTree {
@@ -42,15 +43,21 @@ private:
 	Catalog* catalog;
         map<string,opt> initial;
         map<string,string> final;
+        vector<mapkey> mapKey;
 
 public:
 	QueryOptimizer(Catalog& _catalog);
 	virtual ~QueryOptimizer();
 
 	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
-        void treeGenerator(string tabList, OptimizationTree* & root);
+        void InitializeMaps(TableList* _tables);
+        void CalculateCosts(TableList* _tables, AndList* _predicate);
+        void CalculateSize(TableList* _tables, AndList* _predicate);
+        void PrintTables();
+        void RegenerateTree(string tabList, OptimizationTree* & root);
+        void RegenerateLeaf(string tabList, OptimizationTree* & root);
         void Partition(string _tableIndecies);
-        void treeDisp(OptimizationTree* & root);
+        void PrintOptimizationTree(OptimizationTree* & root);
         /* Computes permutations
          * Use output as your return value
          * pass bin.size(0 as size_bin

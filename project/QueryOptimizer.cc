@@ -19,54 +19,49 @@ QueryOptimizer::~QueryOptimizer() {
 
 void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
 	OptimizationTree* _root) {
-    vector<mapkey> mapKey;
-    //assume complete optimize algorithm exits 
+    InitializeMaps(_tables);
+    cout << "Initialized Maps" << endl;
+    PrintTables();
+    CalculateCosts(_tables,_predicate);
+    cout << "Calculated Costs" << endl;
+    PrintTables();
+    CalculateSize(_tables,_predicate);
+    cout << "Calculated Size" << endl;
+    PrintTables();
+    
+    string keys = "";
+    for(int i = 0; i < mapKey.size(); i++){ if(initial[mapKey.at(i).key].singleTable) {keys += mapKey.at(i).key; }}
+    Partition(keys);
+    cout << "Partition Executed" << endl;
+    PrintTables();
+    _root = new OptimizationTree;
+    _root -> leftChild = NULL;
+    _root -> rightChild = NULL;
+    for (int i = 0; i < keys.size(); i++)  { _root -> tables.push_back(final[ {keys[i]} ] ); }
+    _root -> noTuples = initial[keys].size;
+    keys = initial[keys].key;
+
+    RegenerateTree(keys, _root);
+
+    cout<<endl<<"Printing Tree"<<endl<<endl;
+    PrintOptimizationTree(_root);
+}
+void QueryOptimizer::InitializeMaps(TableList* _tables){
     int index = 0;
     TableList * _tempTables = _tables;
-
-    CNF _cnf;
     while(_tempTables != NULL){
         string _tableName = _tempTables->tableName;
 
         Schema _schema;
         catalog->GetSchema(_tableName, _schema);
-
-        unsigned int numTup;
-        catalog->GetNoTuples(_tableName, numTup);
         string _key = extensions::to_string(index);
-        initial[_key].size = numTup; 
+        initial[_key].size = _schema._noTuples; 
         initial[_key].cost = 0;
         initial[_key].schema = _schema;
+        initial[_key].key = _key;
+        initial[_key].singleTable = true;
 
         final[_key] = _tableName;
-
-        //Schema _schema; Its above
-        Record _record;
-        unsigned long long _div = 0;
-        //catalog->GetSChema(tableName,_schema); Its above
-        if(_cnf.ExtractCNF(*_predicate,_schema,_record) == 0){
-            if(_cnf.numAnds > 0){
-                for(int i = 0; i < _cnf.numAnds;i++){
-                    if(_cnf.andList[i].operand1 == Left || _cnf.andList[i].operand1 == Right){
-                        if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                        else{
-                        vector<Attribute> _atts;
-                        _atts = _schema.GetAtts();
-                        _div = _atts[_cnf.andList[i].whichAtt1].noDistinct;
-                    }
-                }
-                if(_cnf.andList[i].operand2 == Left || _cnf.andList[i].operand2 == Right){
-                    if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                    else{
-                        vector<Attribute> _atts;
-                        _atts = _schema.GetAtts();
-                        _div = _atts[_cnf.andList[i].whichAtt2].noDistinct;
-                    }
-                }
-                }
-                initial[_key].cost /= _div;
-            }
-        }
         
         mapkey node;
         node.tableName = _tableName;
@@ -76,8 +71,57 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
         index++;
         _tempTables = _tempTables->next;
     }
-    cout << "check" << endl;
-    _tempTables = _tables; int check = 0;
+}
+void QueryOptimizer::CalculateCosts(TableList* _tables, AndList* _predicate){
+    TableList * _tempTables = _tables;
+    CNF _cnf;
+    while(_tempTables != NULL){
+        Schema _schema;
+        Record _record;
+        int _div = 1;
+        string tableName(_tempTables->tableName);
+        catalog->GetSchema(tableName,_schema);
+        if(_cnf.ExtractCNF(*_predicate,_schema,_record) == 0){
+            if(_cnf.numAnds > 0){ // shud be just 1 Ands for this cnf
+                for(int i = 0; i < _cnf.numAnds;i++){
+                    if(_cnf.andList[i].operand1 == Left || _cnf.andList[i].operand1 == Right){
+                        if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
+                        else{
+                        vector<Attribute> _atts;
+                        _atts = _schema.GetAtts();
+                        _div = _atts[_cnf.andList[i].whichAtt1].noDistinct;
+                        }
+                    }
+                    if(_cnf.andList[i].operand2 == Left || _cnf.andList[i].operand2 == Right){
+                        if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
+                        else{
+                            vector<Attribute> _atts;
+                            _atts = _schema.GetAtts();
+                            _div = _atts[_cnf.andList[i].whichAtt2].noDistinct;
+                        }
+                    }
+                }
+                int i = 0; while(1){ if(tableName == mapKey.at(i).tableName){ initial[extensions::to_string(i)].size /= _div; break; } i++; }
+            }
+        }
+        _tempTables = _tempTables->next;
+    }
+}
+void QueryOptimizer::PrintTables(){
+        cout<<"\nTables:\n";
+	for (int i=0; i<mapKey.size(); i++) cout<<mapKey.at(i).tableName<<"\t"<<mapKey.at(i).key<<endl;
+	cout<<endl;
+
+	for (std::map<string, opt>::iterator it=initial.begin(); it!=initial.end(); ++it)
+	{
+		cout<<it->first<<"\t"<<it->second.size<<"\t"<<it->second.cost<<"\t"<<it->second.key<<endl;
+	}
+
+	cout<<"\n====\n";
+}
+void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
+    TableList * _tempTables = _tables; int check = 0;
+    CNF _cnf;
     while (_tempTables->next != NULL){
         if (check == 0 && _tempTables->next == NULL) { break; } check = 1;
         Schema _schema;
@@ -96,10 +140,16 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
             if(_cnf.ExtractCNF(*_predicate,_schema,_schemaTwo) == 0){
                 vector<Attribute> _attr1,_attr2;
                 _attr1 = _schema.GetAtts();
-                _attr2 = _schema.GetAtts();
+                _attr2 = _schemaTwo.GetAtts();
                 int i = 0; string _key = "";
-                while(1){ if(_tableName == mapKey.at(i).tableName) { _key += mapKey.at(i).key; _tupsOne = initial[mapKey.at(i).key].cost; i = 0; break; } i++;}
-                while(1){ if(_tableNameTwo == mapKey.at(i).tableName) { _key += mapKey.at(i).key; _tupsTwo = initial[mapKey.at(i).key].cost; i = 0; break; } i++;}
+                while(1){ if(_tableName == mapKey.at(i).tableName) { 
+                    _key += mapKey.at(i).key; 
+                    _tupsOne = initial[mapKey.at(i).key].size; 
+                    break; } i++;} i = 0;
+                while(1){ if(_tableNameTwo == mapKey.at(i).tableName) { 
+                    _key += mapKey.at(i).key;
+                    _tupsTwo = initial[mapKey.at(i).key].size;
+                    break; } i++;}
 
                 if(_cnf.numAnds > 0) { 
                     for (int i = 0 ; i < _cnf.numAnds; i++)
@@ -120,7 +170,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
                     }
                 }
                 if (_cnf.numAnds == 0) { _div = 1; }
-                initial[_key].size = (_tupsOne*_tupsTwo)/_div;
+                initial[_key].size = (_tupsOne * _tupsTwo)/_div;
                 initial[_key].cost = 0;
                 initial[_key].key = _key;
                 mapkey node;
@@ -132,41 +182,15 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
         }
         _tempTables = _tempTables->next;
     }
-    string keys = "";
-    for(int i = 0; i < mapKey.size(); i++){ keys += mapKey.at(i).key; }
-    Partition(keys);
-    
-    _root = new OptimizationTree;
-    _root -> leftChild = NULL;
-    _root -> rightChild = NULL;
-    for (int i = 0; i < keys.size(); i++) 
-    {
-            _root -> tables.push_back(final[ {keys[i]} ] );
-    }
-
-    cout<<endl<<endl;
-    _root -> noTuples = initial[keys].size;
-    keys = initial[keys].key;
-
-    treeGenerator(keys, _root);
-
-    cout<<"\n\nDisplaying Tree\n\n";
-    treeDisp(_root);
 }
-void QueryOptimizer::treeDisp(OptimizationTree* & root)
+void QueryOptimizer::PrintOptimizationTree(OptimizationTree* & root)
 {
 
-    if (root -> leftChild == NULL && root -> rightChild == NULL) 
-    {
-            cout<<root -> tables[0]<<endl;		
-            cout<<endl;
-            return;
-    }
-    treeDisp(root->leftChild);
-    treeDisp(root->rightChild);
+    if (root -> leftChild == NULL && root -> rightChild == NULL) { cout<<root -> tables[0]<<endl<<endl; return; }
+    PrintOptimizationTree(root->leftChild);
+    PrintOptimizationTree(root->rightChild);
 
 }
-
 void QueryOptimizer::Partition(string _tableIndecies){
     string copy = _tableIndecies;
     unsigned long long min_cost = LLONG_MAX,cost,size;
@@ -204,20 +228,20 @@ void QueryOptimizer::Partition(string _tableIndecies){
 
                     if (cost < min_cost){
                             size = initial[left].size*initial[right].size;
-                            //order = "(" + Map[left].order + "," + Map[right].order + ")";
                             order = initial[left].key + "," + initial[right].key;
                             min_cost = cost;
                     }
             }
-
             lastPerm = Permute(_tableIndecies);
     }
-
     initial[copy].key = order;
     initial[copy].size = size;
     initial[copy].cost = min_cost;
 }
-void QueryOptimizer::treeGenerator(string tabList, OptimizationTree* & root)
+void QueryOptimizer::RegenerateTree(string tabList, OptimizationTree*& root){
+    RegenerateLeaf(tabList,root);
+}
+void QueryOptimizer::RegenerateLeaf(string tabList, OptimizationTree* & root)
 {
 	string left,right;
 	int pos = tabList.find(",");
@@ -227,11 +251,11 @@ void QueryOptimizer::treeGenerator(string tabList, OptimizationTree* & root)
 		left = tabList.substr(0,pos);
 		right = tabList.substr(tabList.find(",")+1);
 
-		cout<<"left  "<<left<<"   right   "<<right<<endl;
+		//cout<<"left  "<<left<<"   right   "<<right<<endl;
 		root -> leftChild = new OptimizationTree;
-		treeGenerator(left, root -> leftChild);
+		RegenerateTree(left, root -> leftChild);
 		root -> rightChild = new OptimizationTree;
-		treeGenerator(right, root -> rightChild);
+		RegenerateTree(right, root -> rightChild);
 		return;
 		
 	}
