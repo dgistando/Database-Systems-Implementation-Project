@@ -16,6 +16,12 @@
 #include "InefficientMap.cc"
 
 using namespace std;
+namespace extensions
+{
+    template < typename T > string to_string( const T& n ){
+        ostringstream stm; stm << n; return stm.str() ;
+    }
+}
 
 
 class Catalog {

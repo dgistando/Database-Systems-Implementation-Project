@@ -4,12 +4,7 @@
 #include "Catalog.h"
 
 using namespace std;
-namespace extensions
-{
-    template < typename T > string to_string( const T& n ){
-        ostringstream stm; stm << n; return stm.str() ;
-    }
-}
+
 
 
 Catalog::Catalog(string& _fileName) {

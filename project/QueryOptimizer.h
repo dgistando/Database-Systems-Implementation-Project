@@ -8,10 +8,20 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 using namespace std;
 
-
+struct mapkey{
+    string tableName;
+    string key;
+};
+struct opt{
+    unsigned int size;
+    unsigned int cost;
+    Schema schema;
+    string key;
+};
 // data structure used by the optimizer to compute join ordering
 struct OptimizationTree {
 	// list of tables joined up to this node
@@ -30,12 +40,15 @@ struct OptimizationTree {
 class QueryOptimizer {
 private:
 	Catalog* catalog;
+        map<string,opt> initial;
+        map<string,string> final;
 
 public:
 	QueryOptimizer(Catalog& _catalog);
 	virtual ~QueryOptimizer();
 
 	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
+        void Partition(string _tableIndecies);
         /* Computes permutations
          * Use output as your return value
          * pass bin.size(0 as size_bin

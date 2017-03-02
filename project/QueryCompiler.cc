@@ -85,77 +85,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
             
             _tables =_tables->next;
         } _tables = head;
-//        while(_tables != NULL){
-//            Schema _schema;
-//            string _table = _tables->tableName;
-//            catalog->GetSchema(_table,_schema);
-//            Record _record;
-//            CNF _cnf;
-//            if(ConditionOnSchema(*_predicate, _schema)){
-//                if(_cnf.ExtractCNF(*_predicate,_schema,_record)){
-//                    _scans.at(i).
-//                }
-//            }
-//            _tables = _tables->next;
-//        } _tables = head;
-        
-        
-        
-        
-        
-        
-//	vector<Scan> scans;
-//	string table;
-//        //saving the head
-//        TableList* head = new TableList();
-//        head = _tables;
-//        
-//	unsigned int noDistinct, noTuples;
-//	while(_tables != NULL){
-//		table = _tables->tableName;
-//		Schema schema;
-//		catalog->GetSchema(table, schema); // GetSchema returns a boolean, better check because if it dont exists it returns NULL;
-//
-//		DBFile db;
-//
-//		scans.push_back(Scan(schema, db));
-//
-//		// push-down selections: create a SELECT operator wherever necessary
-//		Comparison compare;
-//		if(ConditionOnSchema(*_predicate, schema)){
-//			//if so, pass all selection preticates.
-//			while(_predicate != NULL){
-//				ComparisonOp* cOp = _predicate->left;
-//				
-//				//NAME op (FLOAT,INTEGER) ex: p.size < 50
-//				if(cOp->left->code == NAME && cOp->code != EQUALS && cOp->right->code != NAME)
-//				{
-//					std::string s(cOp->left->value);
-//					cout<<"selection: "<<s<<endl;
-//					catalog->GetNoDistinct(table, s, noDistinct);
-//					noDistinct /= 3;
-//					//catalog->SetNoDistinct(table, s, noDistinct);
-//                                        
-//				}
-//				else if(cOp->left->code == NAME && cOp->code == EQUALS && cOp->right->code != NAME)
-//				{
-//					std::string s(cOp->left->value);
-//					cout<<"selection=: "<<s<<endl;
-//					catalog->GetNoTuples(table, noTuples);
-//					catalog->GetNoDistinct(table, s, noDistinct);
-//					noTuples /= noDistinct;
-//					catalog->SetNoTuples(table, noTuples);
-//				}
-//
-//				_predicate = _predicate->rightAnd;
-//			}
-//		}
-//
-//		_tables = _tables->next;
-//	}
 
-
-	
 	// call the optimizer to compute the join order
 	OptimizationTree* root;
         _tables = head;
