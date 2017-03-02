@@ -20,30 +20,30 @@ QueryOptimizer::~QueryOptimizer() {
 void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
 	OptimizationTree* _root) {
     InitializeMaps(_tables);
-    cout << "Initialized Maps" << endl;
+    cout << "\n\t--Initialized Maps--\n" << endl;
     PrintTables();
-    CalculateCosts(_tables,_predicate);
-    cout << "Calculated Costs" << endl;
+    CalculateSizeForOriginalTables(_tables,_predicate);
+    cout << "\n\t--Calculated Size For Original Tables--\n" << endl;
     PrintTables();
-    CalculateSize(_tables,_predicate);
-    cout << "Calculated Size" << endl;
+    CalculateSizeForTableCombination(_tables,_predicate);
+    cout << "\n\t--Calculated Size For Table Combinations--\n" << endl;
     PrintTables();
     
     string keys = "";
-    for(int i = 0; i < mapKey.size(); i++){ if(initial[mapKey.at(i).key].singleTable) {keys += mapKey.at(i).key; }}
+    for(int i = 0; i < mapKey.size(); i++){ if(tableOptMap[mapKey.at(i).key].singleTable) {keys += mapKey.at(i).key; }}
     Partition(keys);
-    cout << "Partition Executed" << endl;
+        cout << "\n\t--Partition Algo Executed--\n" << endl;
     PrintTables();
     _root = new OptimizationTree;
     _root -> leftChild = NULL;
     _root -> rightChild = NULL;
-    for (int i = 0; i < keys.size(); i++)  { _root -> tables.push_back(final[ {keys[i]} ] ); }
-    _root -> noTuples = initial[keys].size;
-    keys = initial[keys].key;
-
+    for (int i = 0; i < keys.size(); i++)  { _root -> tables.push_back(tableNamesMap[ {keys[i]} ] ); }
+    _root -> noTuples = tableOptMap[keys].size;
+    keys = tableOptMap[keys].key;
+    
+    cout << "\n\t--Rebuilding the Tree--\n" << endl;
     RegenerateTree(keys, _root);
-
-    cout<<endl<<"Printing Tree"<<endl<<endl;
+    cout << "\n\t--Printing the Join Order--\n" << endl;
     PrintOptimizationTree(_root);
 }
 void QueryOptimizer::InitializeMaps(TableList* _tables){
@@ -55,13 +55,13 @@ void QueryOptimizer::InitializeMaps(TableList* _tables){
         Schema _schema;
         catalog->GetSchema(_tableName, _schema);
         string _key = extensions::to_string(index);
-        initial[_key].size = _schema._noTuples; 
-        initial[_key].cost = 0;
-        initial[_key].schema = _schema;
-        initial[_key].key = _key;
-        initial[_key].singleTable = true;
+        tableOptMap[_key].size = _schema._noTuples; 
+        tableOptMap[_key].cost = 0;
+        tableOptMap[_key].schema = _schema;
+        tableOptMap[_key].key = _key;
+        tableOptMap[_key].singleTable = true;
 
-        final[_key] = _tableName;
+        tableNamesMap[_key] = _tableName;
         
         mapkey node;
         node.tableName = _tableName;
@@ -72,7 +72,7 @@ void QueryOptimizer::InitializeMaps(TableList* _tables){
         _tempTables = _tempTables->next;
     }
 }
-void QueryOptimizer::CalculateCosts(TableList* _tables, AndList* _predicate){
+void QueryOptimizer::CalculateSizeForOriginalTables(TableList* _tables, AndList* _predicate){
     TableList * _tempTables = _tables;
     CNF _cnf;
     while(_tempTables != NULL){
@@ -86,22 +86,13 @@ void QueryOptimizer::CalculateCosts(TableList* _tables, AndList* _predicate){
                 for(int i = 0; i < _cnf.numAnds;i++){
                     if(_cnf.andList[i].operand1 == Left || _cnf.andList[i].operand1 == Right){
                         if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                        else{
-                        vector<Attribute> _atts;
-                        _atts = _schema.GetAtts();
-                        _div = _atts[_cnf.andList[i].whichAtt1].noDistinct;
-                        }
+                        else{ _div = _schema.GetAtts()[_cnf.andList[i].whichAtt1].noDistinct; }
                     }
                     if(_cnf.andList[i].operand2 == Left || _cnf.andList[i].operand2 == Right){
                         if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                        else{
-                            vector<Attribute> _atts;
-                            _atts = _schema.GetAtts();
-                            _div = _atts[_cnf.andList[i].whichAtt2].noDistinct;
-                        }
-                    }
-                }
-                int i = 0; while(1){ if(tableName == mapKey.at(i).tableName){ initial[extensions::to_string(i)].size /= _div; break; } i++; }
+                        else{ _div = _schema.GetAtts()[_cnf.andList[i].whichAtt2].noDistinct; }
+                    }   // map the size
+                } int i = 0; while(1){ if(tableName == mapKey.at(i).tableName){ tableOptMap[extensions::to_string(i)].size /= _div; break; } i++; }
             }
         }
         _tempTables = _tempTables->next;
@@ -112,14 +103,14 @@ void QueryOptimizer::PrintTables(){
 	for (int i=0; i<mapKey.size(); i++) cout<<"TableName: "<<mapKey.at(i).tableName<<"\tMapKey: "<<mapKey.at(i).key<<endl;
 	cout<<endl;
         cout<<"-\t-SIZE-\t\t\t-COST-"<<endl;
-	for (std::map<string, opt>::iterator it=initial.begin(); it!=initial.end(); ++it)
+	for (std::map<string, opt>::iterator it=tableOptMap.begin(); it!=tableOptMap.end(); ++it)
 	{
 		cout<<it->first<<"-\t-"<<it->second.size<<"-\t\t-"<<it->second.cost<<"-"<<endl;
 	}
 
 	cout<<"\n------------------------------------------------\n";
 }
-void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
+void QueryOptimizer::CalculateSizeForTableCombination(TableList* _tables, AndList* _predicate){
     TableList * _tempTables = _tables; int check = 0;
     CNF _cnf;
     while (_tempTables->next != NULL){
@@ -142,37 +133,26 @@ void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
                 _attr1 = _schema.GetAtts();
                 _attr2 = _schemaTwo.GetAtts();
                 int i = 0; string _key = "";
-                while(1){ if(_tableName == mapKey.at(i).tableName) { 
-                    _key += mapKey.at(i).key; 
-                    _tupsOne = initial[mapKey.at(i).key].size; 
-                    break; } i++;} i = 0;
-                while(1){ if(_tableNameTwo == mapKey.at(i).tableName) { 
-                    _key += mapKey.at(i).key;
-                    _tupsTwo = initial[mapKey.at(i).key].size;
-                    break; } i++;}
-
+                while(1){ if(_tableName == mapKey.at(i).tableName) {  _key += mapKey.at(i).key;   _tupsOne = tableOptMap[mapKey.at(i).key].size;  break; } i++;} i = 0;
+                while(1){ if(_tableNameTwo == mapKey.at(i).tableName) {  _key += mapKey.at(i).key; _tupsTwo = tableOptMap[mapKey.at(i).key].size; break; } i++;}
                 if(_cnf.numAnds > 0) { 
-                    for (int i = 0 ; i < _cnf.numAnds; i++)
-                    {
-                        if (_cnf.andList[i].operand1 == Left)
-                        {
-                                _noDisOne = _attr1[_cnf.andList[i].whichAtt1].noDistinct;
-                                _noDisTwo = _attr2[_cnf.andList[i].whichAtt2].noDistinct;
+                    for (int i = 0 ; i < _cnf.numAnds; i++) {
+                        if (_cnf.andList[i].operand1 == Left)  {
+                            _noDisOne = _attr1[_cnf.andList[i].whichAtt1].noDistinct;
+                            _noDisTwo = _attr2[_cnf.andList[i].whichAtt2].noDistinct;
                         }
 
-                        if (_cnf.andList[i].operand1 == Right)
-                        {
-                                _noDisOne = _attr1[_cnf.andList[i].whichAtt2].noDistinct;
-                                _noDisTwo = _attr2[_cnf.andList[i].whichAtt1].noDistinct;
+                        if (_cnf.andList[i].operand1 == Right) {
+                            _noDisOne = _attr1[_cnf.andList[i].whichAtt2].noDistinct;
+                            _noDisTwo = _attr2[_cnf.andList[i].whichAtt1].noDistinct;
                         }
-
                         if (_noDisOne > _noDisTwo){ _div = _noDisOne; } else { _div = _noDisTwo; }
                     }
                 }
                 if (_cnf.numAnds == 0) { _div = 1; }
-                initial[_key].size = (_tupsOne * _tupsTwo)/_div;
-                initial[_key].cost = 0;
-                initial[_key].key = _key;
+                tableOptMap[_key].size = (_tupsOne * _tupsTwo)/_div;
+                tableOptMap[_key].cost = 0;
+                tableOptMap[_key].key = _key;
                 mapkey node;
                 node.key = _key;
                 node.tableName = _tableName + "," + _tableNameTwo;
@@ -183,23 +163,25 @@ void QueryOptimizer::CalculateSize(TableList* _tables, AndList* _predicate){
         _tempTables = _tempTables->next;
     }
 }
-void QueryOptimizer::PrintOptimizationTree(OptimizationTree* & root)
+void QueryOptimizer::PrintOptimizationTree(OptimizationTree* & _root)
 {
 
-    if (root -> leftChild == NULL && root -> rightChild == NULL) { cout<<"TableName: "<<root -> tables[0]<<endl<<endl; return; }
-    PrintOptimizationTree(root->leftChild);
-    PrintOptimizationTree(root->rightChild);
+    if (_root -> leftChild == NULL && _root -> rightChild == NULL) { cout<<"TableName: "<<_root -> tables[0]<<" -JOIN- "; return; }
+    PrintOptimizationTree(_root->leftChild);
+    PrintOptimizationTree(_root->rightChild);
 
 }
 void QueryOptimizer::Partition(string _tableIndecies){
     string _copyIndecies = _tableIndecies;
-    unsigned long long min_cost = LLONG_MAX,cost,size;
+    unsigned long long min_cost = LLONG_MAX,
+            cost,
+            size;
     string key;
 
     sort(_copyIndecies.begin(), _copyIndecies.end());
 
-    map<string,opt>::iterator it = initial.find(_copyIndecies);
-    if(it != initial.end()) return;
+    map<string,opt>::iterator it = tableOptMap.find(_copyIndecies);
+    if(it != tableOptMap.end()) return;
 
     int N = _tableIndecies.size();
     bool lastPerm = true;
@@ -212,65 +194,59 @@ void QueryOptimizer::Partition(string _tableIndecies){
                     string right=""; for (int ind = j+1; ind < N; ind++) right+= _tableIndecies[ind]; Partition(right);
                     sort(left.begin(), left.end());
                     sort(right.begin(), right.end());
-                    cost = initial[left].cost + initial[right].cost;
-                    if (j!=0) cost += initial[left].size;
-                    if (j!=N-2) cost += initial[right].size;
+                    cost = tableOptMap[left].cost + tableOptMap[right].cost;
+                    if (j!=0) cost += tableOptMap[left].size;
+                    if (j!=N-2) cost += tableOptMap[right].size;
                     if (cost < min_cost){
-                            size = initial[left].size*initial[right].size;
-                            key = initial[left].key + "," + initial[right].key;
+                            size = tableOptMap[left].size*tableOptMap[right].size;
+                            key = tableOptMap[left].key + "," + tableOptMap[right].key;
                             min_cost = cost;
                     }
             }
             lastPerm = Permute(_tableIndecies);
     }
-    initial[_copyIndecies].key = key;
-    initial[_copyIndecies].size = size;
-    initial[_copyIndecies].cost = min_cost;
+    tableOptMap[_copyIndecies].key = key;
+    tableOptMap[_copyIndecies].size = size;
+    tableOptMap[_copyIndecies].cost = min_cost;
 }
-void QueryOptimizer::RegenerateTree(string _tableIndecies, OptimizationTree*& root){
-    RegenerateLeaf(_tableIndecies,root);
+void QueryOptimizer::RegenerateTree(string _tableIndecies, OptimizationTree*& _root){
+    RegenerateLeaf(_tableIndecies,_root);
 }
-void QueryOptimizer::RegenerateLeaf(string _tableIndecies, OptimizationTree* & root)
+void QueryOptimizer::RegenerateLeaf(string _tableIndecies, OptimizationTree* & _root)
 {
 	string left,right;
 	int pos = _tableIndecies.find(",");
-
-	if (pos != string::npos)
-	{
+        //string not found
+	if (pos != string::npos) {
 		left = _tableIndecies.substr(0,pos);
 		right = _tableIndecies.substr(_tableIndecies.find(",")+1);
-                cout<<"------------------------------------"<<endl;
-		cout<<"-Left Leaf: "<<left<<" -Right Leaf: "<<right<<endl;
-                cout<<"------------------------------------"<<endl;
-		root -> leftChild = new OptimizationTree;
-		RegenerateTree(left, root -> leftChild);
-		root -> rightChild = new OptimizationTree;
-		RegenerateTree(right, root -> rightChild);
-		return;
-		
-	}
-		
-	for (int i=0; i<_tableIndecies.size(); i++){ root -> tables.push_back(final[ {_tableIndecies[i]} ]); }
-	
-	if (_tableIndecies.size() == 1)
-	{
-		root -> noTuples = initial[_tableIndecies].size;
-		root -> leftChild = NULL;
-		root -> rightChild = NULL;
+                cout<<"-----------------------------------------"<<endl;
+		cout<<"\t-Left Leaf- "<<left<<" -Right Leaf- "<<right<<endl;
+                cout<<"-----------------------------------------"<<endl;
+		_root -> leftChild = new OptimizationTree;
+		RegenerateLeaf(left, _root -> leftChild);
+		_root -> rightChild = new OptimizationTree;
+		RegenerateLeaf(right, _root -> rightChild);
 		return;
 	}
-	
-	root -> leftChild = new OptimizationTree;
-	root -> leftChild -> leftChild = NULL;
-	root -> leftChild -> rightChild = NULL;
-	root -> leftChild -> tables.push_back(root -> tables[0]);
-	root -> leftChild -> noTuples = initial[{_tableIndecies[0]}].size;
-	
-	root -> rightChild = new OptimizationTree;
-	root -> rightChild -> leftChild = NULL;
-	root -> rightChild -> rightChild = NULL;
-	root -> rightChild -> tables.push_back(root -> tables[1]);
-	root -> rightChild -> noTuples = initial[{_tableIndecies[1]}].size;
+		
+	for (int i=0; i<_tableIndecies.size(); i++){ _root -> tables.push_back(tableNamesMap[ {_tableIndecies[i]} ]); }
+	if (_tableIndecies.size() == 1) {
+		_root -> noTuples = tableOptMap[_tableIndecies].size;
+		_root -> leftChild = NULL;
+		_root -> rightChild = NULL;
+		return;
+	}
+	_root -> leftChild = new OptimizationTree;
+	_root -> rightChild = new OptimizationTree;
+	_root -> leftChild -> leftChild = NULL;
+	_root -> leftChild -> rightChild = NULL;
+	_root -> rightChild -> leftChild = NULL;
+	_root -> rightChild -> rightChild = NULL;
+	_root -> leftChild -> tables.push_back(_root -> tables[0]);
+	_root -> leftChild -> noTuples = tableOptMap[{_tableIndecies[0]}].size;
+	_root -> rightChild -> tables.push_back(_root -> tables[1]);
+	_root -> rightChild -> noTuples = tableOptMap[{_tableIndecies[1]}].size;
 
 }
 bool QueryOptimizer::Permute(string& array)
