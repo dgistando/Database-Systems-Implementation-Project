@@ -18,9 +18,11 @@ Record :: Record () {
 
 Record::Record (const Record& copyMe) {
 	// this is a deep copy, so allocate the bits and move them over!
-	delete [] bits;
-	bits = new char[((int *) copyMe.bits)[0]];
-	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
+	//delete [] bits;
+	if( copyMe.bits != NULL ) {
+		bits = new char[((int *) copyMe.bits)[0]];
+		memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
+	}
 }
 
 Record& Record::operator=(const Record& copyMe) {
@@ -28,16 +30,19 @@ Record& Record::operator=(const Record& copyMe) {
 	if (this == &copyMe) return *this;
 
 	// this is a deep copy, so allocate the bits and move them over!
-	delete [] bits;
-	bits = new char[((int *) copyMe.bits)[0]];
-	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
-
+	//delete [] bits;
+	if( copyMe.bits != NULL ) {
+		bits = new char[((int *) copyMe.bits)[0]];
+		memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
+	}
 	return *this;
 }
 
 Record :: ~Record () {
-	delete [] bits;
-	bits = NULL;
+	if( bits != NULL ) {
+		delete [] bits;
+		bits = NULL;
+	}
 }
 
 void Record::Swap(Record& _other) {
@@ -45,7 +50,8 @@ void Record::Swap(Record& _other) {
 }
 
 void Record :: Consume (char*& fromMe) {
-	delete [] bits;
+	if( bits != NULL )
+		delete [] bits;
 	bits = fromMe;
 	fromMe = NULL;
 }
@@ -392,7 +398,7 @@ void Record :: AppendRecords (Record& left, Record& right,
 	}
 }
 
-ostream& Record :: print(ostream& _os, Schema& mySchema) {
+ostream&  Record :: print(ostream& _os, Schema& mySchema) {
 	int n = mySchema.GetNumAtts();
 	vector<Attribute> atts = mySchema.GetAtts();
 
@@ -411,17 +417,17 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 		// depending on the type we then print out the contents
 		// first is integer
 		if (atts[i].type == Integer) {
-			int *myInt = (int *) &(bits[pointer]);
-			_os << *myInt;
+			int myInt; memcpy(&myInt, bits+pointer, sizeof(int));
+			_os << myInt;
 		}
 		// then is a double
 		else if (atts[i].type == Float) {
-			double *myDouble = (double *) &(bits[pointer]);
-			_os << *myDouble;
+			double myDouble; memcpy(&myDouble, bits+pointer, sizeof(double));
+			_os << myDouble;
 		}
 		// then is a character string
 		else if (atts[i].type == String) {
-			char *myString = (char *) &(bits[pointer]);
+			char *myString = bits+pointer;
 			_os << myString;
 		} 
 
@@ -431,5 +437,5 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 		}
 	}
 
-	return _os;
+	_os << '}';
 }

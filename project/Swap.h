@@ -10,7 +10,7 @@
 	typeof() operator.
 */
 
-#define SWAP(a,b) {typeof(a) tmp=a; a=b; b=tmp;}
+#define SWAP(a,b) {decltype(a) tmp=a; a=b; b=tmp;}
 
 /* macro to swap content of STL-like containers/maps */
 #define STL_SWAP(a,b) a.swap(b);
