@@ -23,6 +23,9 @@ public:
 
 	// set the number of pages the operator can use
 	void SetNoPages(int _noPages) {noPages = _noPages;}
+        
+        //Get SChema
+        virtual void returnSchema(Schema& _schema) = 0;
 
 	// every operator has to implement this method
 	virtual bool GetNext(Record& _record) = 0;
@@ -50,7 +53,7 @@ public:
 	virtual ~Scan();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema (Schema& _schema){_schema = schema;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -73,7 +76,7 @@ public:
 	virtual ~Select();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema (Schema& _schema){_schema = schema;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -101,7 +104,7 @@ public:
 	virtual ~Project();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schemaOut;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -127,7 +130,7 @@ public:
 	virtual ~Join();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schemaOut;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -144,7 +147,7 @@ public:
 	virtual ~DuplicateRemoval();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schema;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -167,7 +170,7 @@ public:
 	virtual ~Sum();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schemaOut;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -192,7 +195,7 @@ public:
 	virtual ~GroupBy();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schemaOut;}
 	virtual ostream& print(ostream& _os);
 };
 
@@ -212,7 +215,7 @@ public:
 	virtual ~WriteOut();
 
 	virtual bool GetNext(Record& _record) {}
-
+        virtual void returnSchema(Schema& _schema){_schema = schema;}
 	virtual ostream& print(ostream& _os);
 };
 

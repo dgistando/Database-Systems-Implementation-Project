@@ -17,6 +17,7 @@ Scan::Scan(Schema& _schema, DBFile& _file) {
 }
 
 Scan::~Scan() {
+    cout << "Destroy Select" << endl;
 }
 
 ostream& Scan::print(ostream& _os) {
