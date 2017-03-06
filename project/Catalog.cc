@@ -4,12 +4,7 @@
 #include "Catalog.h"
 
 using namespace std;
-namespace extensions
-{
-    template < typename T > string to_string( const T& n ){
-        ostringstream stm; stm << n; return stm.str() ;
-    }
-}
+
 
 
 Catalog::Catalog(string& _fileName) {
@@ -21,11 +16,9 @@ Catalog::Catalog(string& _fileName) {
     else cout << "Cannot open db!" << endl;
 }
 
-
-
-}
 Catalog::~Catalog() {
-    WriteDatabse();
+    //for query execution you dont need to write back to the database;
+    //WriteDatabse();
 }
 
 bool Catalog::Save() {

@@ -57,7 +57,9 @@ public:
 	void Swap(Schema& _other);
 
 	// destructor
-	virtual ~Schema() {atts.clear();}
+	virtual ~Schema() {
+            atts.clear();
+        }
 
 	// get functions
 	unsigned int GetNumAtts() {return atts.size();}
