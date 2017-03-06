@@ -49,7 +49,7 @@ public:
 	QueryOptimizer(Catalog& _catalog);
 	virtual ~QueryOptimizer();
 
-	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
+	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree*& _root);
         /* Initializes mapKey vector, tableOpt map, tableNames map.
          * mapKey stores tableName relation to the key in tableOpt and tableNames map
          * tableOpt maps original and generated table permutation keys to an Opt structure

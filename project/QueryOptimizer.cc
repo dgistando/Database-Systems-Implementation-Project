@@ -18,7 +18,7 @@ QueryOptimizer::~QueryOptimizer() {
 }
 
 void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
-	OptimizationTree* _root) {
+	OptimizationTree*& _root) {
     InitializeMaps(_tables);
     cout << "\n\t--Initialized Maps--\n" << endl;
     PrintTables();
@@ -45,6 +45,7 @@ void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
     RegenerateTree(keys, _root);
     cout << "\n\t--Printing the Join Order--\n" << endl;
     PrintOptimizationTree(_root);
+    _root = _root;
 }
 void QueryOptimizer::InitializeMaps(TableList* _tables){
     int index = 0;
