@@ -71,9 +71,9 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                 if(attcomp != ""){
                     RelationalOp* _producer = (RelationalOp*) & scanMap.at(_tableName);
                     Select sel(_schema, cnf , rec , _producer);
-                    //pair<string,Select> tuple = make_pair(_tableName,sel);
-                    //selectMap.insert(tuple);
-                    selectMap[_tableName] = sel;
+                    pair<string,Select> tuple = make_pair(_tableName,sel);
+                    selectMap.insert(tuple);
+                    //selectMap[_tableName] = &sel;
                 }
                     
             }
