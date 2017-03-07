@@ -2,7 +2,13 @@
 #include <string>
 
 #include "Catalog.h"
-
+extern "C" {
+#include "QueryParser.h"
+}
+//stuff
+#include "QueryOptimizer.h"
+#include "QueryCompiler.h"
+#include "RelOp.h"
 
 
 using namespace std;
@@ -20,58 +26,44 @@ extern "C" int yyparse();
 extern "C" int yylex_destroy();
 
 
-
-
-
-
-
-
 int main () {
 	// this is the catalog
 	string dbFile = "catalog";
 	Catalog catalog(dbFile);
 
-	
-        while(true){
-            // this is the query optimizer
-            // it is not invoked directly but rather passed to the query compiler
-            QueryOptimizer optimizer(catalog);
+	// this is the query optimizer
+	// it is not invoked directly but rather passed to the query compiler
+	QueryOptimizer optimizer(catalog);
 
-            // this is the query compiler
-            // it includes the catalog and the query optimizer
-            QueryCompiler compiler(catalog, optimizer);
-            cout<<endl<<"Enter query: "<<endl;
-            // the query parser is accessed directly through yyparse
-            // this populates the extern data structures
-            int parse = -1;
-            if (yyparse () == 0) {
-                    cout << "OK!" << endl;
-                    parse = 0;
-            }
-            else {
-                    cout << "Error: Query is not correct!" << endl;
-                    parse = -1;
-            }
+	// this is the query compiler
+	// it includes the catalog and the query optimizer
+	QueryCompiler compiler(catalog, optimizer);
 
-            yylex_destroy();
 
-            if (parse != 0) return -1;
+	// the query parser is accessed directly through yyparse
+	// this populates the extern data structures
+	int parse = -1;
+	if (yyparse () == 0) {
+		cout << "OK!" << endl;
+		parse = 0;
+	}
+	else {
+		cout << "Error: Query is not correct!" << endl;
+		parse = -1;
+	}
 
-            // at this point we have the parse tree in the ParseTree data structures
-            // we are ready to invoke the query compiler with the given query
-            // the result is the execution tree built from the parse tree and optimized
-            QueryExecutionTree queryTree;
-            compiler.Compile(tables, attsToSelect, finalFunction, predicate,
-                    groupingAtts, distinctAtts, queryTree);
+	yylex_destroy();
 
-            //cout << queryTree << endl;
+	if (parse != 0) return -1;
 
-            cout<<endl<<"exit(y/n)? ";
-            char antwort;
-            cin >> antwort;
-            if(antwort == 'y'){ break; }
-        }
-        
+	// at this point we have the parse tree in the ParseTree data structures
+	// we are ready to invoke the query compiler with the given query
+	// the result is the execution tree built from the parse tree and optimized
+	QueryExecutionTree queryTree;
+	compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+		groupingAtts, distinctAtts, queryTree);
+
+	cout << queryTree << endl;
 
 	return 0;
 }

@@ -6,16 +6,14 @@
 using namespace std;
 
 
-
 Catalog::Catalog(string& _fileName) {
-	sqlite3 *_db;
-  char *zErrMsg = 0;
-  int  rc;
-  char *sql;
-  bool _isOpen;
-  rc = sqlite3_open_v2(_fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
-  if(rc == SQLITE_OK){ _isOpen = 1; } else { _isOpen = 0; }
-  /* Open database */
+    //open database
+    int rc = sqlite3_open_v2(_fileName.c_str(), &_db, SQLITE_OPEN_READWRITE, 0);
+    if(rc == SQLITE_OK){ _dbOpen = 1; } else { _dbOpen = 0; }
+    //read database
+    if(_dbOpen){ ReadDatabase(); }
+    else cout << "Cannot open db!" << endl;
+}
 
 Catalog::~Catalog() {
     //for query execution you dont need to write back to the database;
@@ -157,13 +155,7 @@ bool Catalog::GetSchema(string& _table, Schema& _schema) {
  */
 bool Catalog::CreateTable(string& _table, vector<string>& _attributes,vector<string>& _attributeTypes) {
     Keyify<string> key(_table);
-
-    if(_attributes.size() == 0){
-        return false;
-    }
-
     if(_attributes.size() == 0){ return false; } // u shall not pass need more attrb
-
     if(!catalog_tbl.IsThere(key)){
         vector<unsigned int> d;
         for(int i = 0; i < _attributes.size(); i++){ d.push_back(0); }
