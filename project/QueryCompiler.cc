@@ -73,7 +73,6 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                     Select sel(_schema, cnf , rec , _producer);
                     pair<string,Select> tuple = make_pair(_tableName,sel);
                     selectMap.insert(tuple);
-                    //selectMap[_tableName] = &sel;
                 }
                     
             }
@@ -149,8 +148,8 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                 else
                 {
                         Schema schIn, schIn_;
-                        join->returnSchema(schIn_);
                         schIn = schIn_;
+                        cout << schIn << endl;
 
                         NameList* grouping = _groupingAtts;
                         int numAtts = 0; 
@@ -210,6 +209,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
         //SetRoot
         
         _queryTree.SetRoot(*join);
+        cout << _queryTree << endl;
 }
 RelationalOp* QueryCompiler::constTree(OptimizationTree* root, AndList* _predicate)
 {

@@ -36,7 +36,7 @@ Select::Select(Schema& _schema, CNF& _predicate, Record& _constants,
 }
 
 Select::~Select() {
-	delete producer;
+	//delete producer;
 }
 
 ostream& Select::print(ostream& _os) {
@@ -156,5 +156,13 @@ ostream& WriteOut::print(ostream& _os) {
 
 
 ostream& operator<<(ostream& _os, QueryExecutionTree& _op) {
-	return _os << "QUERY EXECUTION TREE";
+        Record r;
+        Schema sch;
+        _op.root->returnSchema(sch);
+	while (_op.root->GetNext(r)){
+            r.print(_os,sch);
+        }
+
+	return _os;
 }
+
