@@ -33,6 +33,14 @@ Select::Select(Schema& _schema, CNF& _predicate, Record& _constants,
 Select::~Select() {
 }
 
+bool Select::GetNext(Record& rec) {
+    if (!producer->GetNext(rec)) return false;
+    while (!predicate.Run(rec,constants)) {
+        if (!producer->GetNext(rec)) return false;
+    } return true;
+}
+
+
 ostream& Select::print(ostream& _os) {
 	_os << "σ [";
 	for(int i = 0; i < predicate.numAnds; i++) {
@@ -101,6 +109,14 @@ Project::Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 }
 
 Project::~Project() {
+}
+bool Project::GetNext(Record& record) {
+    if (producer->GetNext(record))
+    {
+            record.Project(keepMe, numAttsOutput, numAttsInput);		
+            return true;
+    }
+    return false;
 }
 
 ostream& Project::print(ostream& _os) {
@@ -254,6 +270,13 @@ WriteOut::WriteOut(Schema& _schema, string& _outFile, RelationalOp* _producer) {
 }
 
 WriteOut::~WriteOut() {
+}
+
+bool WriteOut::GetNext(Record& record) {
+    bool writeout = producer->GetNext(record);
+    if (!writeout) { return false; }
+    return writeout;
+
 }
 
 ostream& WriteOut::print(ostream& _os) {

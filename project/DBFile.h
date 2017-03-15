@@ -15,6 +15,10 @@ class DBFile {
 private:
 	File file;
 	string fileName;
+        
+        Page page;
+        int pageNum;
+        FileType fileType;
 
 public:
 	DBFile ();

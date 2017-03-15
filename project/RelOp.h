@@ -77,7 +77,7 @@ public:
 		RelationalOp* _producer);
 	virtual ~Select();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schema; }
 
@@ -106,8 +106,8 @@ public:
 	Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 		int _numAttsOutput, int* _keepMe, RelationalOp* _producer);
 	virtual ~Project();
-
-	virtual bool GetNext(Record& _record) {}
+        
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schemaOut; }
 
@@ -232,7 +232,7 @@ public:
 	WriteOut(Schema& _schema, string& _outFile, RelationalOp* _producer);
 	virtual ~WriteOut();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schema; }
 
