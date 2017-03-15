@@ -78,7 +78,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 23 "QueryParser.y" /* yacc.c:1909  */
+#line 24 "QueryParser.y" /* yacc.c:1909  */
 
  	struct FuncOperand* myOperand;
 	struct FuncOperator* myOperator; 

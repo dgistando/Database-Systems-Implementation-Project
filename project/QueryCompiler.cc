@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "QueryCompiler.h"
 #include "QueryOptimizer.h"
 #include "Schema.h"
@@ -13,302 +14,232 @@ using namespace std;
 
 QueryCompiler::QueryCompiler(Catalog& _catalog, QueryOptimizer& _optimizer) :
 	catalog(&_catalog), optimizer(&_optimizer) {
-	catalog = &_catalog;
-	optimizer = &_optimizer;
 }
 
 QueryCompiler::~QueryCompiler() {
-
 }
 
 void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
-	FuncOperator* _finalFunction, AndList* _predicate,
-	NameList* _groupingAtts, int& _distinctAtts,
-	QueryExecutionTree& _queryTree) {
-	cout<<"COMPILING.."<<endl;
+	FuncOperator* _finalFunction, AndList* _predicate, NameList* _groupingAtts,
+	int& _distinctAtts,	QueryExecutionTree& _queryTree) {
+	// store Scans and Selects for each table to generate Query Execution Tree
+	unordered_map<string, RelationalOp*> pushDowns;
+	TableList *tblList = _tables;
+	while(_tables != NULL) {
+		string tableName = string(_tables->tableName);
+		DBFile dbFile; // nothing to do during phase2
+		dbFile.Create(_tables->tableName, Heap); // just for tableName
 
-	//preprocessing 1
-        
-        TableList* _tableHead = new TableList();
-        _tableHead = _tables;
-        DBFile _db;
-        while(_tableHead != NULL){
-            Schema _schema1;
-            string _tableName1(_tableHead->tableName);
-            catalog->GetSchema(_tableName1, _schema1);
-            Scan s(_schema1,_db);
-            pair<string,Scan> entry = make_pair(_tableName1,s);
-            scanMap.insert (entry);
-            _tableHead = _tableHead->next;
-        } _tableHead = _tables;
-        while (_tableHead != NULL)
-        {
-            Schema _schema;
-            
-            string _tableName(_tableHead->tableName);
-            catalog->GetSchema(_tableName, _schema);
+		/** create a SCAN operator for each table in the query **/
+		Schema schema;
+		if(!catalog->GetSchema(tableName, schema)) {
+			cerr << "ERROR: Table '" << tableName << "' does not exist" << endl << endl;
+			exit(-1);
+		}
 
-            CNF cnf;
-            Record rec;
-            int dov = cnf.ExtractCNF (*_predicate, _schema, rec);
+		Scan* scan = new Scan(schema, dbFile);
+		pushDowns[tableName] = (RelationalOp*) scan;
 
-            if (cnf.numAnds != 0)
-            {
-                string attcomp;
+		/** push-down selects: create a SELECT operator wherever necessary **/
+		CNF cnf; Record record;
+		// CNF::ExtractCNF returns 0 if success, -1 otherwise
+		if(cnf.ExtractCNF(*_predicate, schema, record) == -1) {
+			// error message is already shown in CNF::ExtractCNF
+			exit(-1);
+		}
 
-                if(cnf.andList[0].operand1 == Left)
-                {
-                        vector <Attribute> atri;
-                        atri = _schema.GetAtts();
-                        attcomp = atri[cnf.andList[0].whichAtt1].name;
-                }
-                if(cnf.andList[0].operand2 == Left)
-                {
-                        vector <Attribute> atri;
-                        atri = _schema.GetAtts();
-                        attcomp = atri[cnf.andList[0].whichAtt2].name;
-                }
-                if(attcomp != ""){
-                    RelationalOp* _producer = (RelationalOp*) & scanMap.at(_tableName);
-                    Select sel(_schema, cnf , rec , _producer);
-                    pair<string,Select> tuple = make_pair(_tableName,sel);
-                    selectMap.insert(tuple);
-                }
-                    
-            }
-            _tableHead = _tableHead->next;
-        }
+		if(cnf.numAnds > 0) {
+			Select* select = new Select(schema, cnf, record, (RelationalOp*) scan);
+			pushDowns[tableName] = (RelationalOp*) select;
+		}
 
-	// call the optimizer to compute the join order
-	OptimizationTree* root = new OptimizationTree();
-	optimizer->Optimize(_tables, _predicate, root);
-	// Creating join operators based on the optimal order computed by the optimizer
-        OptimizationTree* rootCopy = root;
-        RelationalOp* join = constTree(rootCopy, _predicate);
-        
-        // creating remaining operators
-        if (_finalFunction == NULL) 
-        {
-            Schema _projectionSchema;
-            join->returnSchema(_projectionSchema);
-            vector<Attribute> projAtts = _projectionSchema.GetAtts();	
+		// move on to the next table
+		_tables = _tables->next;
+	}
 
-            NameList* attsToSelect = _attsToSelect;
-            int numAttsInput = _projectionSchema.GetNumAtts(), numAttsOutput = 0; 
-            Schema _projectionSchemaOut = _projectionSchema;
-            vector<int> keepMe;
+	/** call the optimizer to compute the join order **/
+	OptimizationTree root;
+	optimizer->Optimize(tblList, _predicate, &root);
+	OptimizationTree *rootTree = &root;
+	/** create join operators based on the optimal order computed by the optimizer **/
+	// get actual Query eXecution Tree by joining them
+	RelationalOp* qxTree = buildJoinTree(rootTree, _predicate, pushDowns, 0);
 
-            while (attsToSelect != NULL)
-            {
-                    string str(attsToSelect->name);
-                    keepMe.push_back(_projectionSchema.Index(str));
-                    attsToSelect = attsToSelect->next;
-                    numAttsOutput++;
-            }
-            int* keepme = new int [keepMe.size()];
-            for (int i = 0;i < keepMe.size(); i++) keepme[i] = keepMe[i]; 
+	/** create the remaining operators based on the query **/
+	// qxTreeRoot will be the root of query execution tree
+	RelationalOp* qxTreeRoot = (RelationalOp*) qxTree;
 
-            _projectionSchemaOut.Project(keepMe);
-            Project* project = new Project (_projectionSchema, _projectionSchemaOut, numAttsInput, numAttsOutput, keepme, join);
+	// case 1. SELECT-WHERE-FROM
+	// since there is no _groupingAtts, check _finalFunction first.
+	// if _finalFunction does not exist, Project and check _distinctAtts for DuplicateRemoval
+	// else, append Sum at the root.
 
-            join = (RelationalOp*) project;
+	// schemaIn always comes from join tree
+	Schema schemaIn = qxTree->GetSchema();
 
-            if (_distinctAtts == 1)
-            {
-                    Schema dupSch;	
-                    join->returnSchema(dupSch);	
-                    DuplicateRemoval* duplicateRemoval = new DuplicateRemoval(dupSch, join);
-                    join = (RelationalOp*) duplicateRemoval;
-            }
+	if(_groupingAtts == NULL) {
 
-        }
-        else
-        {
-                if (_groupingAtts == NULL) 
-                {
-                        Schema schIn, schIn_;
-                        join->returnSchema(schIn_);
-                        schIn = schIn_;
+		if(_finalFunction == NULL) { // check _finalFunction first
+			// a Project operator is appended at the root
+			Schema schemaOut = schemaIn;
+			int numAttsInput = schemaIn.GetNumAtts();
+			int numAttsOutput = 0;
+			vector<int> attsToKeep;
+			vector<Attribute> atts = schemaIn.GetAtts();
+			bool isFound;
 
-                        Function compute;
-                        FuncOperator* finalFunction = _finalFunction;
-                        compute.GrowFromParseTree(finalFunction, schIn_);
+			while(_attsToSelect != NULL) {
+				string attrName = string(_attsToSelect->name);
+				isFound = false;
+				for(int i = 0; i < atts.size(); i++) {
+					if(atts[i].name == attrName) {
+						isFound = true;
+						attsToKeep.push_back(i);
+						numAttsOutput++;
+						break;
+					}
+				}
 
-                        vector<string> attributes, attributeTypes;
-                        vector<unsigned int> distincts;
-                        attributes.push_back("Sum");
-                        attributeTypes.push_back("FLOAT");
-                        distincts.push_back(1);
-                        Schema schOutSum(attributes, attributeTypes, distincts);
+				if(!isFound) {
+					cerr << "ERROR: Attribute '" << attrName << "' does not exist." << endl << endl;
+					exit(-1);
+				}
 
-                        Sum* sum = new Sum (schIn, schOutSum, compute, join);
-                        join = (RelationalOp*) sum;
-                }
+				_attsToSelect = _attsToSelect->next;
+			}
 
-                else
-                {
-                        Schema schIn, schIn_;
-                        schIn = schIn_;
-                        cout << schIn << endl;
+			if(schemaOut.Project(attsToKeep) == -1) {
+				cerr << "ERROR: Project failed:\n" << schemaOut << endl << endl;
+				exit(-1);
+			}
 
-                        NameList* grouping = _groupingAtts;
-                        int numAtts = 0; 
-                        vector<int> keepMe;
+			int keepMe[attsToKeep.size()];
+			copy(attsToKeep.begin(), attsToKeep.end(), keepMe);
 
-                        vector<string> attributes, attributeTypes;
-                        vector<unsigned int> distincts;
-                        attributes.push_back("Sum");
-                        attributeTypes.push_back("FLOAT");
-                        distincts.push_back(1);
+			Project* project = new Project(schemaIn, schemaOut, numAttsInput, numAttsOutput,
+				keepMe, qxTree);
 
-                        while (grouping != NULL)
-                        {
-                                string str(grouping->name);
-                                keepMe.push_back(schIn_.Index(str));
-                                attributes.push_back(str);
+			// in case of DISTINCT, a DuplicateRemoval operator is further inserted
+			if(_distinctAtts != 0) {
+				Schema schemaIn = project->GetSchema();
+				DuplicateRemoval* distinct = new DuplicateRemoval(schemaIn, project);
+				qxTreeRoot = (RelationalOp*) distinct;
+			} else {
+				qxTreeRoot = (RelationalOp*) project;
+			}
+		} else { // a Sum operator is insert at the root
+			// the output schema consists of a single attribute 'sum'.
+			vector<string> attributes, attributeTypes;
+			vector<unsigned int> distincts;
 
-                                Type type;
-                                type = schIn_.FindType(str);
+			Function compute; compute.GrowFromParseTree(_finalFunction, schemaIn);
 
-                                switch(type) 
-                                {
-                                        case Integer:	attributeTypes.push_back("INTEGER");	break;
-                                        case Float:	attributeTypes.push_back("FLOAT");	break;
-                                        case String:	attributeTypes.push_back("STRING");	break;
-                                        default:	attributeTypes.push_back("UNKNOWN");	break;
-                                }
+			attributes.push_back("sum");
+			attributeTypes.push_back(compute.GetType());
+			distincts.push_back(1);
+			Schema schemaOut(attributes, attributeTypes, distincts);
 
-                                distincts.push_back(schIn_.GetDistincts(str));
+			Sum* sum = new Sum(schemaIn, schemaOut, compute, qxTree);
+			qxTreeRoot = (RelationalOp*) sum;
+		}
+	} else { // case 2. SELECT-FROM-WHERE-GROUPBY
+		// if query has GROUP BY, a GroupBy operator is appended at the root
 
-                                grouping = grouping->next;
-                                numAtts++;
-                        }
+		// the output schema contains the aggregate attribute 'sum' on the first position
+		vector<string> attributes, attributeTypes;
+		vector<unsigned int> distincts;
 
-                        int* keepme = new int [keepMe.size()];
-                        for (int i = 0; i < keepMe.size(); i++) keepme[i] = keepMe[i];
+		Function compute;
+		if(_finalFunction != NULL) {
+			compute.GrowFromParseTree(_finalFunction, schemaIn);
 
-                        Schema schOut(attributes, attributeTypes, distincts);
-                        OrderMaker groupingAtts(schIn_, keepme, numAtts);
+			attributes.push_back("sum");
+			attributeTypes.push_back(compute.GetType());
+			distincts.push_back(1);
+		}
 
-                        Function compute;
-                        FuncOperator* finalFunction = _finalFunction;
-                        compute.GrowFromParseTree(finalFunction, schIn);
+		// followed by the grouping attributes
+		vector<int> attsToGroup; int attsNo = 0;
 
-                        GroupBy* groupBy = new GroupBy (schIn, schOut, groupingAtts, compute, join);	
-                        join = (RelationalOp*) groupBy;
-                }	
-        }
+		while(_groupingAtts != NULL) {
+			string attrName = string(_groupingAtts->name);
+			int noDistinct = schemaIn.GetDistincts(attrName);
+			if(noDistinct == -1) {
+				cerr << "ERROR: Attribute '" << attrName << "' does not exist." << endl << endl;
+				exit(-1);
+			}
+			Type attrType = schemaIn.FindType(attrName); string attrTypeStr;
+			switch(attrType) {
+				case Integer:
+					attrTypeStr = "INTEGER";
+					break;
+				case Float:
+					attrTypeStr = "FLOAT";
+					break;
+				case String:
+					attrTypeStr = "STRING";
+					break;
+				default:
+					attrTypeStr = "UNKNOWN";
+					break;
+			}
 
-        Schema finalSchema;
-        join->returnSchema(finalSchema);
-        string outFile = "out.txt";
+			attributes.push_back(attrName);
+			attributeTypes.push_back(attrTypeStr);
+			distincts.push_back(noDistinct);
 
-        WriteOut * writeout = new WriteOut(finalSchema, outFile, join);
-        join = (RelationalOp*) writeout;
-        
-        //SetRoot
-        
-        _queryTree.SetRoot(*join);
-        cout << _queryTree << endl;
+			attsToGroup.push_back(schemaIn.Index(attrName));
+			attsNo++;
+
+			_groupingAtts = _groupingAtts->next;
+		}
+
+		Schema schemaOut(attributes, attributeTypes, distincts);
+
+		int attsOrder[attsToGroup.size()];
+		copy(attsToGroup.begin(), attsToGroup.end(), attsOrder);
+		OrderMaker groupingAtts(schemaIn, attsOrder, attsNo);
+
+		GroupBy* group = new GroupBy(schemaIn, schemaOut, groupingAtts, compute, qxTree);
+		qxTreeRoot = (RelationalOp*) group;
+	}
+
+	// in the end, create WriteOut at the root of qxTree
+	string outFile = "qxTrees/output.txt";
+	Schema outSchema = qxTreeRoot->GetSchema();
+	WriteOut* writeOut = new WriteOut(outSchema, outFile, qxTreeRoot);
+	qxTreeRoot = (RelationalOp*) writeOut;
+
+	/** connect everything in the query execution tree and return **/
+	_queryTree.SetRoot(*qxTreeRoot);
+
+	/** free the memory occupied by the parse tree since it is not necessary anymore **/
+	_tables = NULL; _attsToSelect = NULL; _finalFunction = NULL;
+	_predicate = NULL; _groupingAtts = NULL; rootTree = NULL;
 }
-RelationalOp* QueryCompiler::constTree(OptimizationTree* root, AndList* _predicate)
-{
-	if (root -> leftChild == NULL && root -> rightChild == NULL)
-	{	
-		//if(checkindex == 1) return (RelationalOp*) & si[0]; 
-		RelationalOp* op;
-		auto it = selectMap.find(root -> tables[0]);
-		if(it != selectMap.end())		op = (RelationalOp*) & it->second;
-		else				op = (RelationalOp*) & scanMap.at(it->first);
-		
-		
-		return op;
+
+// a recursive function to create Join operators (w/ Select & Scan) from optimization result
+RelationalOp* QueryCompiler::buildJoinTree(OptimizationTree*& _tree,
+	AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth) {
+	// at leaf, do push-down (or just return table itself)
+	if(_tree->leftChild == NULL && _tree->rightChild == NULL) {
+		return _pushDowns.find(_tree->tables[0])->second;
+	} else { // recursively do join from left/right RelOps
+		Schema lSchema, rSchema, oSchema; CNF cnf;
+
+		RelationalOp* lOp = buildJoinTree(_tree->leftChild, _predicate, _pushDowns, depth+1);
+		RelationalOp* rOp = buildJoinTree(_tree->rightChild, _predicate, _pushDowns, depth+1);
+
+		lSchema = lOp->GetSchema();
+		rSchema = rOp->GetSchema();
+		cnf.ExtractCNF(*_predicate, lSchema, rSchema);
+		oSchema.Append(lSchema); oSchema.Append(rSchema);
+		Join* join = new Join(lSchema, rSchema, oSchema, cnf, lOp, rOp);
+
+		// set current depth for join operation
+		join->depth = depth;
+		join->numTuples = _tree->noTuples;
+
+		return (RelationalOp*) join;
 	}
-
-	if (root -> leftChild -> tables.size() == 1  && root -> rightChild -> tables.size() == 1) 
-	{
-		string left = root -> leftChild -> tables[0];
-		string right = root -> rightChild -> tables[0];
-
-		CNF cnf;
-		Schema sch1, sch2;
-		RelationalOp* lop, *rop;
-
-		auto it = selectMap.find(left);
-		if(it != selectMap.end())		lop = (RelationalOp*) & it->second;
-		else				lop = (RelationalOp*) & scanMap.at(left);
-
-		it = selectMap.find(right);
-		if(it != selectMap.end()) 	rop = (RelationalOp*) & it->second;
-		else				rop = (RelationalOp*) & scanMap.at(right);
-	
-		lop->returnSchema(sch1);
-		rop->returnSchema(sch2);
-		
-		cnf.ExtractCNF (*_predicate, sch1, sch2);
-		Schema schout = sch1;
-		schout.Append(sch2);
-		Join* join = new Join(sch1, sch2, schout, cnf, lop , rop);
-		return ((RelationalOp*) join);
-	
-	}
-
-	if (root -> leftChild -> tables.size() == 1)
-	{	
-		string left = root -> leftChild -> tables[0];
-		Schema sch1,sch2;
-		CNF cnf;		
-		RelationalOp* lop;
-
-		auto it = selectMap.find(left);
-		if(it != selectMap.end())		lop = (RelationalOp*) & it->second;
-		else				lop = (RelationalOp*) & scanMap.at(left);
-
-		lop->returnSchema(sch1);
-		RelationalOp* rop = constTree(root -> rightChild, _predicate);
-		rop->returnSchema(sch2);
-
-		cnf.ExtractCNF (*_predicate, sch1, sch2);
-		Schema schout = sch1;
-		schout.Append(sch2);
-		Join* join = new Join(sch1, sch2, schout, cnf, lop , rop);
-		return ((RelationalOp*) join);
-	}
-
-	if (root -> rightChild -> tables.size() == 1)
-	{	
-		string right = root -> rightChild -> tables[0];
-		Schema sch1,sch2;
-		CNF cnf;
-		RelationalOp* rop;
-
-		auto it = selectMap.find(right);
-		if(it != selectMap.end())		rop = (RelationalOp*) & it->second;
-		else				rop = (RelationalOp*) & scanMap.at(right);
-
-		rop->returnSchema(sch2);
-		RelationalOp* lop = constTree(root -> leftChild, _predicate);
-		lop->returnSchema(sch1);
-		
-		cnf.ExtractCNF (*_predicate, sch1, sch2);
-		Schema schout = sch1;
-		schout.Append(sch2);
-		Join* join = new Join(sch1, sch2, schout, cnf, lop , rop);
-		return ((RelationalOp*) join);
-	}
-
-	Schema sch1,sch2;
-	CNF cnf;
-	RelationalOp* lop = constTree(root -> leftChild, _predicate);
-	RelationalOp* rop = constTree(root -> rightChild, _predicate);
-
-	lop->returnSchema(sch1);
-	rop->returnSchema(sch2);
-
-	cnf.ExtractCNF (*_predicate, sch1, sch2);
-	Schema schout = sch1;
-	schout.Append(sch2);
-	Join* join = new Join(sch1, sch2, schout, cnf, lop , rop);
-	return ((RelationalOp*) join);
-
 }

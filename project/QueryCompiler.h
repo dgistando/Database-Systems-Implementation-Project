@@ -9,12 +9,11 @@
  *  2) Identify the parameters of the operation the operator is executing.
  *     For example, identify the predicate in a SELECT. Or the JOIN PREDICATE.
  */
+#include <unordered_map>
 #include "Catalog.h"
 #include "ParseTree.h"
 #include "QueryOptimizer.h"
 #include "RelOp.h"
-#include <map>
-#include <utility>
 
 using namespace std;
 
@@ -24,22 +23,18 @@ private:
 	Catalog* catalog;
 	QueryOptimizer* optimizer;
 
-	map <string, Scan> scanMap;	
-	map <string, Select> selectMap;
-
-	//vector<ScanIndex> si;
-
-	//int checkindex;
-
 public:
 	QueryCompiler(Catalog& _catalog, QueryOptimizer& _optimizer);
 	virtual ~QueryCompiler();
+
+	// a recursive function to create Join operators (w/ Select) from optimization result
+	RelationalOp* buildJoinTree(OptimizationTree*& _tree, 
+		AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth);
 
 	void Compile(TableList* _tables, NameList* _attsToSelect,
 		FuncOperator* _finalFunction, AndList* _predicate,
 		NameList* _groupingAtts, int& _distinctAtts,
 		QueryExecutionTree& _queryTree);
-        RelationalOp* constTree(OptimizationTree* root, AndList* _predicate);
 };
 
 #endif // _QUERY_COMPILER_H

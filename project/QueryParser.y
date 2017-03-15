@@ -16,6 +16,7 @@
 	struct NameList* groupingAtts; // grouping attributes
 	struct NameList* attsToSelect; // the attributes in SELECT
 	int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query 
+	char* command;
 %}
 
 
@@ -79,6 +80,10 @@ SQL: SELECT SelectAtts FROM Tables WHERE AndList
 	tables = $4;
 	predicate = $6;	
 	groupingAtts = $9;
+}
+| YY_NAME
+{
+	command = $1;
 };
 
 

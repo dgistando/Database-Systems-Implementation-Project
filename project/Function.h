@@ -40,6 +40,8 @@ public:
 
 	// applies the function to the given record and returns the result
 	Type Apply (Record& toMe, int& intResult, double &doubleResult);
+
+	string GetType() { if(returnsInt == 1) { return "INTEGER"; } else { return "FLOAT"; } }
 };
 
 #endif // _FUNCTION_H

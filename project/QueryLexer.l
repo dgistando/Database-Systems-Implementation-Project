@@ -15,7 +15,6 @@
 
 int lineno = 1;
 void yyerror(char* s);
-
 %}
 
 
@@ -34,6 +33,8 @@ void yyerror(char* s);
  */
 
 %%
+
+"sqlite-jarvis> " ; // ignore cmd-line prefix
 
 "SELECT"		return(SELECT);
 

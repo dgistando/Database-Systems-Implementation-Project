@@ -2,7 +2,7 @@
 #define _INEFFICIENT_MAP_H
 
 #include "Swap.h"
-#include "TwoWayList.h"
+#include "TwoWayList.cc"
 
 using namespace std;
 

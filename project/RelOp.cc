@@ -1,6 +1,5 @@
 #include <iostream>
 #include "RelOp.h"
-#include "Schema.h"
 
 using namespace std;
 
@@ -11,132 +10,240 @@ ostream& operator<<(ostream& _os, RelationalOp& _op) {
 
 
 Scan::Scan(Schema& _schema, DBFile& _file) {
-		schema = schema;
-		file = _file;
-
+	schema = _schema;
+	file = _file;
 }
 
 Scan::~Scan() {
-    cout << "Destroy Select" << endl;
 }
 
 ostream& Scan::print(ostream& _os) {
-	_os << schema;
-	return _os << "SCAN";
+	return _os << file.GetTableName();
 }
 
 
 Select::Select(Schema& _schema, CNF& _predicate, Record& _constants,
 	RelationalOp* _producer) {
-		schema = _schema;
-		predicate = _predicate;
-		constants = _constants;
-		producer = _producer;
-
+	schema = _schema;
+	predicate = _predicate;
+	constants = _constants;
+	producer = _producer;
 }
 
 Select::~Select() {
-	//delete producer;
 }
 
 ostream& Select::print(ostream& _os) {
-	return _os << "SELECT";
+	_os << "σ [";
+	for(int i = 0; i < predicate.numAnds; i++) {
+		if(i > 0) {
+			_os << " AND ";
+		}
+
+		Comparison comp = predicate.andList[i];
+		vector<Attribute> atts = schema.GetAtts();
+		if(comp.operand1 != Literal) {
+			_os << atts[comp.whichAtt1].name;
+		} else { // see Record::print for more info
+			int pointer = ((int *) constants.GetBits())[comp.whichAtt1 + 1];
+			if (atts[comp.whichAtt1].type == Integer) {
+				int *myInt = (int *) &(constants.GetBits()[pointer]);
+				_os << *myInt;
+			} else if (atts[comp.whichAtt1].type == Float) {
+				double *myDouble = (double *) &(constants.GetBits()[pointer]);
+				_os << *myDouble;
+			} else if (atts[comp.whichAtt1].type == String) {
+				char *myString = (char *) &(constants.GetBits()[pointer]);
+				_os << myString;
+			}
+		}
+
+		if (comp.op == LessThan) {
+			_os << " < ";
+		} else if (comp.op == GreaterThan) {
+			_os << " > ";
+		} else if (comp.op == Equals) {
+			_os << " = ";
+		} else {
+			_os << " ? ";
+		}
+
+		if(comp.operand2 != Literal) {
+			_os << atts[comp.whichAtt2].name;
+		} else { // see Record::print for more info
+			int pointer = ((int *) constants.GetBits())[comp.whichAtt2 + 1];
+			if (atts[comp.whichAtt1].type == Integer) {
+				int *myInt = (int *) &(constants.GetBits()[pointer]);
+				_os << *myInt;
+			} else if (atts[comp.whichAtt1].type == Float) {
+				double *myDouble = (double *) &(constants.GetBits()[pointer]);
+				_os << *myDouble;
+			} else if (atts[comp.whichAtt1].type == String) {
+				char *myString = (char *) &(constants.GetBits()[pointer]);
+				_os << "\'" << myString << "\'";
+			}
+		}
+	}
+	_os << "] ── " << *producer;
+	return _os;
+	// return _os << "σ [...] ── " << *producer; // print without predicates
 }
 
 
 Project::Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 	int _numAttsOutput, int* _keepMe, RelationalOp* _producer) {
-		
-		schemaIn = _schemaIn;
-		schemaOut = _schemaOut;
-		numAttsInput = _numAttsInput;
-		numAttsOutput = _numAttsOutput;
-		producer = _producer;
-
+	schemaIn = _schemaIn;
+	schemaOut = _schemaOut;
+	numAttsInput = _numAttsInput;
+	numAttsOutput = _numAttsOutput;
+	keepMe = _keepMe;
+	producer = _producer;
 }
 
 Project::~Project() {
-	delete producer;
 }
 
 ostream& Project::print(ostream& _os) {
-	return _os << "PROJECT";
+	_os << "π [";
+	vector<Attribute> atts = schemaOut.GetAtts();
+	for(auto it = atts.begin(); it != atts.end(); it++) {
+		if(it != atts.begin())
+			_os << ", ";
+		_os << it->name;
+	}
+	_os << "]\n\t │\n\t" << *producer;
+	return _os;
+	// return _os << "π [...]\n\t │\n\t" << *producer; // print without predicates
 }
 
 
 Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
-		
-		schemaLeft = _schemaLeft;
-		schemaRight = _schemaRight;
-		schemaOut = _schemaOut;
-		predicate = _predicate;
-		left = _left;
-		right = _right;
-
+	schemaLeft = _schemaLeft;
+	schemaRight = _schemaRight;
+	schemaOut = _schemaOut;
+	predicate = _predicate;
+	left = _left;
+	right = _right;
 }
 
 Join::~Join() {
-	delete left;
-	delete right;
 }
 
 ostream& Join::print(ostream& _os) {
-	return _os << "JOIN";
+	_os << "⋈ [";
+	for(int i = 0; i < predicate.numAnds; i++) {
+		if(i > 0) {
+			_os << " AND ";
+		}
+
+		Comparison comp = predicate.andList[i];
+
+		if(comp.operand1 == Left) {
+			_os << schemaLeft.GetAtts()[comp.whichAtt1].name;
+		} else if(comp.operand1 == Right) {
+			_os << schemaRight.GetAtts()[comp.whichAtt1].name;
+		}
+
+		if (comp.op == LessThan) {
+			_os << " < ";
+		} else if (comp.op == GreaterThan) {
+			_os << " > ";
+		} else if (comp.op == Equals) {
+			_os << " = ";
+		} else {
+			_os << " ? ";
+		}
+
+		if(comp.operand2 == Left) {
+			_os << schemaLeft.GetAtts()[comp.whichAtt2].name;
+		} else if(comp.operand2 == Right) {
+			_os << schemaRight.GetAtts()[comp.whichAtt2].name;
+		}
+	}
+	_os << "]";
+	_os << ", Number of Tuples = "<<numTuples;
+	// _os << "⋈ [...]"; // print without predicates
+
+	_os << "\n";
+	for(int i = 0; i < depth+1; i++)
+		_os << "\t";
+	_os << " ├──── " << *right;
+
+	_os << "\n";
+	for(int i = 0; i < depth+1; i++)
+		_os << "\t";
+	_os << " └──── " << *left;
+
+	return _os;
 }
 
 
 DuplicateRemoval::DuplicateRemoval(Schema& _schema, RelationalOp* _producer) {
 	schema = _schema;
 	producer = _producer;
-
 }
 
 DuplicateRemoval::~DuplicateRemoval() {
-	delete producer;
 }
 
 ostream& DuplicateRemoval::print(ostream& _os) {
-	return _os << "DISTINCT";
+	return _os << "δ \n\t │\n\t" << *producer;
 }
 
 
 Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 	RelationalOp* _producer) {
-		
-		schemaIn = _schemaIn;
-		schemaOut = _schemaOut;
-		compute = _compute;
-		producer = _producer;
-
+	schemaIn = _schemaIn;
+	schemaOut = _schemaOut;
+	compute = _compute;
+	producer = _producer;
 }
 
 Sum::~Sum() {
-delete producer;
-
 }
 
 ostream& Sum::print(ostream& _os) {
-	return _os << "SUM";
+	_os << "SUM(";
+	// do something
+	_os << ")\n\t │\n\t" << *producer;;
+	return _os;
+
+	// return _os << "SUM(...)\n\t │\n\t" << *producer; // print without predicates
 }
 
 
 GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,
-	Function& _compute, RelationalOp* _producer) {
-		
-		schemaIn = _schemaIn;
-		schemaOut = _schemaOut;
-		groupingAtts = _groupingAtts;
-		compute = _compute;
-		producer = _producer;
+	Function& _compute,	RelationalOp* _producer) {
+	schemaIn = _schemaIn;
+	schemaOut = _schemaOut;
+	groupingAtts = _groupingAtts;
+	compute = _compute;
+	producer = _producer;
 }
 
 GroupBy::~GroupBy() {
-	delete producer;
 }
 
 ostream& GroupBy::print(ostream& _os) {
-	return _os << "GROUP BY";
+	_os << "γ [";
+	vector<Attribute> atts = schemaOut.GetAtts();
+	for(auto it = atts.begin(); it != atts.end(); it++) {
+		if(it != atts.begin())
+			_os << ", ";
+
+		string attrName = it->name;
+		if(attrName == "sum") {
+			_os << "SUM(";
+
+			_os << ")";
+		} else {
+			_os << attrName;
+		}
+	}
+	_os << "]\n\t │\n\t" << *producer;
+	return _os;
+	// return _os << "γ [...]\n\t │\n\t" << *producer; // print without predicates
 }
 
 
@@ -147,22 +254,13 @@ WriteOut::WriteOut(Schema& _schema, string& _outFile, RelationalOp* _producer) {
 }
 
 WriteOut::~WriteOut() {
-	delete producer;
 }
 
 ostream& WriteOut::print(ostream& _os) {
-	return _os << "OUTPUT";
+	return _os << endl << "\t" << *producer << endl << endl;
 }
 
 
 ostream& operator<<(ostream& _os, QueryExecutionTree& _op) {
-        Record r;
-        Schema sch;
-        _op.root->returnSchema(sch);
-	while (_op.root->GetNext(r)){
-            r.print(_os,sch);
-        }
-
-	return _os;
+	return _os << "QUERY EXECUTION TREE {" << endl << *_op.root << "}" << endl;
 }
-

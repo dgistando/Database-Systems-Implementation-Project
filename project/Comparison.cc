@@ -534,9 +534,7 @@ int CNF::ExtractCNF (AndList& parseTree, Schema& schema, Record& literal) {
 			// see if it is an integer
 			andList[numAnds].operand2 = Literal;
 			andList[numAnds].whichAtt2 = numFieldsInLiteral;
-                        
-                        if(typeLeft == Float) { typeRight = Float; }
-			else { typeRight = Integer; }
+			typeRight = Integer;
 
 			// add to record literal
 			attStart[numFieldsInLiteral] = recSize;

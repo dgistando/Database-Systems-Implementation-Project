@@ -4,25 +4,18 @@
 #include "Schema.h"
 #include "Catalog.h"
 #include "ParseTree.h"
+#include "Comparison.h"
 #include "RelOp.h"
 
 #include <string>
 #include <vector>
 #include <map>
 
+typedef unsigned long long unll;
+
 using namespace std;
 
-struct mapkey{
-    string tableName;
-    string key;
-};
-struct opt{
-    unsigned long long size;
-    unsigned long long cost;
-    Schema schema;
-    string key;
-    bool singleTable;
-};
+
 // data structure used by the optimizer to compute join ordering
 struct OptimizationTree {
 	// list of tables joined up to this node
@@ -37,58 +30,36 @@ struct OptimizationTree {
 	OptimizationTree* leftChild;
 	OptimizationTree* rightChild;
 };
-
+struct tupleValue {
+	unsigned long long size;
+	unsigned long long cost;
+	OptimizationTree *order;
+	Schema schema;
+};
 class QueryOptimizer {
 private:
 	Catalog* catalog;
-        map<string,opt> tableOptMap;
-        map<string,string> tableNamesMap;
-        vector<mapkey> mapKey;
+
+	std::map <string, tupleValue> tableMap;
+	AndList* predicate;
+	TableList* tables;
+	unsigned long long permsize;
 
 public:
 	QueryOptimizer(Catalog& _catalog);
 	virtual ~QueryOptimizer();
 
-	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree*& _root);
-        /* Initializes mapKey vector, tableOpt map, tableNames map.
-         * mapKey stores tableName relation to the key in tableOpt and tableNames map
-         * tableOpt maps original and generated table permutation keys to an Opt structure
-         * tableNames maps key to to original tables
-         */
-        void InitializeMaps(TableList* _tables);
-        /* Calculates the size for each table given by the TableList
-         * Does push down selections 
-         */
-        void CalculateSizeForOriginalTables(TableList* _tables, AndList* _predicate);
-        /* Calculates size for combination of tables using (#Tuples1 * #Tuples2)/ (Max(#Distinct1,#distinct2))
-         * iterates tru TableList and combines with other tables.
-         */
-        void CalculateSizeForTableCombination(TableList* _tables, AndList* _predicate);
-        /* Prints the table nam, cost, and key
-         * Changes over each step
-         */
-        void PrintTables();
-        /* Iterates tru the tree and prints out tables stored in leafs
-         */
-        void PrintOptimizationTree(OptimizationTree* & _root);
-        /* Unfinished: calls RegenerateLeaf()
-         */
-        void RegenerateTree(string _tableIndecies, OptimizationTree* & _root);
-        /* Rebuild the tree leafs using tableOpt map to get size and string to get the key for name
-         */
-        void RegenerateLeaf(string _tableIndecies, OptimizationTree* & _root);
-        /* partition algo
-         */
-        void Partition(string _tableIndecies);
-        /* Computes permutations
-         * Use output as your return value
-         * pass bin.size(0 as size_bin
-         */
-        void Permute(vector<vector<string> >& output,vector<string> bin,int size_bin);
-        /* std: :string permutation algo
-         */
-        bool Permute(string& array);
-        int Factorial(int n);
+	void Optimize(TableList* _tables, AndList* _predicate, OptimizationTree* _root);
+	unll PushDownSelections(string &tblname);
+	void TablePairInitialization();
+	void Partition(int N, vector<string> &tables);
+	vector<string> fillVector(vector<string> &vec, vector<int> &idx, int x, int y);
+	string GetKey(vector<string> tableNames);
+	void CalcPermutations(int n, vector<vector<int>> &allPerms);
+	void heapPermutation(vector<vector<int>> &allPerms, vector<int> &a, int size, int n);
+	unll Estimate_Join_Cardinality(Schema &sch1, Schema &sch2, unll tblsize);
+	unll factorial(int n);
+
 };
 
 #endif // _QUERY_OPTIMIZER_H

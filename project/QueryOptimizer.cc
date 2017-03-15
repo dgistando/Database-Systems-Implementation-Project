@@ -1,7 +1,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <climits>
+#include <algorithm>
+#include <limits.h>
 
 #include "Schema.h"
 #include "Comparison.h"
@@ -9,272 +10,296 @@
 
 using namespace std;
 
+
 QueryOptimizer::QueryOptimizer(Catalog& _catalog) : catalog(&_catalog) {
-	catalog = &_catalog;
 }
 
 QueryOptimizer::~QueryOptimizer() {
-
 }
 
 void QueryOptimizer::Optimize(TableList* _tables, AndList* _predicate,
-	OptimizationTree*& _root) {
-    InitializeMaps(_tables);
-    cout << "\n\t--Initialized Maps--\n" << endl;
-    PrintTables();
-    CalculateSizeForOriginalTables(_tables,_predicate);
-    cout << "\n\t--Calculated Size For Original Tables--\n" << endl;
-    PrintTables();
-    CalculateSizeForTableCombination(_tables,_predicate);
-    cout << "\n\t--Calculated Size For Table Combinations--\n" << endl;
-    PrintTables();
-    
-    string keys = "";
-    for(int i = 0; i < mapKey.size(); i++){ if(tableOptMap[mapKey.at(i).key].singleTable) {keys += mapKey.at(i).key; }}
-    Partition(keys);
-        cout << "\n\t--Partition Algo Executed--\n" << endl;
-    PrintTables();
-    _root = new OptimizationTree;
-    _root -> leftChild = NULL;
-    _root -> rightChild = NULL;
-    for (int i = 0; i < keys.size(); i++)  { _root -> tables.push_back(tableNamesMap[ {keys[i]} ] ); }
-    _root -> noTuples = tableOptMap[keys].size;
-    keys = tableOptMap[keys].key;
-    
-    cout << "\n\t--Rebuilding the Tree--\n" << endl;
-    RegenerateTree(keys, _root);
-    cout << "\n\t--Printing the Join Order--\n" << endl;
-    PrintOptimizationTree(_root);
-    _root = _root;
-}
-void QueryOptimizer::InitializeMaps(TableList* _tables){
-    int index = 0;
-    TableList * _tempTables = _tables;
-    while(_tempTables != NULL){
-        string _tableName = _tempTables->tableName;
+	OptimizationTree* _root) {
+	predicate = _predicate;
+	tables = _tables;
+	int numTables = 0;
+	vector<string> tableNames;
 
-        Schema _schema;
-        catalog->GetSchema(_tableName, _schema);
-        string _key = extensions::to_string(index);
-        tableOptMap[_key].size = _schema._noTuples; 
-        tableOptMap[_key].cost = 0;
-        tableOptMap[_key].schema = _schema;
-        tableOptMap[_key].key = _key;
-        tableOptMap[_key].singleTable = true;
-
-        tableNamesMap[_key] = _tableName;
-        
-        mapkey node;
-        node.tableName = _tableName;
-        node.key = _key;
-        mapKey.push_back(node);
-        
-        index++;
-        _tempTables = _tempTables->next;
-    }
-}
-void QueryOptimizer::CalculateSizeForOriginalTables(TableList* _tables, AndList* _predicate){
-    TableList * _tempTables = _tables;
-    CNF _cnf;
-    while(_tempTables != NULL){
-        Schema _schema;
-        Record _record;
-        int _div = 1;
-        string tableName(_tempTables->tableName);
-        catalog->GetSchema(tableName,_schema);
-        if(_cnf.ExtractCNF(*_predicate,_schema,_record) == 0){
-            if(_cnf.numAnds > 0){ // shud be just 1 Ands for this cnf
-                for(int i = 0; i < _cnf.numAnds;i++){
-                    if(_cnf.andList[i].operand1 == Left || _cnf.andList[i].operand1 == Right){
-                        if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                        else{ _div = _schema.GetAtts()[_cnf.andList[i].whichAtt1].noDistinct; }
-                    }
-                    if(_cnf.andList[i].operand2 == Left || _cnf.andList[i].operand2 == Right){
-                        if(_cnf.andList[i].op == LessThan || _cnf.andList[i].op == GreaterThan){ _div = 3; }
-                        else{ _div = _schema.GetAtts()[_cnf.andList[i].whichAtt2].noDistinct; }
-                    }   // map the size
-                } int i = 0; while(1){ if(tableName == mapKey.at(i).tableName){ tableOptMap[extensions::to_string(i)].size /= _div; break; } i++; }
-            }
-        }
-        _tempTables = _tempTables->next;
-    }
-}
-void QueryOptimizer::PrintTables(){
-        cout<<"\n\t-Table List:-\n";
-	for (int i=0; i<mapKey.size(); i++) cout<<"TableName: "<<mapKey.at(i).tableName<<"\tMapKey: "<<mapKey.at(i).key<<endl;
-	cout<<endl;
-        cout<<"-\t-SIZE-\t\t\t-COST-"<<endl;
-	for (std::map<string, opt>::iterator it=tableOptMap.begin(); it!=tableOptMap.end(); ++it)
-	{
-		cout<<it->first<<"-\t-"<<it->second.size<<"-\t\t-"<<it->second.cost<<"-"<<endl;
+	//Initializing tableMap from _tables
+	for (TableList *tbl = tables; tbl != NULL; tbl = tbl->next, numTables++) {
+		string tblname(tbl->tableName);
+		tableNames.push_back(tblname);
+		unll tblsize = PushDownSelections(tblname);
+		tableMap[tblname].size = tblsize;
+		tableMap[tblname].cost = 0;
+		OptimizationTree *node = new OptimizationTree;
+		node->tables.push_back(tblname);
+		node->noTuples = tblsize;
+		node->tuples.push_back(tblsize);
+		node->leftChild = NULL;
+		node->rightChild = NULL;
+		tableMap[tblname].order = node;
 	}
 
-	cout<<"\n------------------------------------------------\n";
-}
-void QueryOptimizer::CalculateSizeForTableCombination(TableList* _tables, AndList* _predicate){
-    TableList * _tempTables = _tables; int check = 0;
-    CNF _cnf;
-    while (_tempTables->next != NULL){
-        if (check == 0 && _tempTables->next == NULL) { break; } check = 1;
-        Schema _schema;
-	int _div = 0;
-        string _tableName(_tempTables->tableName);
-        catalog->GetSchema(_tableName, _schema);
-        
-        TableList * _tempTablesTwo = new TableList();
-        _tempTablesTwo = _tempTables->next;//next table
-        while(_tempTablesTwo != NULL){
-            Schema _schemaTwo;
-            unsigned long long _tupsOne, _tupsTwo, _noDisOne, _noDisTwo;
-            string _tableNameTwo = _tempTablesTwo->tableName;
-            catalog->GetSchema(_tableNameTwo,_schemaTwo);
-
-            if(_cnf.ExtractCNF(*_predicate,_schema,_schemaTwo) == 0){
-                vector<Attribute> _attr1,_attr2;
-                _attr1 = _schema.GetAtts();
-                _attr2 = _schemaTwo.GetAtts();
-                int i = 0; string _key = "";
-                while(1){ if(_tableName == mapKey.at(i).tableName) {  _key += mapKey.at(i).key;   _tupsOne = tableOptMap[mapKey.at(i).key].size;  break; } i++;} i = 0;
-                while(1){ if(_tableNameTwo == mapKey.at(i).tableName) {  _key += mapKey.at(i).key; _tupsTwo = tableOptMap[mapKey.at(i).key].size; break; } i++;}
-                if(_cnf.numAnds > 0) { 
-                    for (int i = 0 ; i < _cnf.numAnds; i++) {
-                        if (_cnf.andList[i].operand1 == Left)  {
-                            _noDisOne = _attr1[_cnf.andList[i].whichAtt1].noDistinct;
-                            _noDisTwo = _attr2[_cnf.andList[i].whichAtt2].noDistinct;
-                        }
-
-                        if (_cnf.andList[i].operand1 == Right) {
-                            _noDisOne = _attr1[_cnf.andList[i].whichAtt2].noDistinct;
-                            _noDisTwo = _attr2[_cnf.andList[i].whichAtt1].noDistinct;
-                        }
-                        if (_noDisOne > _noDisTwo){ _div = _noDisOne; } else { _div = _noDisTwo; }
-                    }
-                }
-                if (_cnf.numAnds == 0) { _div = 1; }
-                tableOptMap[_key].size = (_tupsOne * _tupsTwo)/_div;
-                tableOptMap[_key].cost = 0;
-                tableOptMap[_key].key = _key;
-                mapkey node;
-                node.key = _key;
-                node.tableName = _tableName + "," + _tableNameTwo;
-                mapKey.push_back(node);
-            }
-           _tempTablesTwo = _tempTablesTwo->next;
-        }
-        _tempTables = _tempTables->next;
-    }
-}
-void QueryOptimizer::PrintOptimizationTree(OptimizationTree* & _root)
-{
-
-    if (_root -> leftChild == NULL && _root -> rightChild == NULL) { cout<<"TableName: "<<_root -> tables[0]<<" -JOIN- "; return; }
-    PrintOptimizationTree(_root->leftChild);
-    PrintOptimizationTree(_root->rightChild);
-
-}
-void QueryOptimizer::Partition(string _tableIndecies){
-    string _copyIndecies = _tableIndecies;
-    unsigned long long min_cost = LLONG_MAX,
-            cost,
-            size;
-    string key;
-
-    sort(_copyIndecies.begin(), _copyIndecies.end());
-
-    map<string,opt>::iterator it = tableOptMap.find(_copyIndecies);
-    if(it != tableOptMap.end()) return;
-
-    int N = _tableIndecies.size();
-    bool lastPerm = true;
-
-    while (lastPerm)
-    {	
-            for (int j = 0; j <= N - 2; j++)
-            {
-                    string left=""; for (int ind = 0; ind <= j; ind++) left+= _tableIndecies[ind]; Partition(left);
-                    string right=""; for (int ind = j+1; ind < N; ind++) right+= _tableIndecies[ind]; Partition(right);
-                    sort(left.begin(), left.end());
-                    sort(right.begin(), right.end());
-                    cost = tableOptMap[left].cost + tableOptMap[right].cost;
-                    if (j!=0) cost += tableOptMap[left].size;
-                    if (j!=N-2) cost += tableOptMap[right].size;
-                    if (cost < min_cost){
-                            size = tableOptMap[left].size*tableOptMap[right].size;
-                            key = tableOptMap[left].key + "," + tableOptMap[right].key;
-                            min_cost = cost;
-                    }
-            }
-            lastPerm = Permute(_tableIndecies);
-    }
-    tableOptMap[_copyIndecies].key = key;
-    tableOptMap[_copyIndecies].size = size;
-    tableOptMap[_copyIndecies].cost = min_cost;
-}
-void QueryOptimizer::RegenerateTree(string _tableIndecies, OptimizationTree*& _root){
-    RegenerateLeaf(_tableIndecies,_root);
-}
-void QueryOptimizer::RegenerateLeaf(string _tableIndecies, OptimizationTree* & _root)
-{
-	string left,right;
-	int pos = _tableIndecies.find(",");
-        //string not found
-	if (pos != string::npos) {
-		left = _tableIndecies.substr(0,pos);
-		right = _tableIndecies.substr(_tableIndecies.find(",")+1);
-                cout<<"-----------------------------------------"<<endl;
-		cout<<"\t-Left Leaf- "<<left<<" -Right Leaf- "<<right<<endl;
-                cout<<"-----------------------------------------"<<endl;
-		_root -> leftChild = new OptimizationTree;
-		RegenerateLeaf(left, _root -> leftChild);
-		_root -> rightChild = new OptimizationTree;
-		RegenerateLeaf(right, _root -> rightChild);
-		return;
+	if(numTables == 0) {
+		_root = NULL;
 	}
-		
-	for (int i=0; i<_tableIndecies.size(); i++){ _root -> tables.push_back(tableNamesMap[ {_tableIndecies[i]} ]); }
-	if (_tableIndecies.size() == 1) {
-		_root -> noTuples = tableOptMap[_tableIndecies].size;
-		_root -> leftChild = NULL;
-		_root -> rightChild = NULL;
-		return;
+	else if(numTables == 1) {
+		*_root = *tableMap[tables->tableName].order;
 	}
-	_root -> leftChild = new OptimizationTree;
-	_root -> rightChild = new OptimizationTree;
-	_root -> leftChild -> leftChild = NULL;
-	_root -> leftChild -> rightChild = NULL;
-	_root -> rightChild -> leftChild = NULL;
-	_root -> rightChild -> rightChild = NULL;
-	_root -> leftChild -> tables.push_back(_root -> tables[0]);
-	_root -> leftChild -> noTuples = tableOptMap[{_tableIndecies[0]}].size;
-	_root -> rightChild -> tables.push_back(_root -> tables[1]);
-	_root -> rightChild -> noTuples = tableOptMap[{_tableIndecies[1]}].size;
+	else if(numTables == 2) {
+		TablePairInitialization();
+		string table1 = tables->tableName;
+		string table2 = tables->next->tableName;
+		if (tableMap.find(table1 + table2) != tableMap.end()){
+			*_root = *tableMap[table1+table2].order;
+		}
+		else {
+			*_root = *tableMap[table2+table1].order;
+		}
+	}
+	else {
+		TablePairInitialization();
+		Partition(numTables, tableNames);
+		string tablekey = GetKey(tableNames);
+		*_root = *tableMap[tablekey].order;
+	}
 
 }
-bool QueryOptimizer::Permute(string& array)
+
+unll QueryOptimizer::PushDownSelections(string &tblname) {
+	Schema sch;
+	Record rec;
+	catalog->GetSchema(tblname, sch);
+	tableMap[tblname].schema = sch;
+	unsigned int numTuples;
+	catalog->GetNoTuples(tblname, numTuples);
+	CNF cnf;
+	cnf.ExtractCNF(*predicate, sch, rec);
+	for(int i = 0; i < cnf.numAnds; i++) { //TODO - need to test cnf, specially because of schema variable duplicacy
+		if(cnf.andList[i].op == Equals) {
+			vector <Attribute> atts = sch.GetAtts();
+			if (cnf.andList[i].operand1 != Literal)
+				numTuples /= atts[cnf.andList[i].whichAtt1].noDistinct;
+			else
+				numTuples /= atts[cnf.andList[i].whichAtt2].noDistinct;
+		}
+		else {
+			numTuples /= 3;
+		}
+	}
+	return numTuples;
+}
+
+void QueryOptimizer::TablePairInitialization() {
+
+	for(TableList *tbl1 = tables; tbl1 != NULL; tbl1 = tbl1->next) {
+		for(TableList *tbl2 = tbl1->next; tbl2 != NULL; tbl2 = tbl2->next) {
+
+			string table1 = tbl1->tableName;
+			Schema sch1 = Schema(tableMap[table1].schema);
+			vector<Attribute> attr1 = sch1.GetAtts();
+
+			string table2 = tbl2->tableName;
+			Schema sch2 = Schema(tableMap[table2].schema);
+			vector<Attribute> attr2 = sch2.GetAtts();
+
+			vector<string> tableNames;
+			tableNames.push_back(table1);
+			tableNames.push_back(table2);
+			string tablekey = GetKey(tableNames);
+			tableMap[tablekey].size = tableMap[table1].size * tableMap[table2].size;
+			tableMap[tablekey].size = Estimate_Join_Cardinality(sch1, sch2, tableMap[tablekey].size);
+			tableMap[tablekey].cost = 0;
+
+			OptimizationTree *node = new OptimizationTree;
+			node->tables = tableNames;
+			node->tuples.push_back(tableMap[table1].size);
+			node->tuples.push_back(tableMap[table2].size);
+			node->noTuples = tableMap[tablekey].size;
+			node->leftChild = tableMap[table1].order;
+			tableMap[table1].order->parent = node;
+			node->rightChild = tableMap[table2].order;
+			tableMap[table2].order->parent = node;
+			node->parent = NULL;
+			tableMap[tablekey].order  = node;
+
+			sch1.Append(sch2);
+			tableMap[tablekey].schema = sch1;
+		}
+	}
+}
+
+void QueryOptimizer::Partition(int N, vector<string> &tables){
+	string tablekey = GetKey(tables);
+	if (tableMap.find(tablekey) == tableMap.end()) {
+		vector<vector<int>> allPerms;
+		CalcPermutations(N, allPerms);
+		unll min_cost = ULLONG_MAX, cost = 0;
+		unll permsize = factorial(N);
+		for (unll i = 0; i < permsize; i++) {
+			vector<int> perm_i = allPerms[i];
+			for (int j = 1; j < N; j++) {
+				vector<string> left = fillVector(tables, perm_i, 0, j-1);
+				string leftKey = GetKey(left);
+				if (tableMap.find(leftKey) == tableMap.end())
+					Partition(j, left);
+				vector<string> right = fillVector(tables, perm_i, j, N-1);
+				string rightKey = GetKey(right);
+				if (tableMap.find(rightKey) == tableMap.end())
+					Partition(N-j, right);
+
+				cost = tableMap[leftKey].cost + tableMap[rightKey].cost;
+				if (j != 1) cost += tableMap[leftKey].size;
+				if (j != N-1) cost += tableMap[rightKey].size;
+				if (cost < min_cost) {
+					min_cost = cost;
+					Schema sch1 = Schema(tableMap[leftKey].schema);
+					Schema sch2 = Schema(tableMap[rightKey].schema);
+					tableMap[tablekey].size = Estimate_Join_Cardinality(sch1, sch2, tableMap[leftKey].size * tableMap[rightKey].size);
+					tableMap[tablekey].cost = min_cost;
+					sch1.Append(sch2);
+					tableMap[tablekey].schema = sch1;
+
+					OptimizationTree *node = new OptimizationTree;
+					node->tables = tables;
+					node->noTuples = tableMap[tablekey].size;
+					node->leftChild = tableMap[leftKey].order;
+					tableMap[leftKey].order->parent = node;
+					node->rightChild = tableMap[rightKey].order;
+					tableMap[rightKey].order->parent = node;
+					node->parent = NULL;
+					vector<int> ltuples = vector<int>(tableMap[leftKey].order->tuples);
+					vector<int> rtuples = vector<int>(tableMap[rightKey].order->tuples);
+					ltuples.insert(ltuples.end(), rtuples.begin(), rtuples.end());
+					node->tuples = ltuples;
+					tableMap[tablekey].order = node;
+				}
+			}
+		}
+	}
+}
+
+vector<string> QueryOptimizer::fillVector(vector<string> &vec, vector<int> &idx, int x, int y) {
+	vector<string> newVec;
+	for(int i = x; i < y+1; i++) {
+		newVec.push_back(vec[idx[i]]);
+	}
+	return newVec;
+}
+
+string QueryOptimizer::GetKey(vector<string> tableNames) {
+	string tablekey = "";
+	sort(tableNames.begin(), tableNames.end());
+	for(vector<string>::iterator it1 = tableNames.begin(); it1 != tableNames.end(); ++it1) {
+		tablekey += *it1;
+	}
+	return tablekey;
+}
+
+
+void QueryOptimizer::CalcPermutations(int n, vector<vector<int>> &allPerms) {
+	vector<int> arr;
+	for(int i = 0; i < n; i++) {
+		arr.push_back(i);
+	}
+	heapPermutation(allPerms, arr, n, n);
+}
+// Heap's Algorithm for generating permutations - fastest
+void QueryOptimizer::heapPermutation(vector<vector<int>> &allPerms, vector<int> &a, int size, int n)
 {
-    int k = -1, l = 0;
-    for (int i = 0; i < array.size()-1; i++)
-            if(array[i]<array[i+1]) k = i;	
+    if (size == 1)
+    {
+				vector<int> newvec(a);
+				allPerms.push_back(newvec);
+        return;
+    }
 
-    if (k == -1) return false;		
+    for (int i=0; i<size; i++)
+    {
+        heapPermutation(allPerms, a,size-1,n);
 
-    for (int i = k+1; i < array.size(); i++)
-            if(array[k]<array[i]) l = i;	
+        if (size%2==1)
+            swap(a[0], a[size-1]);
 
-    swap(array[k],array[l]);
-
-    int count = 1, temp = k+1;
-    for (int i=0; i<(array.size()-k-1)/2; i++,count++,temp++)
-            swap(array[temp],array[array.size()-count]);
-
-    return true;
-}
-int QueryOptimizer::Factorial(int n){if(n < 0) { return 0; } return !n ? 1 : n * Factorial(n - 1); }
-void QueryOptimizer::Permute(vector<vector<string> >& output, vector<string> bin,int size_bin){
-    if(size_bin == 1){ output.push_back(bin); return; }
-    for(int i = 0; i < size_bin - 1; i ++){
-        Permute(output,bin,size_bin -1);
-        if(size_bin % 2 == 1) { swap(bin.at(0),bin.at(size_bin-1)); }
-        else { swap(bin.at(i),bin.at(size_bin-1)); }
+        else
+            swap(a[i], a[size-1]);
     }
 }
+
+unll QueryOptimizer::Estimate_Join_Cardinality(Schema &sch1, Schema &sch2, unll tblsize) {
+	CNF cnf;
+	cnf.ExtractCNF(*predicate, sch1, sch2);
+	vector<Attribute> attr1 = sch1.GetAtts();
+	vector<Attribute> attr2 = sch2.GetAtts();
+	for (int i = 0; i < cnf.numAnds; i++) {
+		if (cnf.andList[i].operand1 == Left)
+		{
+			tblsize /= max(attr1[cnf.andList[i].whichAtt1].noDistinct, attr2[cnf.andList[i].whichAtt2].noDistinct);
+		}
+		if (cnf.andList[i].operand1 == Right)
+		{
+			tblsize /= max(attr2[cnf.andList[i].whichAtt1].noDistinct, attr1[cnf.andList[i].whichAtt2].noDistinct);
+		}
+	}
+	return tblsize;
+}
+
+
+unll QueryOptimizer::factorial(int n) {
+	unll ans;
+	if (n > 11) {
+		ans = 1;
+		for (int i = 2; i <= n; i++){
+			ans *= i;
+		}
+	}
+	else {
+		unll factorial[12] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800};
+		ans = factorial[n];
+	}
+	return ans;
+}
+
+
+// void QueryOptimizer::HardPermutations(int n, vector<vector<int>> &allPerms) {
+// 	switch(n){
+// 		case 2: allPerms = {
+// 												{0, 1},
+// 												{1, 0}
+// 											 };
+// 						break;
+// 		case 3: allPerms = {
+// 												{0, 1, 2},
+// 												{1, 0, 2},
+// 												{0, 2, 1},
+// 												{1, 2, 0},
+// 												{2, 1, 0},
+// 												{2, 0, 1}
+// 											 };
+// 						break;
+// 		default: CalcPermutations(n, allPerms);
+// 	}
+// }
+
+// void QueryOptimizer::CalcPermutations(int n, vector<vector<int>> &allPerms) {
+// 	// str filename = to_string(factorial(n)) + "X" + to_string(n);
+// 	// ifstream file;
+// 	// file.open(filename);
+// 	// if (file.is_open()){
+// 	// 	file.
+// 	// }
+// 	// else {
+// 		vector<int> arr;
+// 		for(int i = 0; i < n; i++) {
+// 			arr.push_back(i);
+// 		}
+// 		heapPermutation(allPerms, arr, n, n);
+// 		// ofstream file
+// 		// for(vector<vector<int>>::iterator row = allPerms.begin(); row != allPerms.end(); ++row) {
+// 		// 	for(vector<int>::iterator col = row->begin(); col != row->end(); ++col) {
+// 		// 		cout<<*col;
+// 		// 	}
+// 		// 	cout<<'\n';
+// 		// }
+// 	// }
+// }

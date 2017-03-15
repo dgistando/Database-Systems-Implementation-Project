@@ -2,14 +2,12 @@
 #include <string>
 
 #include "Catalog.h"
-extern "C" {
-#include "QueryParser.h"
-}
-//stuff
 #include "QueryOptimizer.h"
 #include "QueryCompiler.h"
 #include "RelOp.h"
-
+extern "C" { // due to "previous declaration with ‘C++’ linkage"
+	#include "QueryParser.h"
+}
 
 using namespace std;
 
@@ -21,6 +19,7 @@ extern struct AndList* predicate; // the predicate in WHERE
 extern struct NameList* groupingAtts; // grouping attributes
 extern struct NameList* attsToSelect; // the attributes in SELECT
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
+extern char* command; // command to execute other functionalities (e.g. exit)
 
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
@@ -28,7 +27,7 @@ extern "C" int yylex_destroy();
 
 int main () {
 	// this is the catalog
-	string dbFile = "catalog";
+	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
 
 	// this is the query optimizer
@@ -39,31 +38,46 @@ int main () {
 	// it includes the catalog and the query optimizer
 	QueryCompiler compiler(catalog, optimizer);
 
+	while(true) {		
+		cout << "sqlite-jarvis> ";
 
-	// the query parser is accessed directly through yyparse
-	// this populates the extern data structures
-	int parse = -1;
-	if (yyparse () == 0) {
-		cout << "OK!" << endl;
-		parse = 0;
+		// the query parser is accessed directly through yyparse
+		// this populates the extern data structures
+		int parse = -1;
+		if (yyparse() == 0) {
+			parse = 0;
+		} else {
+			cout << "Error: Query is not correct!" << endl << endl;
+			parse = -1;
+		}
+
+		yylex_destroy();
+
+		if(parse == 0) {
+			if(command != NULL) {
+				if(strcmp(command, "exit") == 0) {
+					cout << endl << "Bye!" << endl << endl;
+					return 0;
+				} else {
+					cout << endl << "Error: Command not found." << endl << endl;
+				}
+			} else {
+				cout << endl << "OK!" << endl;
+
+				// at this point we have the parse tree in the ParseTree data structures
+				// we are ready to invoke the query compiler with the given query
+				// the result is the execution tree built from the parse tree and optimized
+				QueryExecutionTree queryTree;
+				compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+					groupingAtts, distinctAtts, queryTree);
+
+				cout << queryTree << endl;
+			}
+		}
+		// re-open stdin so that we can start reading from the scratch
+		freopen("/dev/tty", "r", stdin); 
 	}
-	else {
-		cout << "Error: Query is not correct!" << endl;
-		parse = -1;
-	}
-
-	yylex_destroy();
-
-	if (parse != 0) return -1;
-
-	// at this point we have the parse tree in the ParseTree data structures
-	// we are ready to invoke the query compiler with the given query
-	// the result is the execution tree built from the parse tree and optimized
-	QueryExecutionTree queryTree;
-	compiler.Compile(tables, attsToSelect, finalFunction, predicate,
-		groupingAtts, distinctAtts, queryTree);
-
-	cout << queryTree << endl;
-
+	fclose(stdin);
+	
 	return 0;
 }

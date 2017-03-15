@@ -35,40 +35,25 @@ Schema::Schema(vector<string>& _attributes,	vector<string>& _attributeTypes,
 		Attribute a;
 		a.name = _attributes[i];
 		a.noDistinct = _distincts[i];
-		if (_attributeTypes[i] == "Integer") a.type = Integer;
-		else if (_attributeTypes[i] == "Float") a.type = Float;
-		else if (_attributeTypes[i] == "String") a.type = String;
+		if (_attributeTypes[i] == "INTEGER") a.type = Integer;
+		else if (_attributeTypes[i] == "FLOAT") a.type = Float;
+		else if (_attributeTypes[i] == "STRING") a.type = String;
 		
 		atts.push_back(a);
 	}
 }
-/* EDITED
- */
+
 Schema::Schema(const Schema& _other) {
 	for (int i = 0; i < _other.atts.size(); i++) {
 		Attribute a; a = _other.atts[i];
 		atts.push_back(a);
 	}
-        _location = _other._location;
-        _noTuples = _other._noTuples;
-        _nameTable = _other._nameTable;
-        _toCreate = _other._toCreate;
-        _edited = _other._edited;
 }
-/* EDITED
- */
+
 Schema& Schema::operator=(const Schema& _other) {
 	// handle self-assignment first
-   
 	if (this == &_other) return *this;
-        
-        _location = _other._location;
-        _noTuples = _other._noTuples;
-        _nameTable = _other._nameTable;
-        _toCreate = _other._toCreate;
-        _edited = _other._edited;
-        
-        
+
 	for (int i = 0; i < _other.atts.size(); i++) {
 		Attribute a; a = _other.atts[i];
 		atts.push_back(a);
@@ -76,15 +61,8 @@ Schema& Schema::operator=(const Schema& _other) {
 
 	return *this;
 }
-/* EDITED
- */
+
 void Schema::Swap(Schema& _other) {
-        _location = _other._location;
-        _noTuples = _other._noTuples;
-        _nameTable = _other._nameTable;
-        _toCreate = _other._toCreate;
-        _edited = _other._edited;
-        
 	atts.swap(_other.atts);
 }
 
@@ -167,9 +145,8 @@ int Schema::Project(vector<int>& _attsToKeep) {
 }
 
 ostream& operator<<(ostream& _os, Schema& _c) {
-	_os << "(";
 	for(int i=0; i<_c.atts.size(); i++) {
-		_os << _c.atts[i].name << ':';
+		_os << '\t' << _c.atts[i].name << '\t';
 
 		switch(_c.atts[i].type) {
 			case Integer:
@@ -185,11 +162,8 @@ ostream& operator<<(ostream& _os, Schema& _c) {
 				cout << "UNKNOWN";
 				break;
 		}
-
-		_os << " [" << _c.atts[i].noDistinct << "]";
-		if (i < _c.atts.size()-1) _os << ", ";
+		_os << "\t" << _c.atts[i].noDistinct << endl;
 	}
-	_os << ")";
 
 	return _os;
 }

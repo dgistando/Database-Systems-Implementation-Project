@@ -8,7 +8,6 @@
 #include "Schema.h"
 #include "File.h"
 
-
 using namespace std;
 
 
@@ -32,6 +31,11 @@ public:
 	void MoveFirst ();
 	void AppendRecord (Record& _addMe);
 	int GetNext (Record& _fetchMe);
+
+	// this function retrieves tableName from fileName
+	// fileName is currently (as of phase 2) same as tableName
+	// this should be changed if we change our naming rule for the fileName
+	string GetTableName();
 };
 
 #endif //DBFILE_H

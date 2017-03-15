@@ -5,12 +5,12 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include "Config.h"
 #include "Record.h"
 #include "TwoWayList.cc"
 #include "File.h"
-#include "unistd.h"
 
 using namespace std;
 
