@@ -29,6 +29,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 		string tableName = string(_tables->tableName);
 		DBFile dbFile; // nothing to do during phase2
 		dbFile.Create(_tables->tableName, Heap); // just for tableName
+                dbFile.MoveFirst(); // added to move to the first page.
 
 		/** create a SCAN operator for each table in the query **/
 		Schema schema;

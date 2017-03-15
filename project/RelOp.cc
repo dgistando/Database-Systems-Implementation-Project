@@ -111,10 +111,9 @@ Project::Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 Project::~Project() {
 }
 bool Project::GetNext(Record& record) {
-    if (producer->GetNext(record))
-    {
-            record.Project(keepMe, numAttsOutput, numAttsInput);		
-            return true;
+    if (producer->GetNext(record)) {
+        record.Project(keepMe, numAttsOutput, numAttsInput);		
+        return true;
     }
     return false;
 }

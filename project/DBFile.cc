@@ -46,7 +46,9 @@ void DBFile::Load (Schema& schema, char* textFile) {
     FILE * fileToRead = fopen(textFile,"r");
     while (1) {
         Record rec;
-        if (rec.ExtractNextRecord (schema, *fileToRead) == 0) break;
+        if (rec.ExtractNextRecord (schema, *fileToRead) == 0) {
+            break;
+        }
         AppendRecord(rec);
     } fclose(fileToRead);
     file.AddPage(page, file.GetLength());
