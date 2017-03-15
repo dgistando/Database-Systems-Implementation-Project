@@ -90,6 +90,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 
 		// move on to the next table
 		_tables = _tables->next;
+                dbFile.Close();
 	}
 
 	/** call the optimizer to compute the join order **/

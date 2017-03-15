@@ -51,47 +51,47 @@ int main () {
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
         
-        DBFile db1;
-        string fileName1 = "/home/farrenkor/Desktop/data";
-        vector<string> files1;
-        vector<string> tables1;
-        catalog.GetTables(files1);
-        for (int i = 0; i< files1.size(); i++) {
-            tables1.push_back(files1[i]);
-            files1[i]+= ".tbl";
-            files1[i].insert(0,"/home/farrenkor/Desktop/data/");
-            cout<<files1[i]<<endl;
-	}
-        for (int i = 0; i < files1.size(); i++)
-	{
-            string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
-            char* file = &newFileName[0]; 
-            Schema sch;
-            catalog.GetSchema(tables1[i],sch);
-            
-            db1.Create(file,(FileType) Heap);
-            
-            db1.Open(file);
-            
-            db1.Load(sch, &files1[i][0]);
-            
-            string fileLocation = "";
-            catalog.GetDataFile(tables1.at(i),fileLocation);
-            vector<string> vstr = split(fileLocation, ',');
-            if(vstr.size() > 1){ fileLocation = vstr.at(0); }
-            fileLocation += "," + std::to_string(db1.GetPageNums());
-            catalog.SetDataFile(tables1.at(i),fileLocation);
-            
-            Record r;
-            int records = 0;
-            db1.MoveFirst();
-            while (db1.GetNext(r) != 0) {
-                records++;
-            }
-            cout<<"\ntotal rec "<< records << endl;
-            
-            db1.Close();//<<endl;
-	}
+//        DBFile db1;
+//        string fileName1 = "/home/farrenkor/Desktop/data";
+//        vector<string> files1;
+//        vector<string> tables1;
+//        catalog.GetTables(files1);
+//        for (int i = 0; i< files1.size(); i++) {
+//            tables1.push_back(files1[i]);
+//            files1[i]+= ".tbl";
+//            files1[i].insert(0,"/home/farrenkor/Desktop/data/");
+//            cout<<files1[i]<<endl;
+//	}
+//        for (int i = 0; i < files1.size(); i++)
+//	{
+//            string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
+//            char* file = &newFileName[0]; 
+//            Schema sch;
+//            catalog.GetSchema(tables1[i],sch);
+//            
+//            db1.Create(file,(FileType) Heap);
+//            
+//            db1.Open(file);
+//            
+//            db1.Load(sch, &files1[i][0]);
+//            
+//            string fileLocation = "";
+//            catalog.GetDataFile(tables1.at(i),fileLocation);
+//            vector<string> vstr = split(fileLocation, ',');
+//            if(vstr.size() > 1){ fileLocation = vstr.at(0); }
+//            fileLocation += "," + std::to_string(db1.GetPageNums());
+//            catalog.SetDataFile(tables1.at(i),fileLocation);
+//            
+//            Record r;
+//            int records = 0;
+//            db1.MoveFirst();
+//            while (db1.GetNext(r) != 0) {
+//                records++;
+//            }
+//            cout<<"\ntotal rec "<< records << endl;
+//            
+//            db1.Close();//<<endl;
+//	}
         
         
         
@@ -105,7 +105,7 @@ int main () {
 	QueryCompiler compiler(catalog, optimizer);
 
 	while(true) {		
-		cout << "sqlite-jarvis> ";
+		cout << "sqlite> ";
 
 		// the query parser is accessed directly through yyparse
 		// this populates the extern data structures
