@@ -10,6 +10,7 @@ using namespace std;
 
 
 DBFile::DBFile () : fileName("") {
+    pageNum = 0;
 }
 
 DBFile::~DBFile () {
@@ -44,14 +45,17 @@ int DBFile::Open (char* f_path) {
 
 void DBFile::Load (Schema& schema, char* textFile) {
     FILE * fileToRead = fopen(textFile,"r");
+    int i = 0;
     while (1) {
         Record rec;
         if (rec.ExtractNextRecord (schema, *fileToRead) == 0) {
             break;
         }
+        i++;
         AppendRecord(rec);
     } fclose(fileToRead);
     file.AddPage(page, file.GetLength());
+    cout << "\n records: " << i << " pages: " << file.GetLength() << endl;
 }
 
 int DBFile::Close () {
@@ -59,12 +63,14 @@ int DBFile::Close () {
 }
 
 void DBFile::MoveFirst () {
+    //cout << "\n  Old Page: " << pageNum << endl;
     pageNum = 0;
+    //cout << "\n  New Page: " << pageNum << endl;
 }
 
 void DBFile::AppendRecord (Record& rec) {
     if (page.Append(rec) == 0) {
-        file.AddPage(page, file.GetLength());
+        file.AddPage(page, pageNum);
         page.EmptyItOut();
         page.Append(rec);
         pageNum++;
@@ -73,9 +79,10 @@ void DBFile::AppendRecord (Record& rec) {
 
 int DBFile::GetNext (Record& rec) {
     if (page.GetFirst(rec) == 0) {
-        if (file.GetLength() == pageNum) return 0;
+        if (file.GetLength() - 1 == pageNum) return 0;
         if (file.GetPage(page, pageNum) == -1) return 0;
         page.GetFirst(rec);
+        //cout << " Current Page: " << pageNum << endl;
         pageNum++;
     } return 1;
     

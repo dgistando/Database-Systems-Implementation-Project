@@ -45,28 +45,23 @@ int main () {
 	{
             string newFileName = fileName + "/" + tables.at(i) + ".dat";
             char* file = &newFileName[0]; 
+            Schema sch;
+            catalog.GetSchema(tables[i],sch);
+            
             db.Create(file,(FileType) Heap);
-            Schema sch;
-            /*db.Open(&filename[0]);
-            Schema sch;
-            Page p;
+            
+            db.Open(file);
+            
+            db.Load(sch, &files[i][0]);
+            
             Record r;
             int records = 0;
-            db.setPage();
-            while (db.GetNext(r) != 0) records++;
-            cout<<"\ntotal rec "<<records;
-            cout<<"\ncounting again\n";
-
-            records = 0;
             db.MoveFirst();
-            db.setPage();
-            while (db.GetNext(r) != 0) records++;
-            cout<<"\ntotal rec "<<records;*/
-
-            catalog.GetSchema(tables[i],sch);
-            db.Load(sch, &files[i][0]);
-
-            //cout<<"New CurrentLngth "<<
+            while (db.GetNext(r) != 0) {
+                records++;
+            }
+            cout<<"\ntotal rec "<< records << endl;
+            
             db.Close();//<<endl;
 	}
         

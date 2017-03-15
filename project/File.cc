@@ -35,7 +35,9 @@ int Page :: GetFirst(Record& firstOne) {
 	myRecs.MoveToStart ();
 
 	// make sure there is data 
-	if (myRecs.AtEnd()) return 0;
+	if (myRecs.AtEnd()) {
+            return 0;
+        }
 
 	// and remove it
 	myRecs.Remove (firstOne);
@@ -197,6 +199,8 @@ void File :: AddPage (Page& addMe, off_t whichPage) {
 	addMe.ToBinary(bits);
 	lseek (fileDescriptor, PAGE_SIZE * (whichPage+1), SEEK_SET);
 	write (fileDescriptor, bits, PAGE_SIZE);
+        
+        curLength = whichPage+1;
 
 	delete [] bits;
 }
