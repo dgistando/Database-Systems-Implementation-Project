@@ -8,9 +8,34 @@
 #include "Comparison.h"
 #include "Function.h"
 #include "RelOp.h"
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iterator>
 
 using namespace std;
 
+
+namespace ext{
+    template<typename Out>
+    void split(const std::string &s, char delim, Out result) {
+        std::stringstream ss;
+        ss.str(s);
+        std::string item;
+        while (std::getline(ss, item, delim)) {
+            *(result++) = item;
+        }
+    }
+    template < typename T > string to_string( const T& n ){
+        ostringstream stm; stm << n; return stm.str() ;
+    }
+
+    std::vector<std::string> split(const std::string &s, char delim) {
+        std::vector<std::string> elems;
+        split(s, delim, std::back_inserter(elems));
+        return elems;
+    }
+}
 
 QueryCompiler::QueryCompiler(Catalog& _catalog, QueryOptimizer& _optimizer) :
 	catalog(&_catalog), optimizer(&_optimizer) {
@@ -28,7 +53,16 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	while(_tables != NULL) {
 		string tableName = string(_tables->tableName);
 		DBFile dbFile; // nothing to do during phase2
-		dbFile.Create(_tables->tableName, Heap); // just for tableName
+                string fileLocation = "";
+                string tableNameString = _tables->tableName;
+                catalog->GetDataFile(tableNameString,fileLocation);
+                vector<string> vstr = ext::split(fileLocation,',');
+                if(vstr.size() > 1){ 
+                    dbFile.SetPageNums(std::stoi(vstr.at(1))); 
+                    fileLocation = vstr.at(0);
+                }
+                
+		dbFile.Open(&fileLocation[0]); // just for tableName
                 dbFile.MoveFirst(); // added to move to the first page.
 
 		/** create a SCAN operator for each table in the query **/

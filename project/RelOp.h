@@ -52,7 +52,7 @@ public:
 	Scan(Schema& _schema, DBFile& _file);
 	virtual ~Scan();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record) { return file.GetNext (_record); }
 
 	virtual Schema GetSchema() { return schema; }
 
@@ -250,7 +250,10 @@ public:
 
 	void ExecuteQuery() {
             Record rec;
-            while(root->GetNext(rec)){ }
+            while(root->GetNext(rec)){
+               Schema sch = root->GetSchema();
+               rec.print(cout,sch);
+            }
         }
 	void SetRoot(RelationalOp& _root) {root = &_root;}
 

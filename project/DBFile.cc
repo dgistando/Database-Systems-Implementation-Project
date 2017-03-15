@@ -54,7 +54,7 @@ void DBFile::Load (Schema& schema, char* textFile) {
         i++;
         AppendRecord(rec);
     } fclose(fileToRead);
-    file.AddPage(page, file.GetLength());
+    //file.AddPage(page, file.GetLength());
     cout << "\n records: " << i << " pages: " << file.GetLength() << endl;
 }
 
@@ -79,7 +79,7 @@ void DBFile::AppendRecord (Record& rec) {
 
 int DBFile::GetNext (Record& rec) {
     if (page.GetFirst(rec) == 0) {
-        if (file.GetLength() - 1 == pageNum) return 0;
+        if (file.GetLength() == pageNum) return 0;
         if (file.GetPage(page, pageNum) == -1) return 0;
         page.GetFirst(rec);
         //cout << " Current Page: " << pageNum << endl;
@@ -93,4 +93,10 @@ int DBFile::GetNext (Record& rec) {
 // this should be changed if we change our naming rule for the fileName
 string DBFile::GetTableName() {
 	return fileName;
+}
+off_t DBFile :: GetPageNums () {
+	return file.GetLength();
+}
+void DBFile:: SetPageNums(int num){
+    file.SetPageNums(num);
 }

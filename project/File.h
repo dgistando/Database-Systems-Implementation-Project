@@ -74,6 +74,8 @@ public:
 
 	// close file and return length in number of pages
 	int Close ();
+        
+        void SetPageNums(int num);
 };
 
 #endif //_FILE_H

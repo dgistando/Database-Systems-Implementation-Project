@@ -208,3 +208,6 @@ void File :: AddPage (Page& addMe, off_t whichPage) {
 off_t File :: GetLength () {
 	return curLength;
 }
+void File:: SetPageNums(int num){
+    curLength = num + 1;
+}

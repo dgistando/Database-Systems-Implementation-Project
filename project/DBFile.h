@@ -40,6 +40,8 @@ public:
 	// fileName is currently (as of phase 2) same as tableName
 	// this should be changed if we change our naming rule for the fileName
 	string GetTableName();
+        off_t GetPageNums();
+        void SetPageNums(int num);
 };
 
 #endif //DBFILE_H
