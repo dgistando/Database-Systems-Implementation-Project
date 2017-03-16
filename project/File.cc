@@ -166,7 +166,7 @@ int File :: Close () {
 }
 
 int File :: GetPage (Page& putItHere, off_t whichPage) {
-	if (whichPage >= curLength) {
+	if (whichPage > curLength) {
 		cerr << "ERROR: Read past end of the file " << fileName << ": ";
 		cerr << "page = " << whichPage << " length = " << curLength << endl;
 		return -1;
