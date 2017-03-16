@@ -57,10 +57,11 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                 string tableNameString = _tables->tableName;
                 catalog->GetDataFile(tableNameString,fileLocation);
 		dbFile.Open(&fileLocation[0]); // just for tableName
-                int pages = dbFile.Close();
-                dbFile.Open(&fileLocation[0]);
+                //int pages = dbFile.Close();
+                //dbFile.Open(&fileLocation[0]);
                 //dbFile.SetPageNums(pages);
                 dbFile.MoveFirst(); // added to move to the first page.
+                
 
 		/** create a SCAN operator for each table in the query **/
 		Schema schema;

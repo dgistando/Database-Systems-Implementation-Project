@@ -21,6 +21,7 @@ private:
 	FileType ftype;
 
 public:
+        bool isOpen;
 	DBFile ();
 	virtual ~DBFile ();
 	DBFile(const DBFile& _copyMe);

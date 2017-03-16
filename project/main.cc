@@ -65,7 +65,7 @@ int main () {
         for (int i = 0; i < files1.size(); i++)
 	{
             DBFile db1;
-            //i = 0;
+            i = 6;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
             char* file = &newFileName[0]; 
             Schema sch;
@@ -85,15 +85,15 @@ int main () {
             int records = 0;
             db2.MoveFirst();
             while (db2.GetNext(r) != 0) {
-                //r.print(cout,sch);
-               // cout << endl;
+                r.print(cout,sch);
+                //cout << endl;
                 records++;
             }
             r.print(cout,sch);
             cout<<"\n " << tables1[i] << " total stored: "<< records << endl;
             
             db1.Close();//<<endl;
-            //break;
+            break;
 	}
         
         
