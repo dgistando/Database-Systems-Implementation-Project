@@ -51,21 +51,24 @@ int main () {
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
         
-        string fileName1 = "/home/farrenkor/Desktop/data";
+        //cout<<"Catalog:: "<<catalog<<endl;
+        
+        string fileName1 = "/home/david/Desktop/data";
         vector<string> files1;
         vector<string> tables1;
         catalog.GetTables(files1);
         for (int i = 0; i< files1.size(); i++) {
             tables1.push_back(files1[i]);
             files1[i]+= ".tbl";
-            files1[i].insert(0,"/home/farrenkor/Desktop/data/");
+            files1[i].insert(0,"/home/david/Desktop/data/");
             cout<<files1[i]<<endl;
 	}
         
         for (int i = 0; i < files1.size(); i++)
 	{
+            break;
             DBFile db1;
-            i = 6;
+          //  i = 6;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
             char* file = &newFileName[0]; 
             Schema sch;
@@ -85,7 +88,7 @@ int main () {
             int records = 0;
             db2.MoveFirst();
             while (db2.GetNext(r) != 0) {
-                r.print(cout,sch);
+                //r.print(cout,sch);
                 //cout << endl;
                 records++;
             }

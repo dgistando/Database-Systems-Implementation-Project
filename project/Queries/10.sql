@@ -1,4 +1,4 @@
-SELECT SUM(l_extendedprice * l_discount) 
+SELECT l_extendedprice, l_discount
 FROM lineitem
-WHERE l_discount < 0.07 AND l_quantity < 24
+WHERE '1994-01-01'<l_shipdate AND '1994-02-01'>l_shipdate
 

@@ -1,6 +1,4 @@
-SELECT l_discount 
-FROM lineitem, orders, customer, nation, region
-WHERE l_orderkey = o_orderkey AND o_custkey = c_custkey AND 
-	c_nationkey = n_nationkey AND n_regionkey = r_regionkey AND 
-	r_regionkey = 1 AND o_orderkey < 10000
+SELECT p_name, p_mfgr, p_brand, p_type 
+FROM part
+WHERE p_size>2 AND p_size<6 AND p_retailprice>10.0 AND p_retailprice<15.0
 

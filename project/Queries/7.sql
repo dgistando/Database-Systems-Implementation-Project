@@ -1,5 +1,4 @@
-SELECT DISTINCT c_name 
-FROM lineitem, orders, customer, nation, region
-WHERE l_orderkey = o_orderkey AND o_custkey = c_custkey AND 
-	c_nationkey = n_nationkey AND n_regionkey = r_regionkey
+SELECT s_name, s_phone
+FROM supplier
+WHERE s_nationkey=10 AND s_acctbal<100.0
 

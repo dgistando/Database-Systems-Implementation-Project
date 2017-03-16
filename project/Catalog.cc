@@ -160,13 +160,19 @@ Catalog::Catalog(string& _fileName) {
 		vector<unsigned int> distincts;
 		vector<TableDataStructure>::iterator it;
 		for (it = tables.begin(); it != tables.end(); ++it) {
+                    
+                    //cout<<"ATTRIBUTES:: "<<attributes<<endl;
+                    
 			attributes.clear(); types.clear(); distincts.clear();
 			t_name = (*it).getTname();
 			attributes.clear(); types.clear();
 
-			sql = "SELECT a_name, a_type, no_distinct " \
+			//sql = "SELECT a_name, a_type, no_distinct " \
 					"FROM " +  CATALOG_ATTRS + " " \
 					"WHERE t_name=?1;";
+			sql = "SELECT a_name, a_type, no_distinct " \
+					"FROM " +  CATALOG_ATTRS + " " \
+					"WHERE t_name LIKE '"+t_name+"';";
 			sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, NULL);
 			sqlite3_bind_text(stmt, 1, (*it).getTname().c_str(), -1, SQLITE_STATIC);
 
