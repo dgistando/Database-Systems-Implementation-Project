@@ -32,11 +32,14 @@ DBFile& DBFile::operator=(const DBFile& _copyMe) {
 
 int DBFile::Create (char* f_path, FileType f_type) {
 	// this is just for phase2, to retrieve table name
+    int retval  = 0;
     if(f_type == Heap){
         fileName = string(f_path);
         fileType = f_type;
-        return file.Open(0,f_path); // zero coz creating
+        retval =  file.Open(0,f_path); // zero coz creating
+        pageNum = file.Close();
     }
+    return retval;
 }
 
 int DBFile::Open (char* f_path) {
@@ -57,6 +60,29 @@ void DBFile::Load (Schema& schema, char* textFile) {
     } fclose(fileToRead);
     //file.AddPage(page, file.GetLength());
     cout << "\n records: " << i << " pages: " << file.GetLength() << endl;
+//    FILE *fileTable = fopen(textFile , "r");
+//    Record tempRec;
+//    Page tempPage;
+//    file.GetPage(tempPage,pageNum);
+//    int i = 0;
+//    while(1) {
+//        if(tempRec.ExtractNextRecord(schema, *fileTable) == 1) {
+//            if(tempPage.Append(tempRec) == 0) {
+//                    file.AddPage(tempPage, pageNum);
+//                    pageNum++;
+//                    Page bufferPage; bufferPage.EmptyItOut();
+//                    file.AddPage(bufferPage, pageNum);
+//                    file.GetPage(tempPage, pageNum);
+//                    tempPage.Append(tempRec);
+//            }
+//        } else {
+//            file.AddPage(tempPage,pageNum);
+//            break;
+//        }
+//        i++;	
+//    }
+//    cout << "\n records: " << i << " pages: " << file.GetLength() << endl;
+    MoveFirst();
 }
 
 int DBFile::Close () {
