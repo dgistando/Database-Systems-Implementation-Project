@@ -18,7 +18,7 @@ Scan::~Scan() {
 }
 
 ostream& Scan::print(ostream& _os) {
-	return _os << file.GetTableName();
+	//return _os << file.GetTableName();
 }
 
 

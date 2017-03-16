@@ -16,9 +16,9 @@ private:
 	File file;
 	string fileName;
         
-        Page page;
-        int pageNum;
-        FileType fileType;
+	Page page;
+	int pageCount;
+	FileType ftype;
 
 public:
 	DBFile ();
@@ -35,13 +35,6 @@ public:
 	void MoveFirst ();
 	void AppendRecord (Record& _addMe);
 	int GetNext (Record& _fetchMe);
-
-	// this function retrieves tableName from fileName
-	// fileName is currently (as of phase 2) same as tableName
-	// this should be changed if we change our naming rule for the fileName
-	string GetTableName();
-        off_t GetPageNums();
-        void SetPageNums(int num);
 };
 
 #endif //DBFILE_H

@@ -65,7 +65,7 @@ int main () {
         for (int i = 0; i < files1.size(); i++)
 	{
             DBFile db1;
-            //i = 1;
+            i = 0;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
             char* file = &newFileName[0]; 
             Schema sch;
@@ -73,23 +73,27 @@ int main () {
             
             db1.Create(file,(FileType) Heap);
             
-            db1.Open(file);
+            //db1.Open(file);
             
             db1.Load(sch, &files1[i][0]);
-            db1.Close();
-            db1.Open(file);
+            int pages = db1.Close();
+            cout << "\n pages after closing: " << pages << endl;
+            
+            DBFile db2;
+            db2.Open(file);
             Record r;
             int records = 0;
-            db1.MoveFirst();
-            while (db1.GetNext(r) != 0) {
+            db2.MoveFirst();
+            while (db2.GetNext(r) != 0) {
                 //r.print(cout,sch);
                // cout << endl;
                 records++;
             }
-            cout<<"\ntotal rec "<< records << endl;
+            r.print(cout,sch);
+            cout<<"\n " << tables1[i] << " total stored: "<< records << endl;
             
             db1.Close();//<<endl;
-            //break;
+            break;
 	}
         
         
