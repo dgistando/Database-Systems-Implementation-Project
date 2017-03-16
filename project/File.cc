@@ -45,7 +45,7 @@ int Page :: GetFirst(Record& firstOne) {
 
 	char* b = firstOne.GetBits();
 	curSizeInBytes -= ((int*)b)[0];
-        cout << "s";
+       // cout << "s";
 	return 1;
 }
 

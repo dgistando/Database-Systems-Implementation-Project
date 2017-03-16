@@ -65,7 +65,7 @@ int main () {
         for (int i = 0; i < files1.size(); i++)
 	{
             DBFile db1;
-            i = 0;
+            //i = 0;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
             char* file = &newFileName[0]; 
             Schema sch;
@@ -93,7 +93,7 @@ int main () {
             cout<<"\n " << tables1[i] << " total stored: "<< records << endl;
             
             db1.Close();//<<endl;
-            break;
+            //break;
 	}
         
         

@@ -74,7 +74,6 @@ void DBFile::MoveFirst () {
 void DBFile::AppendRecord (Record& rec) {
 
     if (page.Append(rec) == 0) {
-        page.EmptyItOut();
         file.AddPage(page, file.GetLength());
         page.EmptyItOut();
         page.Append(rec);
@@ -85,10 +84,10 @@ void DBFile::AppendRecord (Record& rec) {
 int DBFile::GetNext (Record& rec) {
     if (page.GetFirst(rec) == 0) {
         pageCount++;
-        cout << "\n jump to page: " << pageCount << endl;
+        //cout << "\n jump to page: " << pageCount << endl;
         if (file.GetLength() == pageCount) return 0;
         if (file.GetPage(page, pageCount) == -1) return 0;
-        //if(page.GetFirst(rec) == 0){ return GetNext(rec); }
+        if(page.GetFirst(rec) == 0){ return GetNext(rec); }
     } return 1;	
 }
 
