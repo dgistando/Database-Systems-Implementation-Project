@@ -56,13 +56,10 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
                 string fileLocation = "";
                 string tableNameString = _tables->tableName;
                 catalog->GetDataFile(tableNameString,fileLocation);
-                vector<string> vstr = ext::split(fileLocation,',');
-                if(vstr.size() > 1){ 
-                    dbFile.SetPageNums(std::stoi(vstr.at(1))); 
-                    fileLocation = vstr.at(0);
-                }
-                
 		dbFile.Open(&fileLocation[0]); // just for tableName
+                int pages = dbFile.Close();
+                dbFile.Open(&fileLocation[0]);
+                dbFile.SetPageNums(pages);
                 dbFile.MoveFirst(); // added to move to the first page.
 
 		/** create a SCAN operator for each table in the query **/

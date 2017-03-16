@@ -10,6 +10,7 @@ using namespace std;
 
 
 DBFile::DBFile () : fileName("") {
+    page.EmptyItOut();
     pageNum = 0;
 }
 
@@ -54,7 +55,7 @@ void DBFile::Load (Schema& schema, char* textFile) {
         i++;
         AppendRecord(rec);
     } fclose(fileToRead);
-    //file.AddPage(page, file.GetLength());
+        file.AddPage(page, file.GetLength());
     cout << "\n records: " << i << " pages: " << file.GetLength() << endl;
 }
 
@@ -79,11 +80,11 @@ void DBFile::AppendRecord (Record& rec) {
 
 int DBFile::GetNext (Record& rec) {
     if (page.GetFirst(rec) == 0) {
+        pageNum++;
         if (file.GetLength() == pageNum) return 0;
         if (file.GetPage(page, pageNum) == -1) return 0;
         page.GetFirst(rec);
         //cout << " Current Page: " << pageNum << endl;
-        pageNum++;
     } return 1;
     
 }

@@ -209,5 +209,5 @@ off_t File :: GetLength () {
 	return curLength;
 }
 void File:: SetPageNums(int num){
-    curLength = num + 1;
+    curLength = num;
 }
