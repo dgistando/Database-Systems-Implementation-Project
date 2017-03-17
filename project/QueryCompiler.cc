@@ -47,6 +47,7 @@ QueryCompiler::~QueryCompiler() {
 void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	FuncOperator* _finalFunction, AndList* _predicate, NameList* _groupingAtts,
 	int& _distinctAtts,	QueryExecutionTree& _queryTree) {
+        
 	// store Scans and Selects for each table to generate Query Execution Tree
 	unordered_map<string, RelationalOp*> pushDowns;
 	TableList *tblList = _tables;
@@ -147,7 +148,8 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 				exit(-1);
 			}
 
-			int keepMe[attsToKeep.size()];
+			//int keepMe[attsToKeep.size()];
+                        int * keepMe  = new int[attsToKeep.size()];
 			copy(attsToKeep.begin(), attsToKeep.end(), keepMe);
 
 			Project* project = new Project(schemaIn, schemaOut, numAttsInput, numAttsOutput,

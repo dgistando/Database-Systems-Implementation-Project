@@ -149,7 +149,7 @@ void Record :: Nullify () {
 }
 
 void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
-	// first, figure out the size of the new record
+	// first, figure out the size of the new record    
 	int totSpace = sizeof (int) * (numAttsToKeep + 1);
 
 	for (int i = 0; i < numAttsToKeep; i++) {
@@ -160,6 +160,7 @@ void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
 		}
 		else {
 			// subtract the start of the next field from the start of this field
+                    //cout<<"subtract the start of the next field from the start of this field"<<endl;
 			totSpace += ((int *) bits)[attsToKeep[i] + 2] - ((int *) bits)[attsToKeep[i] + 1]; 
 		}
 	}
@@ -187,9 +188,10 @@ void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
 		}
 
 		// set the start position of this field
-		((int *) newBits)[i + 1] = curPos;	
+		((int *) newBits)[i + 1] = curPos;
 
 		// and copy over the bits
+                //cout<<"and copy over the bits"<<endl;
 		memcpy (&(newBits[curPos]), &(bits[((int *) bits)[attsToKeep[i] + 1]]), attLen);
 
 		// note that we are moving along in the record
@@ -393,6 +395,9 @@ void Record :: AppendRecords (Record& left, Record& right,
 }
 
 ostream& Record :: print(ostream& _os, Schema& mySchema) {
+    
+    //cout<<"PRINT"<<endl;
+    
 	int n = mySchema.GetNumAtts();
 	vector<Attribute> atts = mySchema.GetAtts();
 
@@ -402,7 +407,7 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 	for (int i = 0; i < n; i++) {
 		// print the attribute name
 		_os << atts[i].name << ": ";
-
+                                
 		// use the i^th slot at the head of the record to get the
 		// offset to the correct attribute in the record
 		int pointer = ((int *) bits)[i + 1];

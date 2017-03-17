@@ -39,6 +39,7 @@ void split(const std::string &s, char delim, Out result) {
 }
 
 
+
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
@@ -66,9 +67,9 @@ int main () {
         
         for (int i = 0; i < files1.size(); i++)
 	{
-            break;
+            
             DBFile db1;
-          //  i = 6;
+            i = 2;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
             char* file = &newFileName[0]; 
             Schema sch;
@@ -88,11 +89,11 @@ int main () {
             int records = 0;
             db2.MoveFirst();
             while (db2.GetNext(r) != 0) {
-                //r.print(cout,sch);
-                //cout << endl;
+             //   r.print(cout,sch);
+             //   cout << endl;
                 records++;
             }
-            r.print(cout,sch);
+            //r.print(cout,sch);
             cout<<"\n " << tables1[i] << " total stored: "<< records << endl;
             
             db1.Close();//<<endl;

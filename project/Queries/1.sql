@@ -1,4 +1,3 @@
 SELECT n_nationkey, n_name
-FROM nation 
+FROM nation
 WHERE n_regionkey=1
-
