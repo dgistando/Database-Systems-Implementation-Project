@@ -12,6 +12,7 @@ ostream& operator<<(ostream& _os, RelationalOp& _op) {
 Scan::Scan(Schema& _schema, DBFile& _file) {
 	schema = _schema;
 	file = _file;
+        file.Open(&file.fileName[0]);
         file.MoveFirst();
 }
 

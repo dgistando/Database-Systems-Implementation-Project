@@ -162,6 +162,7 @@ OrderMaker :: OrderMaker(Schema& schema) : numAtts(0) {
 			whichAtts[numAtts] = i;
 			whichTypes[numAtts] = Integer;
 			numAtts++;
+			cout << "hi1";
 		}
 	}
 
@@ -171,6 +172,7 @@ OrderMaker :: OrderMaker(Schema& schema) : numAtts(0) {
 			whichAtts[numAtts] = i;
 			whichTypes[numAtts] = Float;
 			numAtts++;
+			cout << "hi2";
 		}
 	}
 
@@ -452,7 +454,7 @@ int CNF::ExtractCNF (AndList& parseTree, Schema& schema, Record& literal) {
 
 			// add to record literal
 			attStart[numFieldsInLiteral] = recSize;
-			int cLen = strlen(currCond->left->left->value);
+			int cLen = strlen(currCond->left->left->value)+1;
 			memcpy(recPos, currCond->left->left->value, cLen);
 
 			if (cLen % sizeof (int) != 0) {
@@ -520,7 +522,7 @@ int CNF::ExtractCNF (AndList& parseTree, Schema& schema, Record& literal) {
 
 			// add to record literal
 			attStart[numFieldsInLiteral] = recSize;
-			int cLen = strlen(currCond->left->right->value);
+			int cLen = strlen(currCond->left->right->value)+1;
 			memcpy(recPos, currCond->left->right->value, cLen);
 
 			if (cLen % sizeof (int) != 0) {
@@ -553,7 +555,7 @@ int CNF::ExtractCNF (AndList& parseTree, Schema& schema, Record& literal) {
 			// add to record literal
 			attStart[numFieldsInLiteral] = recSize;
 			int cLen = sizeof(double);
-			*((double *) recPos) = atof (currCond->left->left->value);
+			*((double *) recPos) = atof (currCond->left->right->value);
 			recSize += cLen;
 			recPos += cLen;
 			numFieldsInLiteral += 1;
@@ -613,7 +615,7 @@ int CNF::ExtractCNF (AndList& parseTree, Schema& leftSchema, Schema& rightSchema
 	while (currCond != NULL) {
 		// check if at least one operand in condition is an attribute from schema
 		if (ConditionOnSchemas(*currCond, leftSchema, rightSchema) == false) {
-			// NO; go further along in the list
+			// NO; go further along in the list;
 			currCond = currCond->rightAnd;
 			continue;
 		}

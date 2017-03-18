@@ -14,13 +14,14 @@ using namespace std;
 class DBFile {
 private:
 	File file;
-	string fileName;
+	
         
 	Page page;
 	int pageCount;
 	FileType ftype;
 
 public:
+        string fileName;          
         bool isOpen;
 	DBFile ();
 	virtual ~DBFile ();

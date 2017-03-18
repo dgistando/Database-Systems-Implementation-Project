@@ -252,7 +252,7 @@ public:
             Record rec;
             while(root->GetNext(rec)){
                Schema sch = root->GetSchema();
-               rec.print(cout,sch);
+               rec.print(cout,sch); cout << endl;
             }
         }
 	void SetRoot(RelationalOp& _root) {root = &_root;}
