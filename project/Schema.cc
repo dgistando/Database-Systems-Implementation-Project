@@ -145,9 +145,8 @@ int Schema::Project(vector<int>& _attsToKeep) {
 }
 
 ostream& operator<<(ostream& _os, Schema& _c) {
-	_os << "(";
 	for(int i=0; i<_c.atts.size(); i++) {
-		_os << _c.atts[i].name << ':';
+		_os << '\t' << _c.atts[i].name << '\t';
 
 		switch(_c.atts[i].type) {
 			case Integer:
@@ -163,11 +162,8 @@ ostream& operator<<(ostream& _os, Schema& _c) {
 				cout << "UNKNOWN";
 				break;
 		}
-
-		_os << " [" << _c.atts[i].noDistinct << "]";
-		if (i < _c.atts.size()-1) _os << ", ";
+		_os << "\t" << _c.atts[i].noDistinct << endl;
 	}
-	_os << ")";
 
 	return _os;
 }

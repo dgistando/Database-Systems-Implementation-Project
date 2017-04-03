@@ -6,9 +6,17 @@
 #include <iostream>
 
 #include "Schema.h"
+#include "Keyify.h"
+#include "TableDataStructure.h"
+#include "EfficientMap.cc"
+// #include "InefficientMap.cc"
 
 using namespace std;
 
+extern const string CATALOG_TABLES;
+extern const string CATALOG_ATTRS;
+
+extern bool isModified;
 
 class Catalog {
 private:
@@ -17,7 +25,9 @@ private:
 	 * Efficient data structures are recommended.
 	 * Avoid linear traversals when possible.
 	 */
-
+	// InefficientMap<KeyString, TableDataStructure> tableMap;
+	EfficientMap<KeyString, TableDataStructure> tableMap;
+	
 public:
 	/* Catalog constructor.
 	 * Initialize the catalog with the persistent data stored in _fileName.
