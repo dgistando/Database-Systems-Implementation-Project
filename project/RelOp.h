@@ -2,6 +2,7 @@
 #define _REL_OP_H
 
 #include <iostream>
+#include <map>
 
 #include "Schema.h"
 #include "Record.h"
@@ -135,7 +136,7 @@ public:
 		CNF& _predicate, RelationalOp* _left, RelationalOp* _right);
 	virtual ~Join();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schemaOut; }
 
@@ -158,7 +159,7 @@ public:
 	DuplicateRemoval(Schema& _schema, RelationalOp* _producer);
 	virtual ~DuplicateRemoval();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schema; }
 
@@ -183,7 +184,7 @@ public:
 		RelationalOp* _producer);
 	virtual ~Sum();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schemaOut; }
 
@@ -210,7 +211,7 @@ public:
 		Function& _compute,	RelationalOp* _producer);
 	virtual ~GroupBy();
 
-	virtual bool GetNext(Record& _record) {}
+	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schemaOut; }
 

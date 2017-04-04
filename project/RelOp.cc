@@ -147,6 +147,10 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 Join::~Join() {
 }
 
+bool Join::GetNext(Record& _record){
+    return true;
+}
+
 ostream& Join::print(ostream& _os) {
 	_os << "⋈ [";
 	for(int i = 0; i < predicate.numAnds; i++) {
@@ -204,6 +208,10 @@ DuplicateRemoval::DuplicateRemoval(Schema& _schema, RelationalOp* _producer) {
 DuplicateRemoval::~DuplicateRemoval() {
 }
 
+bool DuplicateRemoval::GetNext(Record& _record){
+    return true;
+}
+
 ostream& DuplicateRemoval::print(ostream& _os) {
 	return _os << "δ \n\t │\n\t" << *producer;
 }
@@ -218,6 +226,10 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 }
 
 Sum::~Sum() {
+}
+
+bool Sum::GetNext(Record& _record){
+    return true;
 }
 
 ostream& Sum::print(ostream& _os) {
@@ -240,6 +252,10 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 }
 
 GroupBy::~GroupBy() {
+}
+
+bool GroupBy::GetNext(Record& _record){
+    return true;
 }
 
 ostream& GroupBy::print(ostream& _os) {
