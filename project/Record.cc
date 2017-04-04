@@ -8,12 +8,14 @@
 #include "Swap.h"
 #include "Schema.h"
 #include "Record.h"
+#include "Comparison.h"
 
 using namespace std;
 
 
 Record :: Record () {
 	bits = NULL;
+	compOrder = NULL;
 }
 
 Record::Record (const Record& copyMe) {
@@ -21,6 +23,8 @@ Record::Record (const Record& copyMe) {
 	delete [] bits;
 	bits = new char[((int *) copyMe.bits)[0]];
 	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
+
+	compOrder = copyMe.compOrder;
 }
 
 Record& Record::operator=(const Record& copyMe) {
@@ -32,16 +36,20 @@ Record& Record::operator=(const Record& copyMe) {
 	bits = new char[((int *) copyMe.bits)[0]];
 	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
 
+	compOrder = copyMe.compOrder;
+
 	return *this;
 }
 
 Record :: ~Record () {
 	delete [] bits;
 	bits = NULL;
+	compOrder = NULL;
 }
 
 void Record::Swap(Record& _other) {
 	SWAP(bits, _other.bits);
+	SWAP(compOrder, _other.compOrder);
 }
 
 void Record :: Consume (char*& fromMe) {
@@ -101,11 +109,6 @@ int Record :: ExtractNextRecord (Schema& mySchema, FILE& textFile) {
 			currentPosInRec += sizeof (double);
 		}
 		else if (atts[i].type == String) {
-			// align things to the size of an integer if needed
-			if (len % sizeof (int) != 0) {
-				len += sizeof (int) - (len % sizeof (int));
-			}
-
 			strcpy (&(recSpace[currentPosInRec]), space); 
 			currentPosInRec += len;
 		} 
@@ -149,7 +152,7 @@ void Record :: Nullify () {
 }
 
 void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
-	// first, figure out the size of the new record    
+	// first, figure out the size of the new record
 	int totSpace = sizeof (int) * (numAttsToKeep + 1);
 
 	for (int i = 0; i < numAttsToKeep; i++) {
@@ -160,7 +163,6 @@ void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
 		}
 		else {
 			// subtract the start of the next field from the start of this field
-                    //cout<<"subtract the start of the next field from the start of this field"<<endl;
 			totSpace += ((int *) bits)[attsToKeep[i] + 2] - ((int *) bits)[attsToKeep[i] + 1]; 
 		}
 	}
@@ -188,10 +190,9 @@ void Record :: Project (int* attsToKeep, int numAttsToKeep, int numAttsNow) {
 		}
 
 		// set the start position of this field
-		((int *) newBits)[i + 1] = curPos;
+		((int *) newBits)[i + 1] = curPos;	
 
 		// and copy over the bits
-                //cout<<"and copy over the bits"<<endl;
 		memcpy (&(newBits[curPos]), &(bits[((int *) bits)[attsToKeep[i] + 1]]), attLen);
 
 		// note that we are moving along in the record
@@ -394,10 +395,7 @@ void Record :: AppendRecords (Record& left, Record& right,
 	}
 }
 
-ostream& Record :: print(ostream& _os, Schema& mySchema) {
-    
-    //cout<<"PRINT"<<endl;
-    
+void Record :: print(ostream& _os, Schema& mySchema) {
 	int n = mySchema.GetNumAtts();
 	vector<Attribute> atts = mySchema.GetAtts();
 
@@ -407,7 +405,7 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 	for (int i = 0; i < n; i++) {
 		// print the attribute name
 		_os << atts[i].name << ": ";
-                                
+
 		// use the i^th slot at the head of the record to get the
 		// offset to the correct attribute in the record
 		int pointer = ((int *) bits)[i + 1];
@@ -416,17 +414,17 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 		// depending on the type we then print out the contents
 		// first is integer
 		if (atts[i].type == Integer) {
-			int *myInt = (int *) &(bits[pointer]);
-			_os << *myInt;
+			int myInt; memcpy(&myInt, bits+pointer, sizeof(int));
+			_os << myInt;
 		}
 		// then is a double
 		else if (atts[i].type == Float) {
-			double *myDouble = (double *) &(bits[pointer]);
-			_os << *myDouble;
+			double myDouble; memcpy(&myDouble, bits+pointer, sizeof(double));
+			_os << myDouble;
 		}
 		// then is a character string
 		else if (atts[i].type == String) {
-			char *myString = (char *) &(bits[pointer]);
+			char *myString = bits+pointer;
 			_os << myString;
 		} 
 
@@ -436,5 +434,24 @@ ostream& Record :: print(ostream& _os, Schema& mySchema) {
 		}
 	}
 
-	return _os;
+	_os << '}';
+}
+
+
+bool Record::operator< (Record& _withMe) {
+	int ret = compOrder->Run(*this, _withMe, *_withMe.compOrder);
+	if (ret == -1) return true;
+	return false;
+}
+
+bool Record::IsEqual (Record& _withMe) {
+	int ret = compOrder->Run(*this, _withMe, *_withMe.compOrder);
+	if (ret == 0) return true;
+	return false;
+}
+
+bool Record::LessThan (Record& _withMe) {
+	int ret = compOrder->Run(*this, _withMe, *_withMe.compOrder);
+	if (ret == -1) return true;
+	return false;
 }
