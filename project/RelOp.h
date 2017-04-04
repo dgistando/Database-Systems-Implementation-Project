@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <sstream>
 
 #include "Schema.h"
 #include "Record.h"
@@ -154,6 +155,9 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
+        
+        //duplicate removal
+        map<string,Record> dupMap;
 
 public:
 	DuplicateRemoval(Schema& _schema, RelationalOp* _producer);

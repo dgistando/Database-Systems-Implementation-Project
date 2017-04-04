@@ -209,7 +209,20 @@ DuplicateRemoval::~DuplicateRemoval() {
 }
 
 bool DuplicateRemoval::GetNext(Record& _record){
-    return true;
+    while (true)
+    {
+        if (!producer->GetNext(_record)) { return false; }
+        else{
+            stringstream key;
+            _record.print(key, schema);
+            auto it = dupMap.find(key.str());
+            if(it == dupMap.end()) 
+            {
+                dupMap[key.str()] = _record;
+                return true;
+            }
+        }
+    }
 }
 
 ostream& DuplicateRemoval::print(ostream& _os) {
