@@ -158,7 +158,7 @@ public:
 
 	int numTuples;
         
-        bool phase1;
+        bool leftSmaller;
 };
 
 class DuplicateRemoval : public RelationalOp {

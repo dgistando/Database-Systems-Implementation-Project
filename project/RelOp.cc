@@ -144,6 +144,7 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	right = _right;
         mmap = multimap<Record, int>();
         
+        
         //first phase
         leftOrder = new OrderMaker();
         rightOrder = new OrderMaker();
@@ -152,10 +153,23 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
     
         Record* temp = new Record();
         
-        //loading into memory
-        while(left->GetNext(*temp)){
-            temp->SetOrderMaker(leftOrder);
-            mmap.insert(pair<Record,int>(*temp,10));
+        if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
+        
+            //loading left into memory
+            while(left->GetNext(*temp)){
+                temp->SetOrderMaker(leftOrder);
+                mmap.insert(pair<Record,int>(*temp,10));
+            }
+        
+            leftSmaller = true;
+        }else{
+        
+            //loading right into memory
+            while(right->GetNext(*temp)){
+                temp->SetOrderMaker(rightOrder);
+                mmap.insert(pair<Record,int>(*temp,10));
+            }
+        
         }
         
         
@@ -170,6 +184,7 @@ bool Join::GetNext(Record& _record){
     
     Record temp;
         
+    if(leftSmaller){
       while(right->GetNext(temp)){
           temp.SetOrderMaker(rightOrder);
       
@@ -186,7 +201,26 @@ bool Join::GetNext(Record& _record){
         }
       }
                 
+    }else{
     
+        while(left->GetNext(temp)){
+          temp.SetOrderMaker(leftOrder);
+      
+             
+        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+	
+            Record mapRec = const_cast<Record&>((*it).first);
+              
+            if(mapRec.IsEqual(temp)){
+                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+                return true;
+            }
+            
+        }
+      }
+    
+    
+    }
 }
 
 ostream& Join::print(ostream& _os) {
