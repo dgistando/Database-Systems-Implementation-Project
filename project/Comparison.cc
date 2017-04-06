@@ -268,10 +268,10 @@ int OrderMaker :: Run(Record& left, Record& right) {
 
 	return 0;
 }
-
-int OrderMaker :: Run (Record& left, Record& right, OrderMaker& orderRight) {
+ 
+int OrderMaker :: Run (const Record& left, const Record& right, const OrderMaker& orderRight) const{
 	char *val1, *val2;
-
+        
 	char* left_bits = left.GetBits();
 	char* right_bits = right.GetBits();
 

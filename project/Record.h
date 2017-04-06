@@ -84,11 +84,13 @@ public:
 
 
     // comparison operator overloading
-    bool operator< (Record& _withMe);
+    bool operator< (const Record& _withMe);
     bool IsEqual(Record& _withMe);
     bool LessThan(Record& _me);
 
     void SetOrderMaker(OrderMaker* _order) {compOrder = _order;}
+    
+    friend bool operator<(const Record a,const Record b);
 };
 
 #endif //_RECORD_H

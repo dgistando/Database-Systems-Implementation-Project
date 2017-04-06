@@ -20,7 +20,7 @@ Record :: Record () {
 
 Record::Record (const Record& copyMe) {
 	// this is a deep copy, so allocate the bits and move them over!
-	delete [] bits;
+	//delete [] bits;
 	bits = new char[((int *) copyMe.bits)[0]];
 	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
 
@@ -32,7 +32,7 @@ Record& Record::operator=(const Record& copyMe) {
 	if (this == &copyMe) return *this;
 
 	// this is a deep copy, so allocate the bits and move them over!
-	delete [] bits;
+	//delete [] bits;
 	bits = new char[((int *) copyMe.bits)[0]];
 	memcpy (bits, copyMe.bits, ((int *) copyMe.bits)[0]);
 
@@ -438,8 +438,8 @@ void Record :: print(ostream& _os, Schema& mySchema) {
 }
 
 
-bool Record::operator< (Record& _withMe) {
-	int ret = compOrder->Run(*this, _withMe, *_withMe.compOrder);
+bool Record::operator< (const Record& _withMe){
+	int ret = compOrder->Run(*this,_withMe, *_withMe.compOrder);
 	if (ret == -1) return true;
 	return false;
 }

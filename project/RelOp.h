@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <set>
 #include <sstream>
 
 #include "Schema.h"
@@ -131,6 +132,8 @@ private:
 	// operators generating data
 	RelationalOp* left;
 	RelationalOp* right;
+        
+        multimap<Record,int> ds;
 
 public:
 	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,

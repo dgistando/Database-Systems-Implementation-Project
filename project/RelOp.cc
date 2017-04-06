@@ -147,8 +147,29 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 Join::~Join() {
 }
 
+bool operator<(const Record a,const Record b){
+    int ret = a.compOrder->Run(a,b, *(b.compOrder));
+    if (ret == -1) return true;
+    return false;
+}
+
 bool Join::GetNext(Record& _record){
-    return true;
+    
+    //multimap <Record, int> dss;
+    vector <Record> vec;
+    Record temp;
+    int count = 0;
+    while(left->GetNext(temp)){
+        //int val = count;
+        //pair<Record,int> test(temp,val);
+        //dss.insert(test);
+        vec.push_back(temp);
+        count++;
+        //auto it = dss.find(temp);
+        //cout << (*it).second <<  endl;
+    }
+    
+    int x = 0;
 }
 
 ostream& Join::print(ostream& _os) {
@@ -250,7 +271,7 @@ bool Sum::GetNext(Record& _record){
         double double_result = 0;
         auto type = compute.Apply(_record,integer_result,double_result);
         if(type == Integer) { integer_sum += integer_result; }
-        else if (type = Float) { double_sum += double_result; }
+        else if (type == Float) { double_sum += double_result; }
         else { return false; }
     }
     double sum_result = (double)integer_sum + double_sum; // one of them will be zero

@@ -100,8 +100,8 @@ public:
 	// use the same order for both records
 	int Run(Record& left, Record& right);
 	// use different orders: *this for left and orderRight for right
-	int Run(Record& left, Record& right, OrderMaker& orderRight);
-
+	int Run(const Record& left, const Record& right, const OrderMaker& orderRight) const;
+        
 	// print to the screen
     friend ostream& operator<<(ostream& _os, OrderMaker& _o);
 };
