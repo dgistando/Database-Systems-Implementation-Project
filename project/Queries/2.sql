@@ -1,4 +1,5 @@
-SELECT l_orderkey, l_suppkey, l_partkey
-FROM lineitem
-WHERE l_orderkey<l_suppkey AND l_orderkey<l_partkey AND l_partkey<l_suppkey
+SELECT SUM(c_acctbal), c_name 
+FROM customer, orders 
+WHERE c_custkey = o_custkey AND o_totalprice < 100.0
+GROUP BY c_name
 

@@ -55,14 +55,14 @@ int main () {
         
         //cout<<"Catalog:: "<<catalog<<endl;
         
-        string fileName1 = "/home/farrenkor/Desktop/data";
+        string fileName1 = "/home/david/Desktop/data";
         vector<string> files1;
         vector<string> tables1;
         catalog.GetTables(files1);
         for (int i = 0; i< files1.size(); i++) {
             tables1.push_back(files1[i]);
             files1[i]+= ".tbl";
-            files1[i].insert(0,"/home/farrenkor/Desktop/data/");
+            files1[i].insert(0,"/home/david/Desktop/data/");
             cout<<files1[i]<<endl;
 	}
         
@@ -152,6 +152,8 @@ int main () {
 		}
 		// re-open stdin so that we can start reading from the scratch
 		freopen("/dev/tty", "r", stdin); 
+                
+                break;
 	}
 	fclose(stdin);
 	

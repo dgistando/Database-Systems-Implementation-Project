@@ -23,9 +23,11 @@ class Record {
 private:
 	//the binary content of the record or the actual data in the record
 	char* bits;
-	OrderMaker* compOrder;
+        OrderMaker* compOrder;
+	
 
 public:
+    
 	Record ();
 	Record(const Record& _other);
 	Record& operator=(const Record& _other);
@@ -84,13 +86,23 @@ public:
 
 
     // comparison operator overloading
-    bool operator< (const Record& _withMe);
+    bool operator< (const Record& _withMe) const;
     bool IsEqual(Record& _withMe);
     bool LessThan(Record& _me);
 
     void SetOrderMaker(OrderMaker* _order) {compOrder = _order;}
     
-    friend bool operator<(const Record a,const Record b);
+    
+    //friend bool operator<(const Record a,const Record b); //This wasnt necessary
+    
 };
+
+
+/*bool operator<(const Record a,const Record b){
+    int ret = a.compOrder->Run(a,b, *(b.compOrder));
+    if (ret == -1) return true;
+    return false;
+}*/
+
 
 #endif //_RECORD_H

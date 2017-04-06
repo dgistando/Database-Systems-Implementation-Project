@@ -39,7 +39,8 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <flagsDictionary>
-        <element flagsID="0" commonFlags="-std=gnu++11"/>
+        <element flagsID="0"
+                 commonFlags="-mtune=generic -march=x86-64 -std=gnu++11 -fstack-protector-strong"/>
       </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
@@ -57,58 +58,97 @@
       </makefileType>
       <item path="Catalog.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="Comparison.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="DBFile.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="EfficientMap.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="File.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="Function.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="QueryCompiler.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="QueryLexer.c" ex="false" tool="0" flavor2="2">
       </item>
       <item path="QueryOptimizer.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="QueryParser.c" ex="false" tool="1" flavor2="4">
       </item>
       <item path="Record.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="RelOp.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="Schema.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="TableDataStructure.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
       <item path="main.cc" ex="false" tool="1" flavor2="8">
         <ccTool flags="0">
+          <incDir>
+            <pElem>.</pElem>
+          </incDir>
         </ccTool>
       </item>
     </conf>

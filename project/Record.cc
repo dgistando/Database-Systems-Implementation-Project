@@ -438,7 +438,7 @@ void Record :: print(ostream& _os, Schema& mySchema) {
 }
 
 
-bool Record::operator< (const Record& _withMe){
+bool Record::operator< (const Record& _withMe) const {
 	int ret = compOrder->Run(*this,_withMe, *_withMe.compOrder);
 	if (ret == -1) return true;
 	return false;
@@ -455,3 +455,9 @@ bool Record::LessThan (Record& _withMe) {
 	if (ret == -1) return true;
 	return false;
 }
+
+/*bool Record::operator<(const Record a,const Record b){
+    int ret = a.compOrder->Run(a,b, *(b.compOrder));
+    if (ret == -1) return true;
+    return false;
+}*/

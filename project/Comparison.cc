@@ -272,8 +272,11 @@ int OrderMaker :: Run(Record& left, Record& right) {
 int OrderMaker :: Run (const Record& left, const Record& right, const OrderMaker& orderRight) const{
 	char *val1, *val2;
         
-	char* left_bits = left.GetBits();
-	char* right_bits = right.GetBits();
+        Record recLeft = const_cast<Record&>(left);
+        Record recRight = const_cast<Record&>(right);
+        
+	char* left_bits = recLeft.GetBits();
+	char* right_bits = recRight.GetBits();
 
 	for (int i = 0; i < numAtts; i++) {
 		val1 = left_bits + ((int *) left_bits)[whichAtts[i] + 1];

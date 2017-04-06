@@ -142,34 +142,51 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	predicate = _predicate;
 	left = _left;
 	right = _right;
+        mmap = multimap<Record, int>();
+        
+        //first phase
+        leftOrder = new OrderMaker();
+        rightOrder = new OrderMaker();
+            
+        predicate.GetSortOrders(*leftOrder, *rightOrder);    
+    
+        Record* temp = new Record();
+        
+        //loading into memory
+        while(left->GetNext(*temp)){
+            temp->SetOrderMaker(leftOrder);
+            mmap.insert(pair<Record,int>(*temp,10));
+        }
+        
+        
 }
 
 Join::~Join() {
 }
 
-bool operator<(const Record a,const Record b){
-    int ret = a.compOrder->Run(a,b, *(b.compOrder));
-    if (ret == -1) return true;
-    return false;
-}
+
 
 bool Join::GetNext(Record& _record){
     
-    //multimap <Record, int> dss;
-    vector <Record> vec;
     Record temp;
-    int count = 0;
-    while(left->GetNext(temp)){
-        //int val = count;
-        //pair<Record,int> test(temp,val);
-        //dss.insert(test);
-        vec.push_back(temp);
-        count++;
-        //auto it = dss.find(temp);
-        //cout << (*it).second <<  endl;
-    }
+        
+      while(right->GetNext(temp)){
+          temp.SetOrderMaker(rightOrder);
+      
+             
+        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+	
+            Record mapRec = const_cast<Record&>((*it).first);
+              
+            if(mapRec.IsEqual(temp)){
+                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+                return true;
+            }
+            
+        }
+      }
+                
     
-    int x = 0;
 }
 
 ostream& Join::print(ostream& _os) {
@@ -269,24 +286,42 @@ bool Sum::GetNext(Record& _record){
     while(producer->GetNext(_record)){
         int integer_result = 0;
         double double_result = 0;
-        auto type = compute.Apply(_record,integer_result,double_result);
-        if(type == Integer) { integer_sum += integer_result; }
-        else if (type == Float) { double_sum += double_result; }
-        else { return false; }
+        
+        (compute.Apply(_record,integer_result,double_result) == Integer)?
+        integer_sum += integer_result:
+        double_sum += double_result;
+        
     }
     double sum_result = (double)integer_sum + double_sum; // one of them will be zero
     
 
-    char* recSpace = new char[PAGE_SIZE];
+    char* recSpace = new char[16];
     int currentPosInRec = sizeof (int) * (2);
     ((int *) recSpace)[1] = currentPosInRec;
-    *((double *) &(recSpace[currentPosInRec])) = sum_result;
+    
+    if(schemaOut.GetAtts()[0].type == Integer){
+            *((int *) (recSpace + currentPosInRec)) = sum_result;
+    }else{
+            *((double *) (recSpace+ currentPosInRec)) = sum_result;
+    }
+    
+    //*((double *) (recSpace+ currentPosInRec)) = sum_result;
     currentPosInRec += sizeof (double);
     ((int *) recSpace)[0] = currentPosInRec;
+    
     Record sumRec;
-    sumRec.CopyBits( recSpace, currentPosInRec );
-    delete [] recSpace;
-    _record = sumRec;
+    
+    
+    //sumRec.CopyBits( recSpace, currentPosInRec );
+    
+    //delete [] recSpace;
+    
+    //cout<<((int*) recSpace)[0]<<endl;
+    //cout<<((int*) recSpace)[1]<<endl;
+    //cout<<*((double*) (recSpace+8))<<endl;
+    
+    
+    _record.Consume(recSpace);
     alreadyCalculatedSum = true;
     return true;
 }
