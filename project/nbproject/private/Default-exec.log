@@ -1,0 +1,7 @@
+called: g++
+	/home/david/Desktop/CSE177/CSE177/Database-Systems-Implementation-Project/project
+	g++
+	-c
+	-Wno-write-strings
+	QueryParser.c
+
