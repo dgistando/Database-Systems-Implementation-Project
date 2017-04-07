@@ -383,7 +383,54 @@ GroupBy::~GroupBy() {
 }
 
 bool GroupBy::GetNext(Record& _record){
-    return true;
+    if(!mapsCreated){
+        int integer_sum = 0;
+        double double_sum = 0;
+        while(producer->GetNext(_record)){
+            stringstream key;
+            int integer_result = 0;
+            double double_result = 0;
+
+            (compute.Apply(_record,integer_result,double_result) == Integer)?
+            integer_sum += integer_result:
+            double_sum += double_result;
+            double sum_result = (double)integer_sum + double_sum; // one of them will be zero
+            
+            _record.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts , schemaOut.GetNumAtts());
+            _record.print(key, schemaOut);
+            auto it = sumMap.find(key.str());
+
+            if(it != sumMap.end())	{ sumMap[key.str()]+= sum_result; }
+            else {
+                    sumMap[key.str()] = sum_result;
+                    recordMap[key.str()] = _record;
+            }
+
+        }
+        mapsCreated = true;
+    } else {
+        if (sumMap.empty()) return false;
+
+        Record temp = recordMap.begin()->second;
+        string strr = sumMap.begin()->first;
+
+        char* recSpace = new char[PAGE_SIZE];
+        int currentPosInRec = sizeof (int) * (2);
+        ((int *) recSpace)[1] = currentPosInRec;
+        *((double *) &(recSpace[currentPosInRec])) = sumMap.begin()->second;
+        currentPosInRec += sizeof (double);
+        ((int *) recSpace)[0] = currentPosInRec;
+        Record sumRec;
+        sumRec.CopyBits( recSpace, currentPosInRec );
+        delete [] recSpace;
+
+        Record newRec;
+        newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
+        recordMap.erase(strr);
+        sumMap.erase(strr);
+        _record = newRec;
+        return true;
+    }
 }
 
 ostream& GroupBy::print(ostream& _os) {
