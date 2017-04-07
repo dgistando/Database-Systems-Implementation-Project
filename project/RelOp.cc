@@ -143,6 +143,7 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	left = _left;
 	right = _right;
         mmap = multimap<Record, int>();
+        leftSmaller = false;
         
         
         //first phase
@@ -153,10 +154,13 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
     
         Record* temp = new Record();
         
+        RelationalOp* copyLeft = _left;
+        RelationalOp* copyRight = _right;
+        
         if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
         
             //loading left into memory
-            while(left->GetNext(*temp)){
+            while(copyLeft->GetNext(*temp)){
                 temp->SetOrderMaker(leftOrder);
                 mmap.insert(pair<Record,int>(*temp,10));
             }
@@ -165,10 +169,13 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
         }else{
         
             //loading right into memory
-            while(right->GetNext(*temp)){
+            while(copyRight->GetNext(*temp)){
                 temp->SetOrderMaker(rightOrder);
                 mmap.insert(pair<Record,int>(*temp,10));
+                
             }
+            temp->print(cout,schemaRight);
+            cout << endl;
         
         }
         
@@ -181,7 +188,6 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    
     Record temp;
         
     if(leftSmaller){
@@ -204,23 +210,19 @@ bool Join::GetNext(Record& _record){
     }else{
     
         while(left->GetNext(temp)){
-          temp.SetOrderMaker(leftOrder);
-      
-             
-        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-	
-            Record mapRec = const_cast<Record&>((*it).first);
-              
-            if(mapRec.IsEqual(temp)){
-                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-                return true;
+            temp.SetOrderMaker(leftOrder);
+            for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+
+                Record mapRec = const_cast<Record&>((*it).first);
+
+                if(mapRec.IsEqual(temp)){
+                    _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+                    return true;
+                }
             }
-            
         }
-      }
-    
-    
     }
+    return false;
 }
 
 ostream& Join::print(ostream& _os) {
@@ -308,6 +310,7 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 	schemaOut = _schemaOut;
 	compute = _compute;
 	producer = _producer;
+        alreadyCalculatedSum = false;
 }
 
 Sum::~Sum() {

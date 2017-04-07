@@ -32,6 +32,8 @@ public:
 
 	// every operator has to implement this method
 	virtual bool GetNext(Record& _record) = 0;
+        
+        //virtual void MoveToFirstPage();
 
 	/* Virtual function for polymorphic printing using operator<<.
 	 * Each operator has to implement its specific version of print.
@@ -140,7 +142,7 @@ private:
         OrderMaker* leftOrder;
         OrderMaker* rightOrder;
     
-        
+        multimap<string,DBFile> dbmap;
         multimap<Record,int> mmap;
 
 public:
