@@ -11,6 +11,9 @@
 #include "DBFile.h"
 #include "Function.h"
 #include "Comparison.h"
+#include "EfficientMap.h"
+#include "Keyify.h"
+#include "Swapify.h"
 
 using namespace std;
 
@@ -133,7 +136,12 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
-        multimap<Record,int> ds;
+            
+        OrderMaker* leftOrder;
+        OrderMaker* rightOrder;
+    
+        
+        multimap<Record,int> mmap;
 
 public:
 	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
@@ -149,6 +157,8 @@ public:
 	int depth;
 
 	int numTuples;
+        
+        bool leftSmaller;
 };
 
 class DuplicateRemoval : public RelationalOp {
@@ -214,6 +224,10 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
+        
+        bool mapsCreated;
+        map<string,Record> recordMap;
+        map<string,double> sumMap;
 
 public:
 	GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,
