@@ -382,7 +382,7 @@ bool Sum::GetNext(Record& _record){
     ((int *) recSpace)[1] = currentPosInRec;
 
     if(schemaOut.GetAtts()[0].type == Integer){
-            *((int *) (recSpace + currentPosInRec)) = sum_result;	
+            *((int *) (recSpace + currentPosInRec)) = sum_result;
     }else{
             *((double *) (recSpace+ currentPosInRec)) = sum_result;
     }
