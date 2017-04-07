@@ -414,7 +414,7 @@ bool GroupBy::GetNext(Record& _record){
         Record temp = recordMap.begin()->second;
         string strr = sumMap.begin()->first;
 
-        char* recSpace = new char[PAGE_SIZE];
+        char* recSpace = new char[16];
         int currentPosInRec = sizeof (int) * (2);
         ((int *) recSpace)[1] = currentPosInRec;
         *((double *) &(recSpace[currentPosInRec])) = sumMap.begin()->second;
