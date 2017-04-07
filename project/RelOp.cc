@@ -368,33 +368,42 @@ bool Sum::GetNext(Record& _record){
     while(producer->GetNext(_record)){
         int integer_result = 0;
         double double_result = 0;
-        auto type = compute.Apply(_record,integer_result,double_result);
-				double sum_result = (double)integer_sum + double_sum; // one of them will be zero
 
+        (compute.Apply(_record,integer_result,double_result) == Integer)?
+        integer_sum += integer_result:
+        double_sum += double_result;
 
-				char* recSpace = new char[16];
-				int currentPosInRec = sizeof (int) * (2);
-				((int *) recSpace)[1] = currentPosInRec;
-
-				if(schemaOut.GetAtts()[0].type == Integer){
-								*((int *) (recSpace + currentPosInRec)) = sum_result;
-				}else{
-								*((double *) (recSpace+ currentPosInRec)) = sum_result;
-				}
     }
     double sum_result = (double)integer_sum + double_sum; // one of them will be zero
 
 
-    char* recSpace = new char[PAGE_SIZE];
+    char* recSpace = new char[16];
     int currentPosInRec = sizeof (int) * (2);
     ((int *) recSpace)[1] = currentPosInRec;
-    *((double *) &(recSpace[currentPosInRec])) = sum_result;
+
+    if(schemaOut.GetAtts()[0].type == Integer){
+            *((int *) (recSpace + currentPosInRec)) = sum_result;	
+    }else{
+            *((double *) (recSpace+ currentPosInRec)) = sum_result;
+    }
+
+    //*((double *) (recSpace+ currentPosInRec)) = sum_result;
     currentPosInRec += sizeof (double);
     ((int *) recSpace)[0] = currentPosInRec;
+
     Record sumRec;
-    sumRec.CopyBits( recSpace, currentPosInRec );
-    delete [] recSpace;
-    _record = sumRec;
+
+
+    //sumRec.CopyBits( recSpace, currentPosInRec );
+
+    //delete [] recSpace;
+
+    //cout<<((int*) recSpace)[0]<<endl;
+    //cout<<((int*) recSpace)[1]<<endl;
+    //cout<<*((double*) (recSpace+8))<<endl;
+
+
+    _record.Consume(recSpace);
     alreadyCalculatedSum = true;
     return true;
 }

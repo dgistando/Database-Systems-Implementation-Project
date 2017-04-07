@@ -112,7 +112,7 @@ public:
 	Project(Schema& _schemaIn, Schema& _schemaOut, int _numAttsInput,
 		int _numAttsOutput, int* _keepMe, RelationalOp* _producer);
 	virtual ~Project();
-        
+
 	virtual bool GetNext(Record& _record);
 
 	virtual Schema GetSchema() { return schemaOut; }
@@ -135,12 +135,12 @@ private:
 	// operators generating data
 	RelationalOp* left;
 	RelationalOp* right;
-        
-            
+
+
         OrderMaker* leftOrder;
         OrderMaker* rightOrder;
-    
-        
+
+
         multimap<Record,int> mmap;
 
 public:
@@ -157,7 +157,7 @@ public:
 	int depth;
 
 	int numTuples;
-        
+
         bool leftSmaller;
 };
 
@@ -168,7 +168,7 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
-        
+
         //duplicate removal
         map<string,Record> dupMap;
 
@@ -195,8 +195,8 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
-        
-        bool alreadyCalculatedSum;
+
+        bool alreadyCalculatedSum = false;
 
 public:
 	Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
