@@ -451,6 +451,7 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 	schemaIn = _schemaIn;
 	schemaOut = _schemaOut;
 	groupingAtts = _groupingAtts;
+	groupingAtts.Swap(_groupingAtts);
 	compute = _compute;
 	producer = _producer;
 }
