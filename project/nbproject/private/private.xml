@@ -15,8 +15,9 @@
             <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/main.cc</file>
             <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/RelOp.h</file>
             <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/Record.cc</file>
+            <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/QueryCompiler.cc</file>
             <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/RelOp.cc</file>
-            <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/DBFile.cc</file>
+            <file>file:/home/farrenkor/Projects/Database-Systems-Implementation-Project/project/Schema.h</file>
         </group>
     </open-files>
 </project-private>

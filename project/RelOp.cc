@@ -451,6 +451,7 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 	schemaIn = _schemaIn;
 	schemaOut = _schemaOut;
 	groupingAtts = _groupingAtts;
+	groupingAtts.Swap(_groupingAtts);
 	compute = _compute;
 	producer = _producer;
 }
@@ -488,7 +489,7 @@ bool GroupBy::GetNext(Record& _record){
         if (sumMap.empty()) return false;
 
         Record temp = recordMap.begin()->second;
-        string strr = sumMap.begin()->first;
+        string topr = sumMap.begin()->first;
 
         char* recSpace = new char[16];
         int currentPosInRec = sizeof (int) * (2);
@@ -502,8 +503,8 @@ bool GroupBy::GetNext(Record& _record){
 
         Record newRec;
         newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
-        recordMap.erase(strr);
-        sumMap.erase(strr);
+        recordMap.erase(topr);
+        sumMap.erase(topr);
         _record = newRec;
         return true;
     }
