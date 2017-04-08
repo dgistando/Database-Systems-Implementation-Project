@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <queue>
 
 #include "Schema.h"
 #include "Record.h"
@@ -138,14 +139,16 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
-            
-        OrderMaker* leftOrder;
-        OrderMaker* rightOrder;
-    
-        multimap<string,DBFile> dbmap;
-        multimap<Record,int> mmap;
+        bool leftIsSmaller;
+	RelationalOp * largerTable;
+	Record curRecord;
+	TwoWayList <Record> smallTable;
+        
+        
+        
 
 public:
+        
 	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 		CNF& _predicate, RelationalOp* _left, RelationalOp* _right);
 	virtual ~Join();

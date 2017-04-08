@@ -136,48 +136,66 @@ ostream& Project::print(ostream& _os) {
 
 Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
+        
 	schemaLeft = _schemaLeft;
 	schemaRight = _schemaRight;
 	schemaOut = _schemaOut;
 	predicate = _predicate;
 	left = _left;
 	right = _right;
-        mmap = multimap<Record, int>();
-        leftSmaller = false;
+        
+        auto copyOut = new Schema();
+        copyOut->Append(_schemaOut);
+        
+        Record temp;
+        if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
+		leftIsSmaller = false; largerTable = left;
+		while (right->GetNext(temp)) { smallTable.Insert(temp); }
+	} else {
+		leftIsSmaller = true; largerTable = right;
+		while (left->GetNext(temp)) { smallTable.Insert(temp); }
+	}
+	smallTable.MoveToFinish();
         
         
-        //first phase
-        leftOrder = new OrderMaker();
-        rightOrder = new OrderMaker();
-            
-        predicate.GetSortOrders(*leftOrder, *rightOrder);    
-    
-        Record* temp = new Record();
         
-        RelationalOp* copyLeft = _left;
-        RelationalOp* copyRight = _right;
-        
-        if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
-        
-            //loading left into memory
-            while(copyLeft->GetNext(*temp)){
-                temp->SetOrderMaker(leftOrder);
-                mmap.insert(pair<Record,int>(*temp,10));
-            }
-        
-            leftSmaller = true;
-        }else{
-        
-            //loading right into memory
-            while(copyRight->GetNext(*temp)){
-                temp->SetOrderMaker(rightOrder);
-                mmap.insert(pair<Record,int>(*temp,10));
-                
-            }
-            temp->print(cout,schemaRight);
-            cout << endl;
-        
-        }
+//        mmap = multimap<Record, int>();
+//        leftSmaller = false;
+//        joinHeaped = false;
+//        
+//        
+//        //first phase
+//        leftOrder = new OrderMaker();
+//        rightOrder = new OrderMaker();
+//            
+//        predicate.GetSortOrders(*leftOrder, *rightOrder);    
+//    
+//        Record* temp = new Record();
+//        
+//        RelationalOp* copyLeft = _left;
+//        RelationalOp* copyRight = _right;
+//        
+//        if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
+//        
+//            //loading left into memory
+//            while(left->GetNext(*temp)){
+//                temp->SetOrderMaker(leftOrder);
+//                mmap.insert(pair<Record,int>(*temp,10));
+//            }
+//        
+//            leftSmaller = true;
+//        }else{
+//        
+//            //loading right into memory
+//            while(right->GetNext(*temp)){
+//                temp->SetOrderMaker(rightOrder);
+//                mmap.insert(pair<Record,int>(*temp,10));
+//                
+//            }
+//            temp->print(cout,schemaRight);
+//            cout << endl;
+//        
+//        }
         
         
 }
@@ -188,41 +206,96 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    Record temp;
-        
-    if(leftSmaller){
-      while(right->GetNext(temp)){
-          temp.SetOrderMaker(rightOrder);
-      
-             
-        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-	
-            Record mapRec = const_cast<Record&>((*it).first);
-              
-            if(mapRec.IsEqual(temp)){
-                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-                return true;
-            }
-            
+    while(true){
+        if(smallTable.AtEnd()){
+            if(!(largerTable->GetNext(curRecord))){ return false; }
+            smallTable.MoveToStart();
         }
-      }
-                
-    }else{
-    
-        while(left->GetNext(temp)){
-            temp.SetOrderMaker(leftOrder);
-            for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-
-                Record mapRec = const_cast<Record&>((*it).first);
-
-                if(mapRec.IsEqual(temp)){
-                    _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-                    return true;
+        while (!smallTable.AtEnd()){
+            if(leftIsSmaller){
+                if (predicate.Run(smallTable.Current(), curRecord)){
+                    _record.AppendRecords(smallTable.Current(), curRecord, schemaLeft.atts.size(), schemaRight.atts.size());
+                    smallTable.Advance(); return true;
                 }
-            }
+            } else {
+                if (predicate.Run(curRecord,smallTable.Current())){
+                    _record.AppendRecords(curRecord, smallTable.Current(), schemaLeft.atts.size(), schemaRight.atts.size());
+                    smallTable.Advance(); return true;
+                }
+            } smallTable.Advance();
         }
-    }
-    return false;
+    } return false;
+    
+//    if(!joinHeaped){
+//        if(leftSmaller){
+//            string path = "tempheap";
+//            joinHeap.Create(&path[0],Heap);
+//            Record temp;
+//            while(right->GetNext(temp)){
+//                for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+//                    Record mapRec = const_cast<Record&>((*it).first);
+//                    if(mapRec.IsEqual(temp)){
+//                        Record macthedRecord;
+//                        macthedRecord.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+//                        joinHeap.AppendRecord(macthedRecord);
+//                    }
+//                }
+//            }
+//        } else {
+//            string path = "tempheap";
+//            joinHeap.Create(&path[0],Heap);
+//            Record temp;
+//            while(left->GetNext(temp)){
+//                temp.SetOrderMaker(leftOrder);
+//                for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+//
+//                    Record mapRec = const_cast<Record&>((*it).first);
+//
+//                    if(mapRec.IsEqual(temp)){
+//                        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//    }
+    
+    
+//    Record temp;
+//        
+//    if(leftSmaller){
+//      while(right->GetNext(temp)){
+//          temp.SetOrderMaker(rightOrder);
+//      
+//             
+//        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+//	
+//            Record mapRec = const_cast<Record&>((*it).first);
+//              
+//            if(mapRec.IsEqual(temp)){
+//                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+//                return true;
+//            }
+//            
+//        }
+//      }
+//                
+//    }else{
+//    
+//        while(left->GetNext(temp)){
+//            temp.SetOrderMaker(leftOrder);
+//            for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+//
+//                Record mapRec = const_cast<Record&>((*it).first);
+//
+//                if(mapRec.IsEqual(temp)){
+//                    _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+//                    return true;
+//                }
+//            }
+//        }
+//    }
+//    return false;
 }
 
 ostream& Join::print(ostream& _os) {
