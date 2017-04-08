@@ -143,7 +143,6 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	left = _left;
 	right = _right;
         mmap = multimap<Record, int>();
-        leftSmaller = false;
         
         //first phase
         leftOrder = new OrderMaker();
@@ -151,25 +150,35 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
             
         predicate.GetSortOrders(*leftOrder, *rightOrder);    
     
-        Record* temp = new Record();
+        Record temp;
         
         if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
-        
+                         
             //loading left into memory
-            while(left->GetNext(*temp)){
-                temp->SetOrderMaker(leftOrder);
-                mmap.insert(pair<Record,int>(*temp,10));
+            while(left->GetNext(temp)){
+                
+                //temp.print(cout,schemaLeft);
+                
+                temp.SetOrderMaker(leftOrder);
+                mmap.insert(pair<Record,int>(temp,10));
             }
         
             leftSmaller = true;
+            int size = mmap.size();
+            cout<<size<<endl;
         }else{
-        
+            
             //loading right into memory
-            while(right->GetNext(*temp)){
-                temp->SetOrderMaker(rightOrder);
-                mmap.insert(pair<Record,int>(*temp,10));
+            while(right->GetNext(temp)){
+                
+               // temp.print(cout,schemaLeft);
+                
+                temp.SetOrderMaker(rightOrder);
+                mmap.insert(pair<Record,int>(temp,10));
             }
-        
+            leftSmaller = false;
+            int size = mmap.size();
+            cout<<size<<endl;
         }
         
         
@@ -183,6 +192,46 @@ Join::~Join() {
 bool Join::GetNext(Record& _record){
     
     Record temp;
+
+    if(leftSmaller){
+        
+        if(right->GetNext(temp)){
+            temp.SetOrderMaker(rightOrder);
+            
+            multimap<Record, int>::iterator it = mmap.find(temp);
+            //if(it == mmap.end())return false;
+            
+            Record mapRec = const_cast<Record&>((*it).first);
+                        
+            //if(predicate.Run(mapRec, temp)){
+            //if(mapRec.IsEqual(temp)){
+                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+                return true;
+            ///}
+            
+        }
+        
+    }else{
+    
+        if(left->GetNext(temp)){
+            temp.SetOrderMaker(leftOrder);
+            
+            multimap<Record, int>::iterator it = mmap.find(temp);
+            //if(it == mmap.end())return false;
+                        
+            Record mapRec = const_cast<Record&>((*it).first);
+                        
+            //if(predicate.Run(temp, mapRec)){
+            //if(temp.IsEqual(mapRec)){
+                _record.AppendRecords(temp, mapRec, schemaRight.GetNumAtts(), schemaLeft.GetNumAtts());
+                return true;
+            //}
+        }
+        
+    }
+    
+    return false;
+    /*Record temp;
         
     if(leftSmaller){
         
@@ -228,6 +277,7 @@ bool Join::GetNext(Record& _record){
     
     }
     return false;
+      */
 }
 
 ostream& Join::print(ostream& _os) {
