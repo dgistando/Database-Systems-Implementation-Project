@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <sstream>
 #include <queue>
@@ -175,7 +176,7 @@ private:
 	RelationalOp* producer;
         
         //duplicate removal
-        map<string,Record> dupMap;
+        unordered_map<string, int> dupMap;
 
 public:
 	DuplicateRemoval(Schema& _schema, RelationalOp* _producer);

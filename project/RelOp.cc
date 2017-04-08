@@ -207,10 +207,7 @@ Join::~Join() {
 
 bool Join::GetNext(Record& _record){
     while(true){
-        if(smallTable.AtEnd()){
-            if(!(largerTable->GetNext(curRecord))){ return false; }
-            smallTable.MoveToStart();
-        }
+        if(smallTable.AtEnd()){ if(!(largerTable->GetNext(curRecord))){ return false; } smallTable.MoveToStart(); }
         while (!smallTable.AtEnd()){
             if(leftIsSmaller){
                 if (predicate.Run(smallTable.Current(), curRecord)){
@@ -225,77 +222,6 @@ bool Join::GetNext(Record& _record){
             } smallTable.Advance();
         }
     } return false;
-    
-//    if(!joinHeaped){
-//        if(leftSmaller){
-//            string path = "tempheap";
-//            joinHeap.Create(&path[0],Heap);
-//            Record temp;
-//            while(right->GetNext(temp)){
-//                for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-//                    Record mapRec = const_cast<Record&>((*it).first);
-//                    if(mapRec.IsEqual(temp)){
-//                        Record macthedRecord;
-//                        macthedRecord.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-//                        joinHeap.AppendRecord(macthedRecord);
-//                    }
-//                }
-//            }
-//        } else {
-//            string path = "tempheap";
-//            joinHeap.Create(&path[0],Heap);
-//            Record temp;
-//            while(left->GetNext(temp)){
-//                temp.SetOrderMaker(leftOrder);
-//                for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-//
-//                    Record mapRec = const_cast<Record&>((*it).first);
-//
-//                    if(mapRec.IsEqual(temp)){
-//                        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
-//    }
-    
-    
-//    Record temp;
-//        
-//    if(leftSmaller){
-//      while(right->GetNext(temp)){
-//          temp.SetOrderMaker(rightOrder);
-//      
-//             
-//        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-//	
-//            Record mapRec = const_cast<Record&>((*it).first);
-//              
-//            if(mapRec.IsEqual(temp)){
-//                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-//                return true;
-//            }
-//            
-//        }
-//      }
-//                
-//    }else{
-//    
-//        while(left->GetNext(temp)){
-//            temp.SetOrderMaker(leftOrder);
-//            for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
-//
-//                Record mapRec = const_cast<Record&>((*it).first);
-//
-//                if(mapRec.IsEqual(temp)){
-//                    _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-//                    return true;
-//                }
-//            }
-//        }
-//    }
-//    return false;
 }
 
 ostream& Join::print(ostream& _os) {
@@ -356,20 +282,18 @@ DuplicateRemoval::~DuplicateRemoval() {
 }
 
 bool DuplicateRemoval::GetNext(Record& _record){
-    while (true)
-    {
-        if (!producer->GetNext(_record)) { return false; }
-        else{
-            stringstream key;
-            _record.print(key, schema);
-            auto it = dupMap.find(key.str());
-            if(it == dupMap.end()) 
-            {
-                dupMap[key.str()] = _record;
-                return true;
-            }
+    Record temp;
+    while(producer->GetNext(temp)){
+        stringstream key;
+        temp.print(key, schema);
+        auto it = dupMap.find(key.str());
+        if(it == dupMap.end()){
+            dupMap[key.str()] = 1;
+            _record = temp;
+            return true;
         }
     }
+    return false;
 }
 
 ostream& DuplicateRemoval::print(ostream& _os) {
