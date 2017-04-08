@@ -81,6 +81,8 @@ void DBFile::MoveFirst () {
 
 void DBFile::AppendRecord (Record& rec) {
 
+    cout << "PAGE COUNT: " << pageCount << endl;
+    
     if (page.Append(rec) == 0) {
         file.AddPage(page, file.GetLength());
         page.EmptyItOut();

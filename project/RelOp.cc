@@ -143,7 +143,7 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	left = _left;
 	right = _right;
         mmap = multimap<Record, int>();
-        
+        leftSmaller = false;
         
         //first phase
         leftOrder = new OrderMaker();
@@ -185,42 +185,49 @@ bool Join::GetNext(Record& _record){
     Record temp;
         
     if(leftSmaller){
-      while(right->GetNext(temp)){
-          temp.SetOrderMaker(rightOrder);
-      
-             
-        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+        
+      if(right->GetNext(temp)){
+          
+        temp.SetOrderMaker(rightOrder);
+           
+        multimap<Record, int>::iterator it = mmap.find(temp);
+        if(it == mmap.end()) return false; //Didn't find the element in list
 	
-            Record mapRec = const_cast<Record&>((*it).first);
-              
-            if(mapRec.IsEqual(temp)){
-                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-                return true;
-            }
-            
+        Record mapRec = const_cast<Record&>((*it).first);
+
+        if(mapRec.IsEqual(temp)){
+        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+        return true;
         }
-      }
+        
+      }else{
+          cout<<"END OF RELATION"<<endl;
+        return false;//we have met the end of the list
+      } 
                 
     }else{
     
-        while(left->GetNext(temp)){
-          temp.SetOrderMaker(leftOrder);
-      
-             
-        for (multimap<Record, int>::iterator it = mmap.begin();it != mmap.end();++it){
+        if(left->GetNext(temp)){
+          
+        temp.SetOrderMaker(rightOrder);
+           
+        multimap<Record, int>::iterator it = mmap.find(temp);
+        if(it == mmap.end()) return false; //Didn't find the element in list
 	
-            Record mapRec = const_cast<Record&>((*it).first);
-              
-            if(mapRec.IsEqual(temp)){
-                _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-                return true;
-            }
-            
+        Record mapRec = const_cast<Record&>((*it).first);//second being the 10
+        
+        if(mapRec.IsEqual(temp)){
+        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+        return true;
         }
-      }
-    
+          
+      }else{
+          cout<<"END OF RELATION"<<endl;
+        return false;//we have met the end of the list
+      } //we have met the end of the list
     
     }
+    return false;
 }
 
 ostream& Join::print(ostream& _os) {
@@ -308,6 +315,7 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 	schemaOut = _schemaOut;
 	compute = _compute;
 	producer = _producer;
+        alreadyCalculatedSum = false;
 }
 
 Sum::~Sum() {
@@ -321,9 +329,12 @@ bool Sum::GetNext(Record& _record){
         int integer_result = 0;
         double double_result = 0;
         
-        (compute.Apply(_record,integer_result,double_result) == Integer)?
-        integer_sum += integer_result:
-        double_sum += double_result;
+        auto type = compute.Apply(_record,integer_result,double_result);
+        
+         if(type == Integer) { integer_sum += integer_result; }
+       else if (type = Float) { double_sum += double_result; }
+        else if (type == Float) { double_sum += double_result; }
+         else { return false; }
         
     }
     double sum_result = (double)integer_sum + double_sum; // one of them will be zero
