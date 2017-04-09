@@ -308,6 +308,7 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 	schemaOut = _schemaOut;
 	compute = _compute;
 	producer = _producer;
+	alreadyCalculatedSum = false;
 }
 
 Sum::~Sum() {
