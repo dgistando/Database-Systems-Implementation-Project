@@ -1,0 +1,26 @@
+catalog.sqlite is opened successfully.
+Loading data from Catalog... Done!
+
+/home/david/Desktop/data/customer.tbl
+/home/david/Desktop/data/lineitem.tbl
+/home/david/Desktop/data/nation.tbl
+/home/david/Desktop/data/orders.tbl
+/home/david/Desktop/data/part.tbl
+/home/david/Desktop/data/partsupp.tbl
+/home/david/Desktop/data/region.tbl
+/home/david/Desktop/data/supplier.tbl
+
+<sqlite> 
+OK!
+QUERY EXECUTION TREE {
+
+	γ [SUM(), s_suppkey]
+	 │
+	⋈ [p_partkey = ps_partkey], Number of Tuples = 88879
+	 ├──── σ [p_size < 5] ── 
+	 └──── ⋈ [s_suppkey = ps_suppkey], Number of Tuples = 266640
+		 ├──── σ [s_acctbal < 1000] ── 
+		 └──── 
+
+}
+

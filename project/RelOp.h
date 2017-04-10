@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include <unordered_map>
 
 #include "Schema.h"
 #include "Record.h"
@@ -170,7 +171,7 @@ private:
 	RelationalOp* producer;
         
         //duplicate removal
-        map<string,Record> dupMap;
+        unordered_map<string, int> dupMap;
 
 public:
 	DuplicateRemoval(Schema& _schema, RelationalOp* _producer);
@@ -180,7 +181,7 @@ public:
 
 	virtual Schema GetSchema() { return schema; }
 
-	virtual ostream& print(ostream& _os);
+        virtual ostream& print(ostream& _os);
 };
 
 class Sum : public RelationalOp {

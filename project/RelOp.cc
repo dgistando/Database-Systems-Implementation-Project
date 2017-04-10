@@ -152,35 +152,40 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
     
         Record temp;
         
-        if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
+        /*int rNumAt = schemaRight.GetNumAtts();
+        int lNumAt = schemaLeft.GetNumAtts();
+        
+        int rDistincts = schemaRight.GetDistincts((schemaRight.GetAtts().front()).name);
+        int lDistincts = schemaLeft.GetDistincts((schemaLeft.GetAtts().front()).name);
+        
+        unsigned long rightSize = rNumAt*rDistincts; 
+        unsigned long leftSize = lNumAt*lDistincts;*/
+        
+       // if(schemaRight.GetNumAtts()*schemaRight.GetDistincts((schemaRight.GetAtts().back()).name) 
+       //         >= schemaLeft.GetNumAtts()*schemaLeft.GetDistincts((schemaLeft.GetAtts().back()).name)){
+        
+        if(schemaRight.GetDistincts((schemaRight.GetAtts().back()).name) 
+                >= schemaLeft.GetDistincts((schemaLeft.GetAtts().back()).name)){
                          
             //loading left into memory
             while(left->GetNext(temp)){
-                
-                //temp.print(cout,schemaLeft);
-                
                 temp.SetOrderMaker(leftOrder);
+
                 mmap.insert(pair<Record,int>(temp,10));
             }
         
             leftSmaller = true;
-            int size = mmap.size();
-            cout<<size<<endl;
         }else{
             
             //loading right into memory
             while(right->GetNext(temp)){
-                
-               // temp.print(cout,schemaLeft);
-                
                 temp.SetOrderMaker(rightOrder);
+                
                 mmap.insert(pair<Record,int>(temp,10));
             }
+            
             leftSmaller = false;
-            int size = mmap.size();
-            cout<<size<<endl;
         }
-        
         
 }
 
@@ -199,15 +204,30 @@ bool Join::GetNext(Record& _record){
             temp.SetOrderMaker(rightOrder);
             
             multimap<Record, int>::iterator it = mmap.find(temp);
-            //if(it == mmap.end())return false;
+
+            int i=0;
+                //Couldn't find record in the map
+                //So advance the larger relation until you can
+                while(it == mmap.end()){
+                    if(right->GetNext(temp)){
+                        temp.SetOrderMaker(rightOrder);
+
+                        if(i==10031){
+                        cout<<i<<endl;
+                        }
+                        
+                        i++;
+                        it = mmap.find(temp);
+                    }else return false;//reached the end
+                }
             
             Record mapRec = const_cast<Record&>((*it).first);
                         
-            //if(predicate.Run(mapRec, temp)){
+            if(predicate.Run(mapRec, temp)){
             //if(mapRec.IsEqual(temp)){
                 _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
                 return true;
-            ///}
+            }
             
         }
         
@@ -217,67 +237,36 @@ bool Join::GetNext(Record& _record){
             temp.SetOrderMaker(leftOrder);
             
             multimap<Record, int>::iterator it = mmap.find(temp);
-            //if(it == mmap.end())return false;
-                        
-            Record mapRec = const_cast<Record&>((*it).first);
-                        
-            //if(predicate.Run(temp, mapRec)){
-            //if(temp.IsEqual(mapRec)){
-                _record.AppendRecords(temp, mapRec, schemaRight.GetNumAtts(), schemaLeft.GetNumAtts());
-                return true;
-            //}
-        }
-        
-    }
-    
-    return false;
-    /*Record temp;
-        
-    if(leftSmaller){
-        
-      if(right->GetNext(temp)){
-          
-        temp.SetOrderMaker(rightOrder);
-           
-        multimap<Record, int>::iterator it = mmap.find(temp);
-        if(it == mmap.end()) return false; //Didn't find the element in list
-	
-        Record mapRec = const_cast<Record&>((*it).first);
+            int i=0;    
+            
+                //Couldn't find record in the map
+                //So advance the larger relation until you can
+                while(it == mmap.end()){
+                    if(left->GetNext(temp)){           
+                        temp.SetOrderMaker(leftOrder);
 
-        if(mapRec.IsEqual(temp)){
-        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-        return true;
+                        if(i==10031){
+                        cout<<i<<endl;
+                        }
+                        
+                        i++;
+                        it = mmap.find(temp);
+                    }else return false;//reached the end
+                }
+
+            
+            Record mapRec = const_cast<Record&>((*it).first);
+
+            if(predicate.Run(temp, mapRec)){
+            //if(temp.IsEqual(mapRec)){
+                _record.AppendRecords(temp, mapRec, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
+                return true;
+            }
         }
         
-      }else{
-          cout<<"END OF RELATION"<<endl;
-        return false;//we have met the end of the list
-      } 
-                
-    }else{
-    
-        if(left->GetNext(temp)){
-          
-        temp.SetOrderMaker(rightOrder);
-           
-        multimap<Record, int>::iterator it = mmap.find(temp);
-        if(it == mmap.end()) return false; //Didn't find the element in list
-	
-        Record mapRec = const_cast<Record&>((*it).first);//second being the 10
-        
-        if(mapRec.IsEqual(temp)){
-        _record.AppendRecords(mapRec, temp, schemaLeft.GetNumAtts(), schemaRight.GetNumAtts());
-        return true;
-        }
-          
-      }else{
-          cout<<"END OF RELATION"<<endl;
-        return false;//we have met the end of the list
-      } //we have met the end of the list
-    
     }
+    
     return false;
-      */
 }
 
 ostream& Join::print(ostream& _os) {
@@ -338,20 +327,18 @@ DuplicateRemoval::~DuplicateRemoval() {
 }
 
 bool DuplicateRemoval::GetNext(Record& _record){
-    while (true)
-    {
-        if (!producer->GetNext(_record)) { return false; }
-        else{
+        Record temp;
+        while(producer->GetNext(temp)){
             stringstream key;
-            _record.print(key, schema);
+            temp.print(key, schema);
             auto it = dupMap.find(key.str());
-            if(it == dupMap.end()) 
-            {
-                dupMap[key.str()] = _record;
+            if(it == dupMap.end()){
+                dupMap[key.str()] = 1;
+                _record = temp;
                 return true;
             }
         }
-    }
+    return false;
 }
 
 ostream& DuplicateRemoval::print(ostream& _os) {
@@ -379,12 +366,9 @@ bool Sum::GetNext(Record& _record){
         int integer_result = 0;
         double double_result = 0;
         
-        auto type = compute.Apply(_record,integer_result,double_result);
-        
-         if(type == Integer) { integer_sum += integer_result; }
-       else if (type = Float) { double_sum += double_result; }
-        else if (type == Float) { double_sum += double_result; }
-         else { return false; }
+        (compute.Apply(_record,integer_result,double_result) == Integer)?
+        integer_sum += integer_result:
+        double_sum += double_result;
         
     }
     double sum_result = (double)integer_sum + double_sum; // one of them will be zero
@@ -400,22 +384,9 @@ bool Sum::GetNext(Record& _record){
             *((double *) (recSpace+ currentPosInRec)) = sum_result;
     }
     
-    //*((double *) (recSpace+ currentPosInRec)) = sum_result;
     currentPosInRec += sizeof (double);
     ((int *) recSpace)[0] = currentPosInRec;
-    
-    Record sumRec;
-    
-    
-    //sumRec.CopyBits( recSpace, currentPosInRec );
-    
-    //delete [] recSpace;
-    
-    //cout<<((int*) recSpace)[0]<<endl;
-    //cout<<((int*) recSpace)[1]<<endl;
-    //cout<<*((double*) (recSpace+8))<<endl;
-    
-    
+        
     _record.Consume(recSpace);
     alreadyCalculatedSum = true;
     return true;

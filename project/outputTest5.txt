@@ -1,0 +1,15 @@
+catalog.sqlite is opened successfully.
+Loading data from Catalog... Done!
+
+/home/farrenkor/Desktop/data/customer.tbl
+/home/farrenkor/Desktop/data/lineitem.tbl
+/home/farrenkor/Desktop/data/nation.tbl
+/home/farrenkor/Desktop/data/orders.tbl
+/home/farrenkor/Desktop/data/part.tbl
+/home/farrenkor/Desktop/data/partsupp.tbl
+/home/farrenkor/Desktop/data/region.tbl
+/home/farrenkor/Desktop/data/supplier.tbl
+
+<sqlite> 
+OK!
+{sum: 2.14}
