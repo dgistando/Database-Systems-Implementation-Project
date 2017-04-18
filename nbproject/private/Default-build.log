@@ -1,0 +1,6 @@
+yacc --defines=QueryParser.h -o QueryParser.c QueryParser.y
+sed -i QueryParser.c -e "s/  __attribute__ ((__unused__))$/# ifndef __cplusplus\n  __attribute__ ((__unused__));\n# endif/" 
+g++ -c -Wno-write-strings QueryParser.c
+make: g++: Command not found
+makefile:54: recipe for target 'QueryParser.o' failed
+make: *** [QueryParser.o] Error 127
