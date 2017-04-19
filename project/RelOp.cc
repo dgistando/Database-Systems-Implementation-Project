@@ -36,10 +36,9 @@ Select::~Select() {
 }
 
 bool Select::GetNext(Record& rec) {
-    if (!producer->GetNext(rec)) return false;
-    while (!predicate.Run(rec,constants)) {
-        if (!producer->GetNext(rec)) return false;
-    } return true;
+    while(producer->GetNext(rec)){
+        if(predicate.Run(rec,constants)){ return true; }
+    } return false;
 }
 
 
@@ -116,8 +115,7 @@ bool Project::GetNext(Record& record) {
     if (producer->GetNext(record)) {
         record.Project(keepMe, numAttsOutput, numAttsInput);		
         return true;
-    }
-    return false;
+    } return false;
 }
 
 ostream& Project::print(ostream& _os) {
@@ -282,14 +280,12 @@ DuplicateRemoval::~DuplicateRemoval() {
 }
 
 bool DuplicateRemoval::GetNext(Record& _record){
-    Record temp;
-    while(producer->GetNext(temp)){
+    while(producer->GetNext(_record)){
         stringstream key;
-        temp.print(key, schema);
+        _record.print(key, schema);
         auto it = dupMap.find(key.str());
         if(it == dupMap.end()){
             dupMap[key.str()] = 1;
-            _record = temp;
             return true;
         }
     }
