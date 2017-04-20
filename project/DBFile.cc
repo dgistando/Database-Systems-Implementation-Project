@@ -37,12 +37,12 @@ DBFile& DBFile::operator=(const DBFile& _copyMe) {
 
 int DBFile::Create (char* f_path, FileType f_type) {
 
-    if (f_type == Heap) {	
+    //if (f_type == Heap) {	
         ftype = f_type;
         fileName = f_path;
         isOpen = true;
         return (file.Open(0,f_path));
-    }
+    //}
 }
 
 int DBFile::Open (char* f_path) {
@@ -71,6 +71,7 @@ void DBFile::Load (Schema& schema, char* textFile) {
 
 int DBFile::Close () {
     isOpen = false;
+    if(ftype == Sorted) { file.AddPage(page, file.GetLength()); } // testing
     return file.Close();
 }
 
@@ -100,4 +101,10 @@ int DBFile::GetNext (Record& rec) {
         if(page.GetFirst(rec) == 0){ return GetNext(rec); }
     } return 1;	
 }
-
+int DBFile::GetSpecificRecord(int pNumber, int rNumber, Record& rec) {
+    page.EmptyItOut(); 
+    if (file.GetPage(page, pNumber) == -1) return 0; // return 0 for no page found 
+            //page.GetFirst(rec); return 0; 
+    if (page.GetRecordNumber(rNumber, rec) != 1) return 0; 
+    return 1; // return 1 if record exists 
+}

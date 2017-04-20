@@ -104,6 +104,28 @@ void Page :: FromBinary (char* bits) {
 		curPos += len;
 	}
 }
+int Page :: GetRecordNumber(int index, Record& rec) { 
+    int counter = 1; 
+    // move to the first record 
+    myRecs.MoveToStart (); 
+    // make sure there is data 
+    if (myRecs.AtEnd()) return 0; 
+    while (!myRecs.AtEnd()) { 
+            if (index == counter) { 
+                    // remove it 
+                    myRecs.Remove (rec); 
+                    numRecs--; 
+                    char* b = rec.GetBits(); 
+                    curSizeInBytes -= ((int*)b)[0];
+                    return 1;
+             } 
+
+            myRecs.Advance(); 
+            counter++; 
+    } 
+
+    return 0; 
+}
 
 
 File :: File () : fileDescriptor(-1), fileName(""), curLength(0) {

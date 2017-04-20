@@ -37,6 +37,7 @@ public:
 	void MoveFirst ();
 	void AppendRecord (Record& _addMe);
 	int GetNext (Record& _fetchMe);
+        int GetSpecificRecord(int pNumber, int rNumber, Record& rec);
 };
 
 #endif //DBFILE_H

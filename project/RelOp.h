@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 #include "Schema.h"
 #include "Record.h"
@@ -148,7 +149,7 @@ private:
         
         //part 5
         vector <Record> memoryTable;
-        vector<DBFile> rightTable, leftTable;
+        vector<DBFile> rightTableHeaps, leftTableHeaps;
         
 
 public:
@@ -162,6 +163,7 @@ public:
 	virtual Schema GetSchema() { return schemaOut; }
 
 	virtual ostream& print(ostream& _os);
+        
 
 	int depth;
 
