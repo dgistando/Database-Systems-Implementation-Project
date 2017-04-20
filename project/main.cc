@@ -47,8 +47,9 @@ std::vector<std::string> split(const std::string &s, char delim) {
     return elems;
 }
 
-
 int main () {
+        //NUMBER OF PAGES
+        int numPages = 100;
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
@@ -143,7 +144,7 @@ int main () {
 				// we are ready to invoke the query compiler with the given query
 				// the result is the execution tree built from the parse tree and optimized
 				QueryExecutionTree queryTree;
-				compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+				compiler.Compile(numPages,tables, attsToSelect, finalFunction, predicate,
 					groupingAtts, distinctAtts, queryTree);
 
 				//cout << queryTree << endl;

@@ -154,7 +154,7 @@ private:
 
 public:
         
-	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
+	Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 		CNF& _predicate, RelationalOp* _left, RelationalOp* _right);
 	virtual ~Join();
 
