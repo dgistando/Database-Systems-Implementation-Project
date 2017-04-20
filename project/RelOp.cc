@@ -144,58 +144,48 @@ Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
         
         auto copyOut = new Schema();
         copyOut->Append(_schemaOut);
+        //old
+//        Record temp;
+//        if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
+//		leftIsSmaller = false; largerTable = left;
+//		while (right->GetNext(temp)) { smallTable.Insert(temp); }
+//	} else {
+//		leftIsSmaller = true; largerTable = right;
+//		while (left->GetNext(temp)) { smallTable.Insert(temp); }
+//	}
+//	smallTable.MoveToFinish();  
         
+        int heapPart_index = 0;
         Record temp;
         if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
-		leftIsSmaller = false; largerTable = left;
-		while (right->GetNext(temp)) { smallTable.Insert(temp); }
+            leftIsSmaller = false; largerTable = left;
+            
+            int totalRecordMemorySize = 0;
+            while(true){
+                if(right->GetNext(temp)){
+                    totalRecordMemorySize += temp.GetSize();    // increment memory size
+                    if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
+                        DBFile heapPart; heapPart_index++;
+                        auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
+                        
+                        cout << "creating DBFile "  << heap_name << endl;
+                        
+                        heapPart.Create(&heap_name[0],Sorted);
+                        for(auto it:memoryTable){
+                            heapPart.AppendRecord(it);
+                        }
+                        
+                    } else { // not over limit so add it to the TwoWayList
+                        
+                    }
+                }
+            }
+               
 	} else {
-		leftIsSmaller = true; largerTable = right;
-		while (left->GetNext(temp)) { smallTable.Insert(temp); }
-	}
-	smallTable.MoveToFinish();
-        
-        
-        
-//        mmap = multimap<Record, int>();
-//        leftSmaller = false;
-//        joinHeaped = false;
-//        
-//        
-//        //first phase
-//        leftOrder = new OrderMaker();
-//        rightOrder = new OrderMaker();
-//            
-//        predicate.GetSortOrders(*leftOrder, *rightOrder);    
-//    
-//        Record* temp = new Record();
-//        
-//        RelationalOp* copyLeft = _left;
-//        RelationalOp* copyRight = _right;
-//        
-//        if(schemaRight.GetNumAtts() >= schemaLeft.GetNumAtts()){
-//        
-//            //loading left into memory
-//            while(left->GetNext(*temp)){
-//                temp->SetOrderMaker(leftOrder);
-//                mmap.insert(pair<Record,int>(*temp,10));
-//            }
-//        
-//            leftSmaller = true;
-//        }else{
-//        
-//            //loading right into memory
-//            while(right->GetNext(*temp)){
-//                temp->SetOrderMaker(rightOrder);
-//                mmap.insert(pair<Record,int>(*temp,10));
-//                
-//            }
-//            temp->print(cout,schemaRight);
-//            cout << endl;
-//        
-//        }
-        
-        
+            leftIsSmaller = true; largerTable = right;
+		
+                
+	} smallTable.MoveToFinish();
 }
 
 Join::~Join() {
@@ -204,6 +194,12 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
+    
+    
+    
+    
+    
+    
     while(true){
         if(smallTable.AtEnd()){ if(!(largerTable->GetNext(curRecord))){ return false; } smallTable.MoveToStart(); }
         while (!smallTable.AtEnd()){

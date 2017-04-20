@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <set>
 #include <sstream>
-#include <queue>
+#include <string>
 
 #include "Schema.h"
 #include "Record.h"
@@ -143,9 +143,12 @@ private:
         bool leftIsSmaller;
 	RelationalOp * largerTable;
 	Record curRecord;
+        
 	TwoWayList <Record> smallTable;
         
-        
+        //part 5
+        vector <Record> memoryTable;
+        vector<DBFile> rightTable, leftTable;
         
 
 public:
