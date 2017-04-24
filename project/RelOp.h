@@ -1,13 +1,30 @@
 #ifndef _REL_OP_H
 #define _REL_OP_H
+<<<<<<< HEAD
 #include <map>
 #include <iostream>
+=======
+
+#include <iostream>
+#include <map>
+#include <unordered_map>
+#include <set>
+#include <sstream>
+#include <string>
+#include <algorithm>
+>>>>>>> Daniel
 
 #include "Schema.h"
 #include "Record.h"
 #include "DBFile.h"
 #include "Function.h"
 #include "Comparison.h"
+<<<<<<< HEAD
+=======
+#include "EfficientMap.h"
+#include "Keyify.h"
+#include "Swapify.h"
+>>>>>>> Daniel
 
 using namespace std;
 
@@ -26,6 +43,11 @@ public:
 
 	// every operator has to implement this method
 	virtual bool GetNext(Record& _record) = 0;
+<<<<<<< HEAD
+=======
+        
+        //virtual void MoveToFirstPage();
+>>>>>>> Daniel
 
 	/* Virtual function for polymorphic printing using operator<<.
 	 * Each operator has to implement its specific version of print.
@@ -130,11 +152,28 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
+<<<<<<< HEAD
         map <Record> List;
 	
 
 public:
 	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
+=======
+        bool leftIsSmaller;
+	RelationalOp * largerTable;
+	Record curRecord;
+        
+	TwoWayList <Record> smallTable;
+        
+        //part 5
+        vector <Record> memoryTable;
+        vector<DBFile> rightTableHeaps, leftTableHeaps;
+        
+
+public:
+        
+	Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
+>>>>>>> Daniel
 		CNF& _predicate, RelationalOp* _left, RelationalOp* _right);
 	virtual ~Join();
 
@@ -143,10 +182,19 @@ public:
 	virtual Schema GetSchema() { return schemaOut; }
 
 	virtual ostream& print(ostream& _os);
+<<<<<<< HEAD
+=======
+        
+>>>>>>> Daniel
 
 	int depth;
 
 	int numTuples;
+<<<<<<< HEAD
+=======
+        
+        bool leftSmaller;
+>>>>>>> Daniel
 };
 
 class DuplicateRemoval : public RelationalOp {
@@ -157,8 +205,13 @@ private:
 	// operator generating data
 	RelationalOp* producer;
         
+<<<<<<< HEAD
         map <string, Record> set;
 	
+=======
+        //duplicate removal
+        unordered_map<string, int> dupMap;
+>>>>>>> Daniel
 
 public:
 	DuplicateRemoval(Schema& _schema, RelationalOp* _producer);
@@ -183,8 +236,13 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
+<<<<<<< HEAD
 
 	int recSent;
+=======
+        
+        bool alreadyCalculatedSum;
+>>>>>>> Daniel
 
 public:
 	Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
@@ -205,8 +263,11 @@ private:
 	// schema of records output by operator
 	Schema schemaOut;
 
+<<<<<<< HEAD
 	Schema sum, copy;
 
+=======
+>>>>>>> Daniel
 	// grouping attributes
 	OrderMaker groupingAtts;
 	// function to compute
@@ -214,10 +275,17 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
+<<<<<<< HEAD
 
 	int phase;
 	map <string, double> set;
 	map <string, Record> recMap;
+=======
+        
+        bool mapsCreated;
+        map<string,Record> recordMap;
+        map<string,double> sumMap;
+>>>>>>> Daniel
 
 public:
 	GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,

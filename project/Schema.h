@@ -36,10 +36,11 @@ public:
  */
 class Schema {
 private:
-	// attributes in schema
-	vector<Attribute> atts;
 
 public:
+    
+	// attributes in schema
+	vector<Attribute> atts;
 	// default constructor
 	Schema() {}
 	// full constructor

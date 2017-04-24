@@ -8,6 +8,12 @@
 using namespace std;
 
 
+<<<<<<< HEAD
+=======
+// forward declaration
+class OrderMaker;
+
+>>>>>>> Daniel
 /* Record data structure. Data are stored in bits.
  * The layout of bits is as follows:
  *	1) First sizeof(int) bytes: length of the record in bytes
@@ -20,8 +26,16 @@ class Record {
 private:
 	//the binary content of the record or the actual data in the record
 	char* bits;
+<<<<<<< HEAD
 
 public:
+=======
+        
+	
+
+public:
+        OrderMaker* compOrder;
+>>>>>>> Daniel
 	Record ();
 	Record(const Record& _other);
 	Record& operator=(const Record& _other);
@@ -76,7 +90,33 @@ public:
 		int numAttsLeft, int numAttsRight);
 
 	// print record content based on schema
+<<<<<<< HEAD
     ostream& print(ostream& _os, Schema& mySchema);
 };
 
+=======
+    void print(ostream& _os, Schema& mySchema);
+
+
+    // comparison operator overloading
+    bool operator< (const Record& _withMe) const;
+    bool IsEqual(Record& _withMe);
+    bool LessThan(Record& _me);
+
+    void SetOrderMaker(OrderMaker* _order) {compOrder = _order;}
+    
+    
+    //friend bool operator<(const Record a,const Record b); //This wasnt necessary
+    
+};
+
+
+/*bool operator<(const Record a,const Record b){
+    int ret = a.compOrder->Run(a,b, *(b.compOrder));
+    if (ret == -1) return true;
+    return false;
+}*/
+
+
+>>>>>>> Daniel
 #endif //_RECORD_H

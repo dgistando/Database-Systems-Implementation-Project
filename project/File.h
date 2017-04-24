@@ -40,6 +40,10 @@ public:
 
 	// empty records from page
 	void EmptyItOut();
+<<<<<<< HEAD
+=======
+        int GetRecordNumber(int index, Record& rec);
+>>>>>>> Daniel
 };
 
 

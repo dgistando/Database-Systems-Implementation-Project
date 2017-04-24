@@ -1,9 +1,24 @@
 #include <iostream>
+<<<<<<< HEAD
 #include <sstream>
+=======
+>>>>>>> Daniel
 #include "RelOp.h"
 
 using namespace std;
 
+<<<<<<< HEAD
+=======
+namespace ext{
+    template <typename T>
+    void remove(vector<T>& vec, size_t pos)
+    {
+        typename vector<T>::iterator it = vec.begin();
+        advance(it, pos);
+        vec.erase(it);
+    }
+}
+>>>>>>> Daniel
 
 ostream& operator<<(ostream& _os, RelationalOp& _op) {
 	return _op.print(_os);
@@ -37,10 +52,16 @@ Select::~Select() {
 }
 
 bool Select::GetNext(Record& rec) {
+<<<<<<< HEAD
     if (!producer->GetNext(rec)) return false;
     while (!predicate.Run(rec,constants)) {
         if (!producer->GetNext(rec)) return false;
     } return true;
+=======
+    while(producer->GetNext(rec)){
+        if(predicate.Run(rec,constants)){ return true; }
+    } return false;
+>>>>>>> Daniel
 }
 
 
@@ -117,8 +138,12 @@ bool Project::GetNext(Record& record) {
     if (producer->GetNext(record)) {
         record.Project(keepMe, numAttsOutput, numAttsInput);		
         return true;
+<<<<<<< HEAD
     }
     return false;
+=======
+    } return false;
+>>>>>>> Daniel
 }
 
 ostream& Project::print(ostream& _os) {
@@ -135,6 +160,7 @@ ostream& Project::print(ostream& _os) {
 }
 
 
+<<<<<<< HEAD
 Join::Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
 	schemaLeft = _schemaLeft;
@@ -163,6 +189,161 @@ bool Join::GetNext(Record& record)
         }
     }
 }
+=======
+Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
+	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
+        
+    noPages = numPages;
+    schemaLeft = _schemaLeft;
+    schemaRight = _schemaRight;
+    schemaOut = _schemaOut;
+    predicate = _predicate;
+    left = _left;
+    right = _right;
+
+    auto copyOut = new Schema();
+    copyOut->Append(_schemaOut);
+    //old
+//        Record temp;
+//        if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
+//		leftIsSmaller = false; largerTable = left;
+//		while (right->GetNext(temp)) { smallTable.Insert(temp); }
+//	} else {
+//		leftIsSmaller = true; largerTable = right;
+//		while (left->GetNext(temp)) { smallTable.Insert(temp); }
+//	}
+//	smallTable.MoveToFinish();  
+
+    int heapPart_index = 0;
+    Record temp;
+    if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
+        //NOTE SET THIS TABLE TO THE SMALLEST ONE
+        int totalRecordMemorySize = 0;
+        while(true){
+            if(right->GetNext(temp)){
+                totalRecordMemorySize += temp.GetSize();    // increment memory size
+                if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
+                    //sort the memory vector
+                    cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
+                    sort(memoryTable.begin(),memoryTable.end()); // magic huh? quicksort stl and operatro overload by TA
+
+                    DBFile heapPart; heapPart_index++;
+                    auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
+
+                    cout << "Creating DBFile "  << heap_name << endl;
+
+                    int recordCount = 0;
+                    heapPart.Create(&heap_name[0],Sorted); // create a new heap 
+                    for(auto it:memoryTable){ heapPart.AppendRecord(it); recordCount++; } // insert all memory into heap
+
+                    cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
+
+                    heapPart.Close(); // close it
+                    rightTableHeaps.push_back(heapPart); // push back the db file
+                    memoryTable.clear(); // clear the memory
+                } else { // not over limit so add it to the TwoWayList
+                    memoryTable.push_back(temp);
+                } } else { break; } }
+        //Now we sort this shit OUT-OF-MEMORY, epic huh?
+        vector<Record> list;
+        DBFile finalHeap;
+        string path = "finalHeap";
+        finalHeap.Create(&path[0],Sorted);
+        while(rightTableHeaps.size() != 0){ // loop tru until final heap is made
+            int table_index = 0;
+            for(auto it:rightTableHeaps){ // get first record from each heap
+                Record temp;
+                if(it.GetNext(temp)){ list.push_back(temp); }   // get the entry and insert into the list
+                else { ext::remove(rightTableHeaps,table_index); } // if no more entries delete the DBFile object
+                table_index++;
+            }
+            auto minimum = min_element(list.begin(), list.end()); // get the minimum
+            finalHeap.AppendRecord(*minimum.base());    // add to the final heap
+        }
+        finalHeap.Close();
+        list.empty();
+        rightTableHeaps.push_back(finalHeap);
+    } else {
+        //NOTE SET THIS TABLE TO THE SMALLEST ONE
+        int totalRecordMemorySize = 0;
+        while(true){
+            if(left->GetNext(temp)){
+                totalRecordMemorySize += temp.GetSize();    // increment memory size
+                if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
+                    //sort the memory vector
+                    cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
+                    sort(memoryTable.begin(),memoryTable.end()); // magic huh? quicksort stl and operatro overload by TA
+
+                    DBFile heapPart; heapPart_index++;
+                    auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
+
+                    cout << "Creating DBFile "  << heap_name << endl;
+
+                    int recordCount = 0;
+                    heapPart.Create(&heap_name[0],Sorted); // create a new heap 
+                    for(auto it:memoryTable){ heapPart.AppendRecord(it); recordCount++; } // insert all memory into heap
+
+                    cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
+
+                    heapPart.Close(); // close it
+                    leftTableHeaps.push_back(heapPart); // push back the db file
+                    memoryTable.clear(); // clear the memory
+                } else { // not over limit so add it to the TwoWayList
+                    memoryTable.push_back(temp);
+                } } else { break; } }
+        //Now we sort this shit OUT-OF-MEMORY, epic huh?
+        vector<Record> list;
+        DBFile finalHeap;
+        string path = "finalHeap";
+        finalHeap.Create(&path[0],Sorted);
+        while(leftTableHeaps.size() != 0){ // loop tru until final heap is made
+            int table_index = 0;
+            for(auto it:leftTableHeaps){ // get first record from each heap
+                Record temp;
+                if(it.GetNext(temp)){ list.push_back(temp); }   // get the entry and insert into the list
+                else { ext::remove(leftTableHeaps,table_index); } // if no more entries delete the DBFile object
+                table_index++;
+            }
+            auto minimum = min_element(list.begin(), list.end()); // get the minimum
+            finalHeap.AppendRecord(*minimum.base());    // add to the final heap
+        }
+        finalHeap.Close();
+        list.empty();
+        leftTableHeaps.push_back(finalHeap);
+    } 
+}
+
+
+
+Join::~Join() {
+}
+
+
+
+bool Join::GetNext(Record& _record){
+    
+    
+    
+    
+    
+    // old
+//    while(true){
+//        if(smallTable.AtEnd()){ if(!(largerTable->GetNext(curRecord))){ return false; } smallTable.MoveToStart(); }
+//        while (!smallTable.AtEnd()){
+//            if(leftIsSmaller){
+//                if (predicate.Run(smallTable.Current(), curRecord)){
+//                    _record.AppendRecords(smallTable.Current(), curRecord, schemaLeft.atts.size(), schemaRight.atts.size());
+//                    smallTable.Advance(); return true;
+//                }
+//            } else {
+//                if (predicate.Run(curRecord,smallTable.Current())){
+//                    _record.AppendRecords(curRecord, smallTable.Current(), schemaLeft.atts.size(), schemaRight.atts.size());
+//                    smallTable.Advance(); return true;
+//                }
+//            } smallTable.Advance();
+//        }
+//    } return false;
+>>>>>>> Daniel
 }
 
 ostream& Join::print(ostream& _os) {
@@ -222,6 +403,7 @@ DuplicateRemoval::DuplicateRemoval(Schema& _schema, RelationalOp* _producer) {
 DuplicateRemoval::~DuplicateRemoval() {
 }
 
+<<<<<<< HEAD
 bool DuplicateRemoval::GetNext(Record& record){
 
 	//HERE
@@ -237,6 +419,19 @@ bool DuplicateRemoval::GetNext(Record& record){
 			return true;
 		}
 	}
+=======
+bool DuplicateRemoval::GetNext(Record& _record){
+    while(producer->GetNext(_record)){
+        stringstream key;
+        _record.print(key, schema);
+        auto it = dupMap.find(key.str());
+        if(it == dupMap.end()){
+            dupMap[key.str()] = 1;
+            return true;
+        }
+    }
+    return false;
+>>>>>>> Daniel
 }
 
 ostream& DuplicateRemoval::print(ostream& _os) {
@@ -250,12 +445,17 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 	schemaOut = _schemaOut;
 	compute = _compute;
 	producer = _producer;
+<<<<<<< HEAD
 	recSent = 0;
+=======
+        alreadyCalculatedSum = false;
+>>>>>>> Daniel
 }
 
 Sum::~Sum() {
 }
 
+<<<<<<< HEAD
 bool Sum::GetNext(Record& record){
  
 	if (recSent) return false;
@@ -289,6 +489,53 @@ bool Sum::GetNext(Record& record){
 	return true;
 
 
+=======
+bool Sum::GetNext(Record& _record){
+    if(alreadyCalculatedSum){ return false; }
+    int integer_sum = 0;
+    double double_sum = 0;
+    while(producer->GetNext(_record)){
+        int integer_result = 0;
+        double double_result = 0;
+        
+        (compute.Apply(_record,integer_result,double_result) == Integer)?
+        integer_sum += integer_result:
+        double_sum += double_result;
+        
+    }
+    double sum_result = (double)integer_sum + double_sum; // one of them will be zero
+    
+
+    char* recSpace = new char[16];
+    int currentPosInRec = sizeof (int) * (2);
+    ((int *) recSpace)[1] = currentPosInRec;
+    
+    if(schemaOut.GetAtts()[0].type == Integer){
+            *((int *) (recSpace + currentPosInRec)) = sum_result;
+    }else{
+            *((double *) (recSpace+ currentPosInRec)) = sum_result;
+    }
+    
+    //*((double *) (recSpace+ currentPosInRec)) = sum_result;
+    currentPosInRec += sizeof (double);
+    ((int *) recSpace)[0] = currentPosInRec;
+    
+    Record sumRec;
+    
+    
+    //sumRec.CopyBits( recSpace, currentPosInRec );
+    
+    //delete [] recSpace;
+    
+    //cout<<((int*) recSpace)[0]<<endl;
+    //cout<<((int*) recSpace)[1]<<endl;
+    //cout<<*((double*) (recSpace+8))<<endl;
+    
+    
+    _record.Consume(recSpace);
+    alreadyCalculatedSum = true;
+    return true;
+>>>>>>> Daniel
 }
 
 ostream& Sum::print(ostream& _os) {
@@ -306,16 +553,23 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 	schemaIn = _schemaIn;
 	schemaOut = _schemaOut;
 	groupingAtts = _groupingAtts;
+<<<<<<< HEAD
 	compute = _compute;
 	producer = _producer;
         phase = 0;
         
         
+=======
+	groupingAtts.Swap(_groupingAtts);
+	compute = _compute;
+	producer = _producer;
+>>>>>>> Daniel
 }
 
 GroupBy::~GroupBy() {
 }
 
+<<<<<<< HEAD
 
 bool GroupBy::GetNext(Record& record)
 {
@@ -379,6 +633,57 @@ bool GroupBy::GetNext(Record& record)
 		record = newRec;
 		return true;
 	}
+=======
+bool GroupBy::GetNext(Record& _record){
+    if(!mapsCreated){
+        int integer_sum = 0;
+        double double_sum = 0;
+        while(producer->GetNext(_record)){
+            stringstream key;
+            int integer_result = 0;
+            double double_result = 0;
+
+            (compute.Apply(_record,integer_result,double_result) == Integer)?
+            integer_sum += integer_result:
+            double_sum += double_result;
+            double sum_result = (double)integer_sum + double_sum; // one of them will be zero
+            
+            _record.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts , schemaOut.GetNumAtts());
+            _record.print(key, schemaOut);
+            auto it = sumMap.find(key.str());
+
+            if(it != sumMap.end())	{ sumMap[key.str()]+= sum_result; }
+            else {
+                    sumMap[key.str()] = sum_result;
+                    recordMap[key.str()] = _record;
+            }
+
+        }
+        mapsCreated = true;
+    } else {
+        if (sumMap.empty()) return false;
+
+        Record temp = recordMap.begin()->second;
+        string topr = sumMap.begin()->first;
+
+        char* recSpace = new char[16];
+        int currentPosInRec = sizeof (int) * (2);
+        ((int *) recSpace)[1] = currentPosInRec;
+        *((double *) &(recSpace[currentPosInRec])) = sumMap.begin()->second;
+        currentPosInRec += sizeof (double);
+        ((int *) recSpace)[0] = currentPosInRec;
+        Record sumRec;
+        sumRec.CopyBits( recSpace, currentPosInRec );
+        delete [] recSpace;
+
+        Record newRec;
+        newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
+        recordMap.erase(topr);
+        sumMap.erase(topr);
+        _record = newRec;
+        return true;
+    }
+>>>>>>> Daniel
 }
 
 ostream& GroupBy::print(ostream& _os) {

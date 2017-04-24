@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 CC = g++ -g -O0 -Wno-deprecated -std=gnu++11
+=======
+CC = g++ -g -O0 -Wno-deprecated -std=gnu++11 -fpermissive
+>>>>>>> Daniel
 LIBS = -lsqlite3 -lfl
 
 tag = -i

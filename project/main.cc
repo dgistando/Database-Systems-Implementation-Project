@@ -40,28 +40,46 @@ void split(const std::string &s, char delim, Out result) {
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Daniel
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
     return elems;
 }
 
+<<<<<<< HEAD
 
 int main () {
+=======
+int main () {
+        //NUMBER OF PAGES
+        int numPages = 100;
+>>>>>>> Daniel
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
         
         //cout<<"Catalog:: "<<catalog<<endl;
         
+<<<<<<< HEAD
         string fileName1 = "/home/bhupinder/Desktop/Database-Systems-Implementation-Project-Daniel/project/data";
+=======
+        string fileName1 = "/home/farrenkor/Desktop/data";
+>>>>>>> Daniel
         vector<string> files1;
         vector<string> tables1;
         catalog.GetTables(files1);
         for (int i = 0; i< files1.size(); i++) {
             tables1.push_back(files1[i]);
             files1[i]+= ".tbl";
+<<<<<<< HEAD
             files1[i].insert(0,"/home/bhupinder/Desktop/Database-Systems-Implementation-Project-Daniel/projectdata/");
+=======
+            files1[i].insert(0,"/home/farrenkor/Desktop/data/");
+>>>>>>> Daniel
             cout<<files1[i]<<endl;
 	}
         
@@ -90,8 +108,13 @@ int main () {
             db2.MoveFirst();
             while (db2.GetNext(r) != 0) {
                 if((records % 10000) == 0){
+<<<<<<< HEAD
                     //r.print(cout,sch);
                     //cout << endl;
+=======
+                    r.print(cout,sch);
+                    cout << endl;
+>>>>>>> Daniel
                 }
                 records++;
             }
@@ -142,7 +165,11 @@ int main () {
 				// we are ready to invoke the query compiler with the given query
 				// the result is the execution tree built from the parse tree and optimized
 				QueryExecutionTree queryTree;
+<<<<<<< HEAD
 				compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+=======
+				compiler.Compile(numPages,tables, attsToSelect, finalFunction, predicate,
+>>>>>>> Daniel
 					groupingAtts, distinctAtts, queryTree);
 
 				//cout << queryTree << endl;

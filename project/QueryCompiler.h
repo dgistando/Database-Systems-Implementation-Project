@@ -28,10 +28,17 @@ public:
 	virtual ~QueryCompiler();
 
 	// a recursive function to create Join operators (w/ Select) from optimization result
+<<<<<<< HEAD
 	RelationalOp* buildJoinTree(OptimizationTree*& _tree, 
 		AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth);
 
 	void Compile(TableList* _tables, NameList* _attsToSelect,
+=======
+	RelationalOp* buildJoinTree(int& numberOfPages,OptimizationTree*& _tree, 
+		AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth);
+
+	void Compile(int& numberOfPages,TableList* _tables, NameList* _attsToSelect,
+>>>>>>> Daniel
 		FuncOperator* _finalFunction, AndList* _predicate,
 		NameList* _groupingAtts, int& _distinctAtts,
 		QueryExecutionTree& _queryTree);
