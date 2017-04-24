@@ -140,6 +140,9 @@ ostream& Project::print(ostream& _os) {
 	// return _os << "π [...]\n\t │\n\t" << *producer; // print without predicates
 }
 
+struct RecordComp{
+    bool operator() (Record& left, Record& right){return left < right;}
+};
 
 Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
@@ -163,7 +166,13 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
 //		leftIsSmaller = true; largerTable = right;
 //		while (left->GetNext(temp)) { smallTable.Insert(temp); }
 //	}
-//	smallTable.MoveToFinish();  
+//	smallTable.MoveToFinish(); 
+    
+    
+    leftOrder = new OrderMaker();
+    rightOrder = new OrderMaker();
+            
+    predicate.GetSortOrders(*leftOrder, *rightOrder); 
 
     int heapPart_index = 0;
     Record temp;
@@ -174,9 +183,10 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
             if(right->GetNext(temp)){
                 totalRecordMemorySize += temp.GetSize();    // increment memory size
                 if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
+                    temp.SetOrderMaker(rightOrder); //test
                     //sort the memory vector
                     cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-                    sort(memoryTable.begin(),memoryTable.end()); // magic huh? quicksort stl and operatro overload by TA
+                    sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
 
                     DBFile heapPart; heapPart_index++;
                     auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
@@ -192,6 +202,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     heapPart.Close(); // close it
                     rightTableHeaps.push_back(heapPart); // push back the db file
                     memoryTable.clear(); // clear the memory
+                    totalRecordMemorySize = 0; // reset it for Bu
                 } else { // not over limit so add it to the TwoWayList
                     memoryTable.push_back(temp);
                 } } else { break; } }
@@ -221,9 +232,10 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
             if(left->GetNext(temp)){
                 totalRecordMemorySize += temp.GetSize();    // increment memory size
                 if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
+                    temp.SetOrderMaker(leftOrder); //test
                     //sort the memory vector
                     cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-                    sort(memoryTable.begin(),memoryTable.end()); // magic huh? quicksort stl and operatro overload by TA
+                    sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
 
                     DBFile heapPart; heapPart_index++;
                     auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
@@ -239,9 +251,10 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     heapPart.Close(); // close it
                     leftTableHeaps.push_back(heapPart); // push back the db file
                     memoryTable.clear(); // clear the memory
+                    totalRecordMemorySize = 0; //reset it for Bu
                 } else { // not over limit so add it to the TwoWayList
                     memoryTable.push_back(temp);
-                } } else { break; } }
+                } } else {  totalRecordMemorySize = 0; break; } }
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
         vector<Record> list;
         DBFile finalHeap;
@@ -255,7 +268,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                 else { ext::remove(leftTableHeaps,table_index); } // if no more entries delete the DBFile object
                 table_index++;
             }
-            auto minimum = min_element(list.begin(), list.end()); // get the minimum
+            auto minimum = min_element(list.begin(), list.end(),RecordComp()); // get the minimum
             finalHeap.AppendRecord(*minimum.base());    // add to the final heap
         }
         finalHeap.Close();

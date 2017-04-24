@@ -141,6 +141,11 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
+        //Test
+        OrderMaker* leftOrder;
+        OrderMaker* rightOrder;
+        DBFile dbfile;
+        
         bool leftIsSmaller;
 	RelationalOp * largerTable;
 	Record curRecord;
