@@ -230,6 +230,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         int totalRecordMemorySize = 0;
         while(true){
             if(left->GetNext(temp)){
+                temp.SetOrderMaker(leftOrder);
                 totalRecordMemorySize += temp.GetSize();    // increment memory size
                 if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
                     temp.SetOrderMaker(leftOrder); //test
@@ -238,7 +239,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
 
                     DBFile heapPart; heapPart_index++;
-                    auto heap_name = "rightHeap_part_" + to_string(heapPart_index);
+                    auto heap_name = "Heaps//leftHeap_part_" + to_string(heapPart_index);
 
                     cout << "Creating DBFile "  << heap_name << endl;
 
@@ -258,20 +259,36 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
         vector<Record> list;
         DBFile finalHeap;
-        string path = "finalHeap";
+        string path = "Heaps//finalHeap";
         finalHeap.Create(&path[0],Sorted);
+        
+        int countAllRecordsInMemory = 0;
         while(leftTableHeaps.size() != 0){ // loop tru until final heap is made
             int table_index = 0;
-            for(auto it:leftTableHeaps){ // get first record from each heap
+            for(int i = 0; i < leftTableHeaps.size(); i++){ // get first record from each heap
+                if(!leftTableHeaps[i].isOpen){ // open dbfile if it was not already opened
+                    leftTableHeaps[i].Open(&leftTableHeaps[i].fileName[0]); 
+                    leftTableHeaps[i].isOpen = true; //set it to opened
+                }
                 Record temp;
-                if(it.GetNext(temp)){ list.push_back(temp); }   // get the entry and insert into the list
-                else { ext::remove(leftTableHeaps,table_index); } // if no more entries delete the DBFile object
+                if(leftTableHeaps[i].GetNext(temp)){
+                    temp.SetOrderMaker(leftOrder);
+                    list.push_back(temp);
+                    countAllRecordsInMemory++;
+                }   // get the entry and insert into the list
+                else { 
+                    //ext::remove(leftTableHeaps,table_index); 
+                } // if no more entries delete the DBFile object
                 table_index++;
             }
+            cout << "records in list: " << countAllRecordsInMemory << endl;
             auto minimum = min_element(list.begin(), list.end(),RecordComp()); // get the minimum
-            finalHeap.AppendRecord(*minimum.base());    // add to the final heap
+            Record recToStore = *minimum.base(); // copy record
+            finalHeap.AppendRecord(recToStore);    // add to the final heap
+            list.erase(minimum);//erase record from list
         }
         finalHeap.Close();
+        finalHeap.isOpen = false;
         list.empty();
         leftTableHeaps.push_back(finalHeap);
     } 
