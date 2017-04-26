@@ -296,16 +296,19 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                 } // if no more entries delete the DBFile object
                 table_index++;
             }
+            cout << "Count before elements in list: " << list.size() << endl;
             auto minimum = min_element(list.begin(), list.end(),TupleComp()); // get the minimum
             Record recToStore = minimum.base()->rec; // copy record
             finalHeap.AppendRecord(recToStore);    // add to the final heap
             Record newTemp; // replacemment for the old temp
             leftTableHeaps[minimum.base()->heapIndex].GetNext(newTemp);// use the same heap to get the next one
+            newTemp.SetOrderMaker(leftOrder);// set left order
             Tuple newTuple;
             newTuple.heapIndex = minimum.base()->heapIndex;
             newTuple.rec = newTemp;
             list.push_back(newTuple);   // push back the new one
             list.erase(minimum);//erase old (mselected minimum) record from list
+            cout << "Count after elements in list: " << list.size() << endl;
             
         }
         finalHeap.Close();

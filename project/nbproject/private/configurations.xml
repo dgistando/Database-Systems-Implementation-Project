@@ -4,6 +4,8 @@
     <df root="." name="0">
       <df name=".idea">
       </df>
+      <df name="Heaps">
+      </df>
       <df name="Queries">
       </df>
       <in>Catalog.cc</in>
