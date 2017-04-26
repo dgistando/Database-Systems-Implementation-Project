@@ -268,53 +268,66 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     memoryTable.push_back(temp);
                 } } else {  totalRecordMemorySize = 0; break; } }
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        vector<Tuple> list;
         DBFile finalHeap;
         string path = "Heaps//finalHeap";
         finalHeap.Create(&path[0],Sorted);
         
-        //MUST BE RECURSIVE WITH MORE EHAPS
-        totalRecordMemorySize = 0;
-        while(leftTableHeaps.size() != 1){ // loop tru until final heap is made
-            int table_index = 0;
-            for(int i = 0; i < leftTableHeaps.size(); i++){ // get first record from each heap
-                if(!leftTableHeaps[i].isOpen){ // open dbfile if it was not already opened
-                    leftTableHeaps[i].Open(&leftTableHeaps[i].fileName[0]); 
-                    leftTableHeaps[i].isOpen = true; //set it to opened
-                    cout << "Opening Heap File: " << leftTableHeaps[i].fileName << endl;
-                }
-                Record temp;
-                if(leftTableHeaps[i].GetNext(temp)){
-                    temp.SetOrderMaker(leftOrder);
-                    Tuple tuple;
-                    tuple.rec = temp;
-                    tuple.heapIndex = i;
-                    list.push_back(tuple);
-                }
-                else { 
-                    //ext::remove(leftTableHeaps,table_index); 
-                } // if no more entries delete the DBFile object
-                table_index++;
+        //CREATE TUPLELIST CREATED HERE
+        vector<Tuple> tupleList;
+        for(int i = 0; i < leftTableHeaps.size(); i++){ // get first record from each heap
+            if(!leftTableHeaps[i].isOpen){ // open dbfile if it was not already opened
+                leftTableHeaps[i].Open(&leftTableHeaps[i].fileName[0]); 
+                leftTableHeaps[i].isOpen = true; //set it to opened
+                cout << "Opening Heap File: " << leftTableHeaps[i].fileName << endl;
             }
-            cout << "Count before elements in list: " << list.size() << endl;
-            auto minimum = min_element(list.begin(), list.end(),TupleComp()); // get the minimum
-            Record recToStore = minimum.base()->rec; // copy record
-            finalHeap.AppendRecord(recToStore);    // add to the final heap
-            Record newTemp; // replacemment for the old temp
-            leftTableHeaps[minimum.base()->heapIndex].GetNext(newTemp);// use the same heap to get the next one
-            newTemp.SetOrderMaker(leftOrder);// set left order
-            Tuple newTuple;
-            newTuple.heapIndex = minimum.base()->heapIndex;
-            newTuple.rec = newTemp;
-            list.push_back(newTuple);   // push back the new one
-            list.erase(minimum);//erase old (mselected minimum) record from list
-            cout << "Count after elements in list: " << list.size() << endl;
-            
+            Record temp;
+            if(leftTableHeaps[i].GetNext(temp)){
+                temp.SetOrderMaker(leftOrder);
+                Tuple tuple;
+                tuple.rec = temp;
+                tuple.heapIndex = i;
+                tupleList.push_back(tuple);
+            }
+            else { 
+                //ext::remove(leftTableHeaps,table_index); 
+            } // if no more entries delete the DBFile object
+        }
+        cout << "Count before elements in list: " << tupleList.size() << endl;
+        //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
+        while(leftTableHeaps.size() != 0){
+            auto min = min_element(tupleList.begin(),tupleList.end(),TupleComp());
+            auto recordToStore = min.base()->rec;
+            finalHeap.AppendRecord(recordToStore);                                              //store it
+            if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
+                recordToStore.SetOrderMaker(leftOrder);                                         //set the order
+                Tuple addMe; addMe.rec = recordToStore; addMe.heapIndex = min.base()->heapIndex;//create new Tuple
+                tupleList.insert(min,addMe);                                                    //replace old one
+            } else {                                                                            //remove the dbfile
+                leftTableHeaps.erase(leftTableHeaps.begin() + min.base()->heapIndex);           //try to remove the dbfile
+            }
         }
         finalHeap.Close();
         finalHeap.isOpen = false;
-        list.empty();
-        leftTableHeaps.push_back(finalHeap);
+        tupleList.empty();
+        
+//        while(leftTableHeaps.size() != 1){ // loop tru until final heap is made
+//            auto minimum = min_element(list.begin(), list.end(),TupleComp()); // get the minimum
+//            Record recToStore = minimum.base()->rec; // copy record
+//            finalHeap.AppendRecord(recToStore);  // add to the final heap
+//            Record newTemp; // replacemment for the old temp
+//            leftTableHeaps[minimum.base()->heapIndex].GetNext(newTemp);// use the same heap to get the next one
+//            newTemp.SetOrderMaker(leftOrder);   // set left order
+//            Tuple newTuple; // new tuple 
+//            newTuple.heapIndex = minimum.base()->heapIndex;
+//            newTuple.rec = newTemp; 
+//            list.push_back(newTuple);   // push back the new one
+//            list.erase(minimum);//erase old (mselected minimum) record from list
+//            cout << "Count after elements in list: " << list.size() << endl;
+//            
+//        }
+//        finalHeap.Close();
+//        finalHeap.isOpen = false;
+//        list.empty();
     } 
 }
 
