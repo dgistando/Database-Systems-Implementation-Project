@@ -205,6 +205,8 @@ int File :: GetPage (Page& putItHere, off_t whichPage) {
 	putItHere.FromBinary(bits);
 
 	delete [] bits;
+        
+        return 0;//test
 }
 
 void File :: AddPage (Page& addMe, off_t whichPage) {

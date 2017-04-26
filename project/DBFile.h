@@ -30,6 +30,7 @@ public:
 
 	int Create (char* fpath, FileType file_type);
 	int Open (char* fpath);
+        int Open ();
 	int Close ();
 
 	void Load (Schema& _schema, char* textFile);

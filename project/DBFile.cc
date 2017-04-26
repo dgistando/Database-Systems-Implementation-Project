@@ -51,6 +51,10 @@ int DBFile::Open (char* f_path) {
 	return file.Open(1,f_path);
 
 }
+int DBFile::Open () {
+        isOpen = true;
+	return file.Open(1,&fileName[0]);
+}
 
 void DBFile::Load (Schema& schema, char* textFile) {
     FILE * pFile;
@@ -92,14 +96,22 @@ void DBFile::AppendRecord (Record& rec) {
 
 int DBFile::GetNext (Record& rec) {
    // if(!isOpen){Open(&fileName[0]); MoveFirst(); }
-    if (page.GetFirst(rec) == 0) {
-        pageCount++;
-        //cout << "\n jump to page: " << pageCount << endl;
-        page.EmptyItOut();
-        if (file.GetLength() == pageCount) return 0;
-        if (file.GetPage(page, pageCount) == -1) return 0;
-        if(page.GetFirst(rec) == 0){ return GetNext(rec); }
-    } return 1;	
+//    if (page.GetFirst(rec) == 0) {
+//        pageCount++;
+//        //cout << "\n jump to page: " << pageCount << endl;
+//        page.EmptyItOut();
+//        if (file.GetLength() == pageCount) return 0;
+//        if (file.GetPage(page, pageCount) == -1) return 0;
+//        if(page.GetFirst(rec) == 0){ return GetNext(rec); }
+//    } return 1;
+    if(page.GetFirst(rec) == 0){
+        if(pageCount < file.GetLength()){
+            page.EmptyItOut();
+            file.GetPage(page,pageCount);
+            pageCount++;
+            return page.GetFirst(rec);
+        } else return 0;
+    } return 1;
 }
 int DBFile::GetSpecificRecord(int pNumber, int rNumber, Record& rec) {
     page.EmptyItOut(); 
