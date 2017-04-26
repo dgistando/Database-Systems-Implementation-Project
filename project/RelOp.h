@@ -169,6 +169,7 @@ public:
 
 	virtual ostream& print(ostream& _os);
         
+        void ComputeJoin(Schema& LeftOrRightSchema, OrderMaker*& LeftOrRight, string& partHeapPath, string& finalHeapPath);
 
 	int depth;
 
