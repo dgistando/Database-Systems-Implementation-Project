@@ -294,18 +294,23 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         }
         cout << "Count before elements in list: " << tupleList.size() << endl;
         //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
+        int county = 0;
         while(leftTableHeaps.size() != 0){
             auto min = min_element(tupleList.begin(),tupleList.end(),TupleComp());
             auto recordToStore = min.base()->rec;
+            //recordToStore.print(cout,this->schemaLeft); cout << endl;
             finalHeap.AppendRecord(recordToStore);                                              //store it
+            county++;
             if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
                 recordToStore.SetOrderMaker(leftOrder);                                         //set the order
                 Tuple addMe; addMe.rec = recordToStore; addMe.heapIndex = min.base()->heapIndex;//create new Tuple
-                tupleList.insert(min,addMe);                                                    //replace old one
+                tupleList.erase(min);
+                tupleList.push_back(addMe);
             } else {                                                                            //remove the dbfile
                 leftTableHeaps.erase(leftTableHeaps.begin() + min.base()->heapIndex);           //try to remove the dbfile
             }
         }
+        cout << "total record: " << county << endl;
         finalHeap.Close();
         finalHeap.isOpen = false;
         tupleList.empty();
