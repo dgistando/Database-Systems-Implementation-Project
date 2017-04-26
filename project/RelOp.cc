@@ -140,10 +140,17 @@ ostream& Project::print(ostream& _os) {
 	return _os;
 	// return _os << "π [...]\n\t │\n\t" << *producer; // print without predicates
 }
-
+struct Tuple{
+    Record rec;
+    int heapIndex;
+};
 struct RecordComp{
     bool operator() (Record& left, Record& right){return left < right;}
 };
+struct TupleComp{
+    bool operator() (Tuple& left, Tuple& right){return left.rec < right.rec;}
+};
+
 
 Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
@@ -261,7 +268,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     memoryTable.push_back(temp);
                 } } else {  totalRecordMemorySize = 0; break; } }
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        vector<Record> list;
+        vector<Tuple> list;
         DBFile finalHeap;
         string path = "Heaps//finalHeap";
         finalHeap.Create(&path[0],Sorted);
@@ -279,36 +286,27 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                 Record temp;
                 if(leftTableHeaps[i].GetNext(temp)){
                     temp.SetOrderMaker(leftOrder);
-                    totalRecordMemorySize += temp.GetSize();    // increment memory size
-                    if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
-
-                        DBFile heapPart; heapPart_index++;
-                        auto heap_name = "Heaps//leftHeap_part_" + to_string(heapPart_index);
-
-                        cout << "Creating DBFile "  << heap_name << endl;
-
-                        int recordCount = 0;
-                        heapPart.Create(&heap_name[0],Sorted); // create a new heap 
-                        for(auto it:list){ heapPart.AppendRecord(it); recordCount++; } // insert all list items into heap
-
-                        cout << "Record stored in current " << heap_name << " is " << list.size() << endl;
-
-                        heapPart.Close(); // close it
-                        leftTableHeaps.push_back(heapPart); // push back the db file
-                        list.clear(); // clear the memory
-                        list.push_back(temp);// push back the new temp
-                        totalRecordMemorySize = temp.GetSize(); //reset it for Bu
-                    } else { list.push_back(temp); }
+                    Tuple tuple;
+                    tuple.rec = temp;
+                    tuple.heapIndex = i;
+                    list.push_back(tuple);
                 }
                 else { 
-                    ext::remove(leftTableHeaps,table_index); 
+                    //ext::remove(leftTableHeaps,table_index); 
                 } // if no more entries delete the DBFile object
                 table_index++;
             }
-            auto minimum = min_element(list.begin(), list.end(),RecordComp()); // get the minimum
-            Record recToStore = *minimum.base(); // copy record
+            auto minimum = min_element(list.begin(), list.end(),TupleComp()); // get the minimum
+            Record recToStore = minimum.base()->rec; // copy record
             finalHeap.AppendRecord(recToStore);    // add to the final heap
-            list.erase(minimum);//erase record from list
+            Record newTemp; // replacemment for the old temp
+            leftTableHeaps[minimum.base()->heapIndex].GetNext(newTemp);// use the same heap to get the next one
+            Tuple newTuple;
+            newTuple.heapIndex = minimum.base()->heapIndex;
+            newTuple.rec = newTemp;
+            list.push_back(newTuple);   // push back the new one
+            list.erase(minimum);//erase old (mselected minimum) record from list
+            
         }
         finalHeap.Close();
         finalHeap.isOpen = false;
