@@ -152,7 +152,7 @@ int main () {
 			}
 		}
 		// re-open stdin so that we can start reading from the scratch
-		freopen("/dev/tty", "r", stdin); 
+		freopen("/dev/tty", "r", stdin);
 	}
 	fclose(stdin);
 	

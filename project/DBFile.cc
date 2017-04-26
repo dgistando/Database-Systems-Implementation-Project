@@ -96,7 +96,7 @@ void DBFile::AppendRecord (Record& rec) {
 }
 
 int DBFile::GetNext (Record& rec) {
-    //if(!isOpen){Open(&fileName[0]); MoveFirst(); }
+//    if(!isOpen){Open(&fileName[0]); MoveFirst(); }
 //    if (page.GetFirst(rec) == 0) {
 //        pageCount++;
 //        //cout << "\n jump to page: " << pageCount << endl;
@@ -111,10 +111,12 @@ int DBFile::GetNext (Record& rec) {
     
     
     if(page.GetFirst(rec) == 0){
+        pageCount++;
         if(pageCount < file.GetLength()){
             //page.EmptyItOut();
+            //pageCount++;
             file.GetPage(page,pageCount);
-            pageCount++;
+            //pageCount++;
             return page.GetFirst(rec);
         } else return 0;
     } return 1;
