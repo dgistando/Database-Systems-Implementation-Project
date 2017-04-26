@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <code-assistance-data xmlns="http://www.netbeans.org/ns/make-project-private/1">
-        <code-model-enabled>true</code-model-enabled>
-    </code-assistance-data>
     <data xmlns="http://www.netbeans.org/ns/make-project-private/1">
         <activeConfTypeElem>0</activeConfTypeElem>
         <activeConfIndexElem>0</activeConfIndexElem>
@@ -12,13 +9,7 @@
         <group>
             <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/DBFile.cc</file>
             <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/main.cc</file>
-<<<<<<< Daniel
-            <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/TwoWayList.cc</file>
             <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/Record.cc</file>
-=======
-            <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/Record.cc</file>
-            <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/RelOp.h</file>
->>>>>>> -Done for tonight (DEBUG DONT RUN IT!)
             <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/QueryCompiler.cc</file>
             <file>file:/home/farrenkor/School/Memebase%202/Project/Database-Systems-Implementation-Project/project/RelOp.cc</file>
         </group>
