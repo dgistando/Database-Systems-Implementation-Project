@@ -312,9 +312,12 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     leftOrder = new OrderMaker();
     rightOrder = new OrderMaker();
             
-    predicate.GetSortOrders(*leftOrder, *rightOrder); 
-
+    DBFile finalHeap;
     
+    predicate.GetSortOrders(*leftOrder, *rightOrder); 
+    
+    int heapPart_index = 0;
+    Record temp;
     if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
         
         cout << schemaRight << endl;
@@ -383,8 +386,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         cout << "Total Stored: " << totalRecordStored << endl;
         
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        DBFile finalHeap;
-        string path = "Heaps//finalHeap";
+        string path = "Heaps//finalHeapRight";
         finalHeap.Create(&path[0],Sorted);
         
         //CREATE TUPLELIST CREATED HERE
@@ -469,6 +471,12 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                     memoryTable.push_back(temp);
                 } } else {  totalRecordMemorySize = 0; break; } }
         
+        
+        if(leftTableHeaps.size() == 0){ // this means all of the records fitted in memory
+            
+        } else {} // thismean they were not
+        
+        
         //ADDING LAST HEAP
         DBFile lastHeap;
         string heap_name = "Heaps//leftHeap_part_" + to_string(++heapPart_index);
@@ -492,8 +500,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         cout << "Total Stored: " << totalRecordStored << endl;
         
         //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        DBFile finalHeap;
-        string path = "Heaps//finalHeap";
+        string path = "Heaps//finalHeapLeft";
         finalHeap.Create(&path[0],Sorted);
         
         //CREATE TUPLELIST CREATED HERE
@@ -547,6 +554,37 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
 //        finalHeap.Open();
 //        while(finalHeap.GetNext(tttemp)){tcount++;} cout << "count in heap: " << ttcount << endl;
     } 
+    
+    //HERE WE FINALLY DO JOINT 420
+    DBFile joinedHeap;
+    string joinedHeapPath = "Heap//joinedHeap.dat"; // this needs some kind of random filename to not overwrite itself
+    joinedHeap.Create(&joinedHeapPath[0],Heap);
+    finalHeap.Open();
+    Record sorted, unsorted;
+    while(true){
+        if(finalHeap.GetNext(sorted)){
+            if(leftIsSmaller){
+                while(right->GetNext(unsorted)){
+                    if(predicate.Run(sorted,unsorted)){
+                        Record joined;
+                        joined.AppendRecords(sorted,unsorted,schemaLeft.atts.size(),schemaRight.atts.size());
+                        joinedHeap.AppendRecord(joined);
+                    }
+                }
+            } else {
+                while(left->GetNext(unsorted)){
+                    if(predicate.Run(unsorted,sorted)){
+                        Record joined;
+                        joined.AppendRecords(unsorted,sorted,schemaLeft.atts.size(),schemaRight.atts.size());
+                        joinedHeap.AppendRecord(joined);
+                    }
+                }
+            }
+        } else { break; }
+    }
+    joinedHeap.Close();
+    dbfile = joinedHeap;
+    
 }
 
 
@@ -557,7 +595,7 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    
+    //joinedHeap->GetNext(record);
     
     
     

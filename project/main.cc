@@ -49,7 +49,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 int main () {
         //NUMBER OF PAGES
-        int numPages = 100;
+        int numPages = 300;
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
