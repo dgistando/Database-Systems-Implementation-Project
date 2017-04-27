@@ -569,11 +569,26 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         cout << "total record: " << county << endl;
         
         
-
-    
-    
-    
-    
+        string finalheapName = "Heaps//finalHeap_" + to_string(std::rand());
+        dbfile.Create(&finalheapName[0],Sorted);
+        finalHeapLeft.Open();
+        finalHeapRight.Open();
+        Record sleft, sright;
+        while(true){
+            if(finalHeapLeft.GetNext(sleft)){
+                while(finalHeapRight.GetNext(sright)){
+                    if(predicate.Run(sleft,sright)){
+                        Record joined;
+                        joined.AppendRecords(sleft,sright,schemaLeft.atts.size(),schemaRight.atts.size());
+                        dbfile.AppendRecord(joined);
+                    } else break; // since sorted we break
+                }
+                
+            //check to see if next record in left is equal to the record before it 
+            //join the same records again
+            } else break;
+        }
+        dbfile.Close();
     
     
     
@@ -649,7 +664,8 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    //joinedHeap->GetNext(record);
+    if(dbfile.isOpen){ dbfile.GetNext(_record); }
+    else { dbfile.Open(); dbfile.GetNext(_record); }
     
     
     //join heapfLeftFinal = heapRightFinal;

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <ctime>
 
 #include "Schema.h"
 #include "Record.h"
