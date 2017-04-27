@@ -3,9 +3,12 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <sstream>
-#include <unordered_map>
+#include <string>
+#include <algorithm>
+#include <ctime>
 
 #include "Schema.h"
 #include "Record.h"
@@ -33,6 +36,8 @@ public:
 
 	// every operator has to implement this method
 	virtual bool GetNext(Record& _record) = 0;
+        
+        //virtual void MoveToFirstPage();
 
 	/* Virtual function for polymorphic printing using operator<<.
 	 * Each operator has to implement its specific version of print.
@@ -137,15 +142,25 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
-            
+        //Test
         OrderMaker* leftOrder;
         OrderMaker* rightOrder;
-    
+        DBFile dbfile;
         
-        multimap<Record,int> mmap;
+        bool leftIsSmaller;
+	RelationalOp * largerTable;
+	Record curRecord;
+        
+	TwoWayList <Record> smallTable;
+        
+        //part 5
+        vector <Record> memoryTable;
+        vector<DBFile> rightTableHeaps, leftTableHeaps;
+        
 
 public:
-	Join(Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
+        
+	Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 		CNF& _predicate, RelationalOp* _left, RelationalOp* _right);
 	virtual ~Join();
 
@@ -154,6 +169,8 @@ public:
 	virtual Schema GetSchema() { return schemaOut; }
 
 	virtual ostream& print(ostream& _os);
+        
+        void ComputeJoin(Schema& LeftOrRightSchema, OrderMaker*& LeftOrRight, string& partHeapPath, string& finalHeapPath);
 
 	int depth;
 
@@ -181,7 +198,7 @@ public:
 
 	virtual Schema GetSchema() { return schema; }
 
-        virtual ostream& print(ostream& _os);
+	virtual ostream& print(ostream& _os);
 };
 
 class Sum : public RelationalOp {
@@ -225,6 +242,10 @@ private:
 
 	// operator generating data
 	RelationalOp* producer;
+        
+        bool mapsCreated;
+        map<string,Record> recordMap;
+        map<string,double> sumMap;
 
 public:
 	GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,

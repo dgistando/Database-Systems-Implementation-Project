@@ -23,11 +23,11 @@ class Record {
 private:
 	//the binary content of the record or the actual data in the record
 	char* bits;
-        OrderMaker* compOrder;
+        
 	
 
 public:
-    
+        OrderMaker* compOrder;
 	Record ();
 	Record(const Record& _other);
 	Record& operator=(const Record& _other);

@@ -23,7 +23,7 @@ Page :: ~Page() {
 
 void Page :: EmptyItOut() {
 	// get rid of all of the records
-	TwoWayList<Record> aux; aux.Swap(myRecs);
+            TwoWayList<Record> aux; aux.Swap(myRecs);
 
 	// reset the page size
 	curSizeInBytes = sizeof(int);
@@ -52,8 +52,6 @@ int Page :: GetFirst(Record& firstOne) {
 int Page :: Append (Record& addMe) {
 	char* b = addMe.GetBits();
 
-        cout<<"NUM RECS"<< numRecs << endl;
-        
 	// first see if we can fit the record
 	if (curSizeInBytes + ((int *) b)[0] > PAGE_SIZE) return 0;
 
@@ -105,6 +103,28 @@ void Page :: FromBinary (char* bits) {
 		myRecs.Append(temp);
 		curPos += len;
 	}
+}
+int Page :: GetRecordNumber(int index, Record& rec) { 
+    int counter = 1; 
+    // move to the first record 
+    myRecs.MoveToStart (); 
+    // make sure there is data 
+    if (myRecs.AtEnd()) return 0; 
+    while (!myRecs.AtEnd()) { 
+            if (index == counter) { 
+                    // remove it 
+                    myRecs.Remove (rec); 
+                    numRecs--; 
+                    char* b = rec.GetBits(); 
+                    curSizeInBytes -= ((int*)b)[0];
+                    return 1;
+             } 
+
+            myRecs.Advance(); 
+            counter++; 
+    } 
+
+    return 0; 
 }
 
 
@@ -185,6 +205,8 @@ int File :: GetPage (Page& putItHere, off_t whichPage) {
 	putItHere.FromBinary(bits);
 
 	delete [] bits;
+        
+        return 0;//test
 }
 
 void File :: AddPage (Page& addMe, off_t whichPage) {

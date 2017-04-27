@@ -44,7 +44,7 @@ QueryCompiler::QueryCompiler(Catalog& _catalog, QueryOptimizer& _optimizer) :
 QueryCompiler::~QueryCompiler() {
 }
 
-void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
+void QueryCompiler::Compile(int& numberOfPages,TableList* _tables, NameList* _attsToSelect,
 	FuncOperator* _finalFunction, AndList* _predicate, NameList* _groupingAtts,
 	int& _distinctAtts,	QueryExecutionTree& _queryTree) {
         
@@ -98,7 +98,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 	OptimizationTree *rootTree = &root;
 	/** create join operators based on the optimal order computed by the optimizer **/
 	// get actual Query eXecution Tree by joining them
-	RelationalOp* qxTree = buildJoinTree(rootTree, _predicate, pushDowns, 0);
+	RelationalOp* qxTree = buildJoinTree(numberOfPages,rootTree, _predicate, pushDowns, 0);
 
 	/** create the remaining operators based on the query **/
 	// qxTreeRoot will be the root of query execution tree
@@ -255,7 +255,7 @@ void QueryCompiler::Compile(TableList* _tables, NameList* _attsToSelect,
 }
 
 // a recursive function to create Join operators (w/ Select & Scan) from optimization result
-RelationalOp* QueryCompiler::buildJoinTree(OptimizationTree*& _tree,
+RelationalOp* QueryCompiler::buildJoinTree(int& numberOfPages,OptimizationTree*& _tree,
 	AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth) {
 	// at leaf, do push-down (or just return table itself)
 	if(_tree->leftChild == NULL && _tree->rightChild == NULL) {
@@ -263,14 +263,14 @@ RelationalOp* QueryCompiler::buildJoinTree(OptimizationTree*& _tree,
 	} else { // recursively do join from left/right RelOps
 		Schema lSchema, rSchema, oSchema; CNF cnf;
 
-		RelationalOp* lOp = buildJoinTree(_tree->leftChild, _predicate, _pushDowns, depth+1);
-		RelationalOp* rOp = buildJoinTree(_tree->rightChild, _predicate, _pushDowns, depth+1);
+		RelationalOp* lOp = buildJoinTree(numberOfPages,_tree->leftChild, _predicate, _pushDowns, depth+1);
+		RelationalOp* rOp = buildJoinTree(numberOfPages,_tree->rightChild, _predicate, _pushDowns, depth+1);
 
 		lSchema = lOp->GetSchema();
 		rSchema = rOp->GetSchema();
 		cnf.ExtractCNF(*_predicate, lSchema, rSchema);
 		oSchema.Append(lSchema); oSchema.Append(rSchema);
-		Join* join = new Join(lSchema, rSchema, oSchema, cnf, lOp, rOp);
+		Join* join = new Join(numberOfPages,lSchema, rSchema, oSchema, cnf, lOp, rOp);
 
 		// set current depth for join operation
 		join->depth = depth;

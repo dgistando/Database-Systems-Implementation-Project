@@ -12,3 +12,4 @@ Loading data from Catalog... Done!
 
 <sqlite> 
 OK!
+{sum: 0.05}

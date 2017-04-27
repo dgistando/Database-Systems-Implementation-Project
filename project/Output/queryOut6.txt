@@ -12,28 +12,28 @@ Loading data from Catalog... Done!
 
 <sqlite> 
 OK!
+{n_name: EGYPT}
+{n_name: JAPAN}
+{n_name: UNITED KINGDOM}
+{n_name: UNITED STATES}
+{n_name: ROMANIA}
 {n_name: INDIA}
+{n_name: VIETNAM}
+{n_name: SAUDI ARABIA}
+{n_name: ARGENTINA}
+{n_name: KENYA}
+{n_name: ETHIOPIA}
+{n_name: RUSSIA}
+{n_name: IRAN}
+{n_name: INDONESIA}
+{n_name: PERU}
+{n_name: MOZAMBIQUE}
+{n_name: GERMANY}
+{n_name: ALGERIA}
+{n_name: BRAZIL}
+{n_name: CHINA}
+{n_name: JORDAN}
+{n_name: MOROCCO}
 {n_name: FRANCE}
 {n_name: IRAQ}
-{n_name: UNITED KINGDOM}
-{n_name: BRAZIL}
-{n_name: MOZAMBIQUE}
-{n_name: INDONESIA}
-{n_name: ARGENTINA}
-{n_name: JAPAN}
-{n_name: ETHIOPIA}
-{n_name: JORDAN}
 {n_name: CANADA}
-{n_name: ROMANIA}
-{n_name: RUSSIA}
-{n_name: PERU}
-{n_name: SAUDI ARABIA}
-{n_name: UNITED STATES}
-{n_name: MOROCCO}
-{n_name: GERMANY}
-{n_name: EGYPT}
-{n_name: CHINA}
-{n_name: VIETNAM}
-{n_name: ALGERIA}
-{n_name: KENYA}
-{n_name: IRAN}

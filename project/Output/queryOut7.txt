@@ -12,5 +12,4 @@ Loading data from Catalog... Done!
 
 <sqlite> 
 OK!
-{n_name: ®Gáz<†@}
-{n_name: š™™™™i^@}
+{c_name: Customer#000138334}

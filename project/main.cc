@@ -28,8 +28,8 @@ extern "C" int yyparse();
 extern "C" int yylex_destroy();
 
 
-//template<typename Out>
-/*void split(const std::string &s, char delim, Out result) {
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
     std::stringstream ss;
     ss.str(s);
     std::string item;
@@ -41,14 +41,15 @@ extern "C" int yylex_destroy();
 
 
 
-vector<string> split(const std::string &s, char delim) {
+std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
     split(s, delim, std::back_inserter(elems));
     return elems;
-}*/
-
+}
 
 int main () {
+        //NUMBER OF PAGES
+        int numPages = 300;
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
@@ -68,7 +69,7 @@ int main () {
         
         for (int i = 0; i < files1.size(); i++)
 	{
-            break;
+            //break;
             DBFile db1;
             //i = 0;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
@@ -143,7 +144,7 @@ int main () {
 				// we are ready to invoke the query compiler with the given query
 				// the result is the execution tree built from the parse tree and optimized
 				QueryExecutionTree queryTree;
-				compiler.Compile(tables, attsToSelect, finalFunction, predicate,
+				compiler.Compile(numPages,tables, attsToSelect, finalFunction, predicate,
 					groupingAtts, distinctAtts, queryTree);
 
 				//cout << queryTree << endl;
@@ -151,8 +152,7 @@ int main () {
 			}
 		}
 		// re-open stdin so that we can start reading from the scratch
-		freopen("/dev/tty", "r", stdin); 
-                
+		freopen("/dev/tty", "r", stdin);
                 break;
 	}
 	fclose(stdin);

@@ -12,15 +12,4 @@ Loading data from Catalog... Done!
 
 <sqlite> 
 OK!
-QUERY EXECUTION TREE {
-
-	π [l_receiptdate]
-	 │
-	⋈ [l_orderkey = o_orderkey], Number of Tuples = 4
-	 ├──── 
-	 └──── ⋈ [o_custkey = c_custkey], Number of Tuples = 1
-		 ├──── σ [o_orderdate > '1995-03-10' AND o_orderdate < '1995-03-20'] ── 
-		 └──── σ [c_name = 'Customer#000000116'] ── 
-
-}
-
+{sum: 2.17431e+08}

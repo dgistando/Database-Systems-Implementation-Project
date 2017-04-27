@@ -40,6 +40,7 @@ public:
 
 	// empty records from page
 	void EmptyItOut();
+        int GetRecordNumber(int index, Record& rec);
 };
 
 

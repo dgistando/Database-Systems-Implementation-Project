@@ -12,13 +12,4 @@ Loading data from Catalog... Done!
 
 <sqlite> 
 OK!
-QUERY EXECUTION TREE {
-
-	γ [SUM(), c_name]
-	 │
-	⋈ [c_custkey = o_custkey], Number of Tuples = 500000
-	 ├──── 
-	 └──── σ [o_totalprice < 100] ── 
-
-}
-
+{sum: 2.14}

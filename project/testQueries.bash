@@ -3,17 +3,17 @@
 
 echo Running Tests...
 
-#make clean
-#make
+make clean
+make
 
 for i in {1..10}
 do
 	echo "Query $i: queryOut$i.txt"
-	./main.out < Queries/$i.sql > queryOut$i.txt
+	./main.out < Queries/$i.sql > Output/queryOut$i.txt
 done
 
 echo Done!! opening in mousepad
 
 mousepad queryOut*.txt
 
-exit 
+exit
