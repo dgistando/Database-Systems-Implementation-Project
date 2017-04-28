@@ -153,6 +153,12 @@ struct TupleComp{
 
 
 int Join::GenerateFinalHeap(Table table){
+    
+    string testPath = "Heaps//text_" + to_string(rand()) + ".txt";
+    ofstream myfile (testPath);
+    myfile.is_open() ; 
+    
+    
     vector<Tuple> tupleList;
     if(table == TableLeft){
         //CREATE FINAL HEAP
@@ -171,28 +177,41 @@ int Join::GenerateFinalHeap(Table table){
             } else { cout << "Error" << endl; return -1; }
         }
         
+        for(int i = 0; i < tupleList.size(); i++){ cout << "BEFORE " << tupleList[i].heapIndex << " TEST " << leftTableHeaps[tupleList[i].heapIndex].fileName << endl; } cout << endl;
+        
         //START SORTIGN INTO ONE HEAP
         int emptyDBFileCount = 0;
+        bool noMoreHeaps = false;
         while(leftTableHeaps.size() > emptyDBFileCount){
             pushMinimumLeft:
             vector<Tuple>::iterator min = min_element(tupleList.begin(), tupleList.end(), TupleComp());
             Record recordToStore = min.base()->rec;
+            
+            recordToStore.print(myfile,this->schemaLeft);
+            myfile << endl;
+            
             finalHeap.AppendRecord(recordToStore);
+            if(noMoreHeaps) { tupleList.erase(min); }
             Record recordToReplenish;
             if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
                 recordToReplenish.SetOrderMaker(leftOrder);
                 Tuple addme; addme.heapIndex = min.base()->heapIndex; addme.rec = recordToReplenish;
                 tupleList.erase(min);
                 tupleList.push_back(addme);
-            } else { emptyDBFileCount++; }
-        } if(!tupleList.empty()) { goto pushMinimumLeft; }
+            } else { 
+                for(int i = 0; i < tupleList.size(); i++){ cout << "ERASE " << tupleList[i].heapIndex << " TEST " << leftTableHeaps[tupleList[i].heapIndex].fileName << endl; }
+                //min.base()->rec.print(cout,schemaLeft); cout << endl;
+                emptyDBFileCount++;  cout << "incrementing DBFile erase Count: " << emptyDBFileCount << " leftTableHeaps.size() = " << leftTableHeaps.size() << " NAME " << leftTableHeaps[min.base()->heapIndex].fileName << endl;
+                tupleList.erase(min); }
+        } if(!tupleList.empty()) { 
+            cout << "HEY" << endl; noMoreHeaps = true; goto pushMinimumLeft; }
         
         //CLEAN UP
         for(int i = 0; i < leftTableHeaps.size();i++){ remove(leftTableHeaps[i].fileName.c_str()); }
         
         //PUSH BACK FINAL HEAP
         leftTableHeaps.push_back(finalHeap);
-        
+        myfile.close();
     } else {
         //CREATE FINAL HEAP
         DBFile finalHeap;
@@ -212,25 +231,38 @@ int Join::GenerateFinalHeap(Table table){
         
         //START SORTIGN INTO ONE HEAP
         int emptyDBFileCount = 0;
+        bool noMoreHeaps = false;
         while(rightTableHeaps.size() > emptyDBFileCount){
             pushMinimumRight:
             vector<Tuple>::iterator min = min_element(tupleList.begin(), tupleList.end(), TupleComp());
             Record recordToStore = min.base()->rec;
+            
+            recordToStore.print(myfile,this->schemaLeft);
+            myfile << endl;
+            
+            
             finalHeap.AppendRecord(recordToStore);
+            if(noMoreHeaps) { tupleList.erase(min); }
             Record recordToReplenish;
             if(rightTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
                 recordToReplenish.SetOrderMaker(leftOrder);
                 Tuple addme; addme.heapIndex = min.base()->heapIndex; addme.rec = recordToReplenish;
                 tupleList.erase(min);
                 tupleList.push_back(addme);
-            } else { emptyDBFileCount++; }
-        } if(!tupleList.empty()) { goto pushMinimumRight; }
+            } else { 
+                for(int i = 0; i < tupleList.size(); i++){ cout << "ERASE " << tupleList[i].heapIndex << " TEST " << rightTableHeaps[tupleList[i].heapIndex].fileName << endl; }
+                //min.base()->rec.print(cout,schemaLeft); cout << endl;
+                emptyDBFileCount++;  cout << "incrementing DBFile erase Count: " << emptyDBFileCount << " rightTableHeaps.size() = " << rightTableHeaps.size() << " NAME " << rightTableHeaps[min.base()->heapIndex].fileName << endl;
+                tupleList.erase(min); }
+        } if(!tupleList.empty()) { 
+            cout << "HEY" << endl; noMoreHeaps = true; goto pushMinimumRight; }
         
         //CLEAN UP
         for(int i = 0; i < rightTableHeaps.size();i++){ remove(rightTableHeaps[i].fileName.c_str()); }
         
         //PUSH BACK FINAL HEAP
         rightTableHeaps.push_back(finalHeap);
+        myfile.close();
     }
 }
 int Join::GenerateHeapPart(int& index, Table table){
@@ -257,10 +289,22 @@ int Join::GenerateHeapPart(int& index, Table table){
     memoryTable.clear();
     memoryTable.shrink_to_fit();
     vector<Record> empty; memoryTable.swap(empty);
-    newPartHeap.MoveFirst();
+    //newPartHeap.MoveFirst();
     
     //ADD TO HEAPLIST
     ((table == TableLeft) ? leftTableHeaps : rightTableHeaps).push_back(newPartHeap);
+    
+    
+    
+    //TEST
+    newPartHeap.Close();
+    newPartHeap.Open(); //DO NOT REOPEN IT IT PRODUCES ONLY 1 PGAE
+    int count = 0;
+    Record ober;
+    while(newPartHeap.GetNext(ober)){
+        count++;
+    } cout << "----COUNTED RECORDS: " << count << endl;
+    newPartHeap.MoveFirst();
     
     //RETURNING RECORDS STORED
     return recordStored;

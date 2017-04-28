@@ -20,7 +20,7 @@ DBFile::~DBFile () {
 }
 
 DBFile::DBFile(const DBFile& _copyMe) :
-	file(_copyMe.file),	fileName(_copyMe.fileName), pageCount(0) {}
+	file(_copyMe.file),	fileName(_copyMe.fileName), isOpen(_copyMe.isOpen), pageCount(0) {}
 
 DBFile& DBFile::operator=(const DBFile& _copyMe) {
     // handle self-assignment first
@@ -74,8 +74,8 @@ void DBFile::Load (Schema& schema, char* textFile) {
 
 int DBFile::Close () {
     isOpen = false;
-    //if(ftype == Sorted) { 
-    //file.AddPage(page, file.GetLength()); //} // testing
+    if(ftype == Sorted) { 
+    file.AddPage(page, pageCount); } // testing
     return file.Close();
 }
 
