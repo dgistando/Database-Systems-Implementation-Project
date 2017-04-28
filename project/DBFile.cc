@@ -58,18 +58,16 @@ int DBFile::Open () {
 }
 
 void DBFile::Load (Schema& schema, char* textFile) {
-    FILE * pFile;
-    string str = textFile;
-    pFile = fopen(&str[0],"r");
+    FILE * pFile = fopen(textFile,"r");
     int i = 0;
     while (1) {
         Record rec;
-        if (rec.ExtractNextRecord (schema, *pFile) == 0) break;
-        AppendRecord(rec);
-        i++;
+        if (rec.ExtractNextRecord (schema, *pFile) == 0) { break; }
+        else { AppendRecord(rec); i++; }
+        
     }
-    pageCount++;
-    file.AddPage(page, file.GetLength());
+    //cout << "After loop append page count: " << pageCount << endl;
+    file.AddPage(page, pageCount);
     fclose(pFile);
     cout << "\n\n enties read: " << i << " pages: " << pageCount << endl;;
 }
@@ -77,7 +75,7 @@ void DBFile::Load (Schema& schema, char* textFile) {
 int DBFile::Close () {
     isOpen = false;
     //if(ftype == Sorted) { 
-    file.AddPage(page, file.GetLength()); //} // testing
+    //file.AddPage(page, file.GetLength()); //} // testing
     return file.Close();
 }
 
@@ -89,6 +87,7 @@ void DBFile::MoveFirst () {
 void DBFile::AppendRecord (Record& rec) {
 
     if (page.Append(rec) == 0) {
+        //cout << "Making new page after " << pageCount << endl;
         file.AddPage(page, pageCount++);
         page.EmptyItOut();
         page.Append(rec);
