@@ -413,10 +413,15 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
         int county = 0; 
         int delDB = 0;
+        ofstream myfile ("example.txt");
+        myfile.is_open() ; 
         while(rightTableHeaps.size() != delDB){
             auto min = min_element(tupleListRight.begin(),tupleListRight.end(),TupleComp());
             auto recordToStore = min.base()->rec;
-            //recordToStore.print(cout,this->schemaRight); cout << endl;
+            
+            stringstream stri;
+            recordToStore.print(stri,this->schemaRight); cout << endl;
+            myfile << stri.str() << endl;
             finalHeapRight.AppendRecord(recordToStore);                                              //store it
             county++;
             if(rightTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
@@ -440,7 +445,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         } finalHeapRight.Close();
         cout << "tuple count left " << tupleListRight.size() << endl;
         cout << "total record: " << county << endl;
-        
+        myfile.close();
         //=========================== LEFT HEAP ====================================
         heapPart_index = 0;
         cout << schemaLeft << endl;

@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <ctime>
+#include <fstream>
 
 #include "Schema.h"
 #include "Record.h"

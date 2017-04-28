@@ -69,7 +69,7 @@ int main () {
         
         for (int i = 0; i < files1.size(); i++)
 	{
-            break;
+            //break;
             DBFile db1;
             //i = 0;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
