@@ -237,7 +237,7 @@ int Join::GenerateFinalHeap(Table table){
             vector<Tuple>::iterator min = min_element(tupleList.begin(), tupleList.end(), TupleComp());
             Record recordToStore = min.base()->rec;
             
-            recordToStore.print(myfile,this->schemaLeft);
+            recordToStore.print(myfile,this->schemaRight);
             myfile << endl;
             
             
@@ -267,6 +267,10 @@ int Join::GenerateFinalHeap(Table table){
 }
 int Join::GenerateHeapPart(int& index, Table table){
     //GENERATING NAME
+    ofstream myfile;
+    string pathing = ((table == TableLeft) ? ("Heaps//lhp_" + to_string(index) + ".txt") : ("Heaps//rhp_" + to_string(index) + ".txt"));
+    myfile.open(pathing);
+        
     string path = ((table == TableLeft) ? ("Heaps//lhp_" + to_string(index) + ".dat") : ("Heaps//rhp_" + to_string(index) + ".dat"));
     
     cout << "Creating Heap: " << path << endl;
@@ -282,7 +286,12 @@ int Join::GenerateHeapPart(int& index, Table table){
     cout << "-Sorted Memory sized: " << memoryTable.size() << endl;
     
     //STORING INTO HEAP_PART
-    for(int i = 0; i < memoryTable.size(); i++) { newPartHeap.AppendRecord(memoryTable.at(i)); recordStored++;}
+    for(int i = 0; i < memoryTable.size(); i++) {  
+        Schema ptr = ((table == TableLeft) ? schemaLeft : schemaRight);
+        memoryTable.at(i).print(myfile,ptr); 
+        myfile << endl; 
+        newPartHeap.AppendRecord(memoryTable.at(i));
+        recordStored++;}
     cout << "--Inserted records in Heap: " << recordStored << endl << endl;
     
     //CLEAN UP
@@ -305,6 +314,7 @@ int Join::GenerateHeapPart(int& index, Table table){
         count++;
     } cout << "----COUNTED RECORDS: " << count << endl;
     newPartHeap.MoveFirst();
+    myfile.close();
     
     //RETURNING RECORDS STORED
     return recordStored;
