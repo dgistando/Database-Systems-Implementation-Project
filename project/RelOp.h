@@ -143,10 +143,8 @@ private:
 	RelationalOp* left;
 	RelationalOp* right;
         
-        //Test
-        OrderMaker* leftOrder;
-        OrderMaker* rightOrder;
-        DBFile dbfile;
+        
+        
         
         bool leftIsSmaller;
 	RelationalOp * largerTable;
@@ -155,6 +153,10 @@ private:
 	TwoWayList <Record> smallTable;
         
         //part 5
+        enum Table{ TableLeft, TableRight };
+        OrderMaker* leftOrder;
+        OrderMaker* rightOrder;
+        DBFile dbfile;
         vector <Record> memoryTable;
         vector<DBFile> rightTableHeaps, leftTableHeaps;
         
@@ -171,8 +173,12 @@ public:
 
 	virtual ostream& print(ostream& _os);
         
-        void ComputeJoin(Schema& LeftOrRightSchema, OrderMaker*& LeftOrRight, string& partHeapPath, string& finalHeapPath);
-
+        int GenerateFinalHeap(Table table);
+        
+        /* Returns amount of records stored in heap
+         */
+        int GenerateHeapPart(int& path, Table table);
+        
 	int depth;
 
 	int numTuples;

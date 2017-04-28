@@ -152,135 +152,118 @@ struct TupleComp{
 };
 
 
-void Join::ComputeJoin(Schema& LeftOrRightSchema, OrderMaker*& LeftOrRight, string& partHeapPath, string& finalHeapPath){
-    int heapPart_index = 0;
-    Record temp;
-    cout << LeftOrRightSchema << endl;
-    int totalRecordMemorySize = 0;
-    int countRecordsInHeaps = 0;
-    int totalRecordStored = 0;
-    while(true){
-        if(left->GetNext(temp)){
-            temp.SetOrderMaker(LeftOrRight);
-            totalRecordMemorySize += temp.GetSize();    // increment memory size
-            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
-                //sort the memory vector
-                cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-                totalRecordStored += memoryTable.size();
-                sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-
-                DBFile heapPart; heapPart_index++;
-                string heap_name = "Heaps//leftHeap_part_" + to_string(heapPart_index) + ".dat";
-
-                cout << "Creating DBFile "  << heap_name << endl;
-
-                int recordCount = 0;
-                heapPart.Create(&heap_name[0],Sorted); // create a new heap 
-                for(int i = 0; i < memoryTable.size(); i++){
-                    heapPart.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-                cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
-
-                heapPart.Close(); // close it
-                leftTableHeaps.push_back(heapPart); // push back the db file
-                memoryTable.clear(); // clear the memory
-                memoryTable.shrink_to_fit(); vector<Record> empty; // shrinking it
-                memoryTable.swap(empty); //trying to get rid of memory
-                cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-
-                countRecordsInHeaps++;
-
-                memoryTable.push_back(temp);// push back the new temp
-                totalRecordMemorySize = temp.GetSize(); //reset it for Bu
-            } else { 
-
-                countRecordsInHeaps++;
-                memoryTable.push_back(temp);
-            } 
-        } else {  totalRecordMemorySize = 0; break; } 
-    }
-        
-    //ADDING LAST HEAP
-    DBFile lastHeap;
-    string heap_name = "Heaps//leftHeap_part_" + to_string(++heapPart_index) + ".dat";
-    cout << "Creating DBFile "  << heap_name << endl;
-    int recordCount = 0;
-    lastHeap.Create(&heap_name[0],Sorted); // create a new heap
-    cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-    totalRecordStored += memoryTable.size();
-    sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-    for(int i = 0; i < memoryTable.size(); i++){
-                    lastHeap.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-    cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
-
-    lastHeap.Close(); // close it
-    leftTableHeaps.push_back(lastHeap); // push back the db file
-    memoryTable.clear(); // clear the memory
-    memoryTable.shrink_to_fit();
-    cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-
-    cout << "Total Stored: " << totalRecordStored << endl;
-
-    //Now we sort this shit OUT-OF-MEMORY, epic huh?
-    DBFile finalHeap;
-    string path = "Heaps//finalHeap";
-    finalHeap.Create(&path[0],Sorted);
-
-    //CREATE TUPLELIST CREATED HERE
+int Join::GenerateFinalHeap(Table table){
     vector<Tuple> tupleList;
-    for(int i = 0; i < leftTableHeaps.size(); i++){ // get first record from each heap
-        if(!leftTableHeaps[i].isOpen){ // open dbfile if it was not already opened
-            if(leftTableHeaps[i].Open() == 0) { cout << "Opening Heap File: " << leftTableHeaps[i].fileName << endl; }
-            else { cout << "Failed to open " << leftTableHeaps[i].fileName << endl; return; }
-        }
-        Record temp;
-        if(i == 8)
-                cout << "hi\n";
-        if(leftTableHeaps[i].GetNext(temp)){
-            temp.SetOrderMaker(LeftOrRight);
-            Tuple tuple;
-            tuple.rec = temp;
-            tuple.heapIndex = i;
-            tupleList.push_back(tuple);
-        }
-        else {
-            cout << "Failed to load first record from " << leftTableHeaps[i].fileName << endl; 
-            return;
-            //ext::remove(leftTableHeaps,table_index); 
-        } // if no more entries delete the DBFile object
-    }
-    cout << "Count before elements in list: " << tupleList.size() << endl;
-    //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
-    int county = 0;
-    while(leftTableHeaps.size() != 0){
-        auto min = min_element(tupleList.begin(),tupleList.end(),TupleComp());
-        auto recordToStore = min.base()->rec;
-        //recordToStore.print(cout,this->LeftOrRightSchema); cout << endl;
-        finalHeap.AppendRecord(recordToStore);                                              //store it
-        county++;
-        if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
-            recordToStore.SetOrderMaker(LeftOrRight);                                         //set the order
-            Tuple addMe; addMe.rec = recordToStore; addMe.heapIndex = min.base()->heapIndex;//create new Tuple
-            tupleList.erase(min);
-            tupleList.push_back(addMe);
-        } else {                                                                            //remove the dbfile
-            leftTableHeaps.erase(leftTableHeaps.begin() + min.base()->heapIndex);           //try to remove the dbfile
-        }
-    }
-    cout << "total record: " << county << endl;
+    if(table == TableLeft){
+        //CREATE FINAL HEAP
+        DBFile finalHeap;
+        string path = "Heaps//lhf_" + to_string(rand()) + ".dat";
+        finalHeap.Create(&path[0], Sorted);
         
-//        finalHeap.MoveFirst();
-//        int tcount = 0; Record ttemp;
-//        while(finalHeap.GetNext(ttemp)){tcount++;} cout << "count in heap: " << tcount << endl;
-//        
-//        finalHeap.Close();
-//        tupleList.empty();
-//        
-//        finalHeap.Open();
-//        
-//        tcount = 0;
-//        while(finalHeap.GetNext(ttemp)){tcount++;} cout << "count in heap: " << tcount << endl;
+        //POPULATE REPLENISHER
+        for(int i = 0; i < leftTableHeaps.size(); i++){
+            if(!leftTableHeaps[i].isOpen) { leftTableHeaps[i].Open(); cout << "Opening Heap: " << leftTableHeaps[i].fileName << endl; }
+            Record temp;
+            if(leftTableHeaps[i].GetNext(temp)){
+                temp.SetOrderMaker(leftOrder);
+                Tuple tuple; tuple.heapIndex = i; tuple.rec = temp;
+                tupleList.push_back(tuple);
+            } else { cout << "Error" << endl; return -1; }
+        }
+        
+        //START SORTIGN INTO ONE HEAP
+        int emptyDBFileCount = 0;
+        while(leftTableHeaps.size() > emptyDBFileCount){
+            pushMinimumLeft:
+            vector<Tuple>::iterator min = min_element(tupleList.begin(), tupleList.end(), TupleComp());
+            Record recordToStore = min.base()->rec;
+            finalHeap.AppendRecord(recordToStore);
+            Record recordToReplenish;
+            if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
+                recordToReplenish.SetOrderMaker(leftOrder);
+                Tuple addme; addme.heapIndex = min.base()->heapIndex; addme.rec = recordToReplenish;
+                tupleList.erase(min);
+                tupleList.push_back(addme);
+            } else { emptyDBFileCount++; }
+        } if(!tupleList.empty()) { goto pushMinimumLeft; }
+        
+        //CLEAN UP
+        for(int i = 0; i < leftTableHeaps.size();i++){ remove(leftTableHeaps[i].fileName.c_str()); }
+        
+        //PUSH BACK FINAL HEAP
+        leftTableHeaps.push_back(finalHeap);
+        
+    } else {
+        //CREATE FINAL HEAP
+        DBFile finalHeap;
+        string path = "Heaps//rhf_" + to_string(rand()) + ".dat";
+        finalHeap.Create(&path[0], Sorted);
+        
+        //POPULATE REPLENISHER
+        for(int i = 0; i < rightTableHeaps.size(); i++){
+            if(!rightTableHeaps[i].isOpen) { rightTableHeaps[i].Open(); cout << "Opening Heap: " << rightTableHeaps[i].fileName << endl; }
+            Record temp;
+            if(rightTableHeaps[i].GetNext(temp)){
+                temp.SetOrderMaker(rightOrder);
+                Tuple tuple; tuple.heapIndex = i; tuple.rec = temp;
+                tupleList.push_back(tuple);
+            } else { cout << "Error" << endl; return -1; }
+        }
+        
+        //START SORTIGN INTO ONE HEAP
+        int emptyDBFileCount = 0;
+        while(rightTableHeaps.size() > emptyDBFileCount){
+            pushMinimumRight:
+            vector<Tuple>::iterator min = min_element(tupleList.begin(), tupleList.end(), TupleComp());
+            Record recordToStore = min.base()->rec;
+            finalHeap.AppendRecord(recordToStore);
+            Record recordToReplenish;
+            if(rightTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
+                recordToReplenish.SetOrderMaker(leftOrder);
+                Tuple addme; addme.heapIndex = min.base()->heapIndex; addme.rec = recordToReplenish;
+                tupleList.erase(min);
+                tupleList.push_back(addme);
+            } else { emptyDBFileCount++; }
+        } if(!tupleList.empty()) { goto pushMinimumRight; }
+        
+        //CLEAN UP
+        for(int i = 0; i < rightTableHeaps.size();i++){ remove(rightTableHeaps[i].fileName.c_str()); }
+        
+        //PUSH BACK FINAL HEAP
+        rightTableHeaps.push_back(finalHeap);
+    }
+}
+int Join::GenerateHeapPart(int& index, Table table){
+    //GENERATING NAME
+    string path = ((table == TableLeft) ? ("Heaps//lhp_" + to_string(index) + ".dat") : ("Heaps//rhp_" + to_string(index) + ".dat"));
+    
+    cout << "Creating Heap: " << path << endl;
+    
+    int recordStored = 0;
+    
+    //CREATING HEAP
+    DBFile newPartHeap;
+    newPartHeap.Create(&path[0],Sorted);
+    
+    //SORTING
+    sort(memoryTable.begin(),memoryTable.end(),RecordComp());
+    cout << "-Sorted Memory sized: " << memoryTable.size() << endl;
+    
+    //STORING INTO HEAP_PART
+    for(int i = 0; i < memoryTable.size(); i++) { newPartHeap.AppendRecord(memoryTable.at(i)); recordStored++;}
+    cout << "--Inserted records in Heap: " << recordStored << endl << endl;
+    
+    //CLEAN UP
+    memoryTable.clear();
+    memoryTable.shrink_to_fit();
+    vector<Record> empty; memoryTable.swap(empty);
+    newPartHeap.MoveFirst();
+    
+    //ADD TO HEAPLIST
+    ((table == TableLeft) ? leftTableHeaps : rightTableHeaps).push_back(newPartHeap);
+    
+    //RETURNING RECORDS STORED
+    return recordStored;
 }
 
 Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
@@ -294,370 +277,88 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     predicate = _predicate;
     left = _left;
     right = _right;
-
     auto copyOut = new Schema();
     copyOut->Append(_schemaOut);
-    //old
-//        Record temp;
-//        if (schemaRight.GetDistincts(schemaRight.atts.at(0).name) <= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)) {
-//		leftIsSmaller = false; largerTable = left;
-//		while (right->GetNext(temp)) { smallTable.Insert(temp); }
-//	} else {
-//		leftIsSmaller = true; largerTable = right;
-//		while (left->GetNext(temp)) { smallTable.Insert(temp); }
-//	}
-//	smallTable.MoveToFinish(); 
     
-    
+    //ORDER SETTING HERE
     leftOrder = new OrderMaker();
     rightOrder = new OrderMaker();
-            
-    DBFile finalHeapRight;
-    DBFile finalHeapLeft;
+    _predicate.GetSortOrders(*leftOrder,*rightOrder);
     
-    predicate.GetSortOrders(*leftOrder, *rightOrder); 
     
-    int heapPart_index = 0;
-    Record temp;
-    
-    cout << schemaRight << endl;
-    int totalRecordMemorySize = 0;
-    int countRecordsInHeaps = 0;
-    int totalRecordStored = 0;
-    while(true){
-        if(right->GetNext(temp)){
+    //CHECK IF FITTING IN MEMORY
+    bool outOfMemory = false;
+    unsigned int totalRecordMemorySize = 0;
+    if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) >= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)){
+        leftIsSmaller = true;
+        largerTable = _right;
+        Record temp;
+        while(_left->GetNext(temp)){
+            temp.SetOrderMaker(leftOrder);
+            totalRecordMemorySize += temp.GetSize();
+            memoryTable.push_back(temp);
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
+        }
+    } else {
+       leftIsSmaller = false; 
+       largerTable = _left;
+       Record temp;
+       while(_right->GetNext(temp)){
+            totalRecordMemorySize += temp.GetSize();
             temp.SetOrderMaker(rightOrder);
-            totalRecordMemorySize += temp.GetSize();    // increment memory size
-            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
-                //sort the memory vector
-                cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-                totalRecordStored += memoryTable.size();
-                sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-
-                DBFile heapPart; heapPart_index++;
-                string heap_name = "Heaps//rightHeap_part_" + to_string(heapPart_index);
-
-                cout << "Creating DBFile "  << heap_name << endl;
-
-                int recordCount = 0;
-                heapPart.Create(&heap_name[0],Sorted); // create a new heap 
-                for(int i = 0; i < memoryTable.size(); i++){
-                    heapPart.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-                cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
-
-                heapPart.Close(); // close it
-                rightTableHeaps.push_back(heapPart); // push back the db file
-                memoryTable.clear(); // clear the memory
-                memoryTable.shrink_to_fit(); vector<Record> empty; // shrinking it
-                memoryTable.swap(empty); //trying to get rid of memory
-                cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-
-                countRecordsInHeaps++;
-
-                memoryTable.push_back(temp);// push back the new temp
-                totalRecordMemorySize = temp.GetSize(); //reset it for Bu
-            } else { 
-
-                countRecordsInHeaps++;
-                memoryTable.push_back(temp);
-            } } else {  totalRecordMemorySize = 0; break; } }
-        
-        //ADDING LAST HEAP
-        DBFile lastHeapRight;
-        string heap_nameRight = "Heaps//rightHeap_part_" + to_string(++heapPart_index);
-        cout << "Creating DBFile "  << heap_nameRight << endl;
-        int recordCount = 0;
-        lastHeapRight.Create(&heap_nameRight[0],Sorted); // create a new heap
-        cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-        totalRecordStored += memoryTable.size();
-        sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-        for(int i = 0; i < memoryTable.size(); i++){
-                        lastHeapRight.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-        cout << "Record stored in current " << heap_nameRight << " is " << recordCount << endl;
-
-        lastHeapRight.Close(); // close it
-        rightTableHeaps.push_back(lastHeapRight); // push back the db file
-        memoryTable.clear(); // clear the memory
-        memoryTable.shrink_to_fit();
-        cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-        
-        cout << "Total Stored: " << totalRecordStored << endl;
-        
-        //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        string pathRight = "Heaps//finalHeapRight";
-        finalHeapRight.Create(&pathRight[0],Sorted);
-        
-        //CREATE TUPLELIST CREATED HERE
-        vector<Tuple> tupleListRight;
-        for(int i = 0; i < rightTableHeaps.size(); i++){ // get first record from each heap
-            if(!rightTableHeaps[i].isOpen){ // open dbfile if it was not already opened
-                rightTableHeaps[i].Open(); 
-                cout << "Opening Heap File: " << rightTableHeaps[i].fileName << endl;
-            }
-            Record temp;
-            if(rightTableHeaps[i].GetNext(temp)){
-                temp.SetOrderMaker(rightOrder);
-                Tuple tuple;
-                tuple.rec = temp;
-                tuple.heapIndex = i;
-                tupleListRight.push_back(tuple);
-            }
-            else {
-                
-                //ext::remove(rightTableHeaps,table_index); 
-            } // if no more entries delete the DBFile object
+            memoryTable.push_back(temp);
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
         }
-        cout << "Count before elements in list: " << tupleListRight.size() << endl;
-        //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
-        int county = 0; 
-        int delDB = 0;
-        ofstream myfile ("example.txt");
-        myfile.is_open() ; 
-        while(rightTableHeaps.size() != delDB){
-            auto min = min_element(tupleListRight.begin(),tupleListRight.end(),TupleComp());
-            auto recordToStore = min.base()->rec;
-            
-            stringstream stri;
-            recordToStore.print(stri,this->schemaRight); cout << endl;
-            myfile << stri.str() << endl;
-            finalHeapRight.AppendRecord(recordToStore);                                              //store it
-            county++;
-            if(rightTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
-                recordToStore.SetOrderMaker(rightOrder);                                         //set the order
-                Tuple addMe; addMe.rec = recordToStore; addMe.heapIndex = min.base()->heapIndex;//create new Tuple
-                tupleListRight.erase(min);
-                tupleListRight.push_back(addMe);
-            } else {                                                                            //remove the dbfile
-                cout << "Erasing DBFILE " << rightTableHeaps[min.base()->heapIndex].fileName << " delDB increment " << delDB << endl;
-                delDB++;
-                //rightTableHeaps.erase(rightTableHeaps.begin() + min.base()->heapIndex);           //try to remove the dbfile
-                
-            }
-        }
-        for(auto it = tupleListRight.begin();it != tupleListRight.end();){
-            auto min = min_element(tupleListRight.begin(),tupleListRight.end(),TupleComp());
-            auto recordToStore = min.base()->rec;
-            finalHeapRight.AppendRecord(recordToStore); 
-            tupleListRight.erase(min);
-            county++;
-        } finalHeapRight.Close();
-        cout << "tuple count left " << tupleListRight.size() << endl;
-        cout << "total record: " << county << endl;
-        myfile.close();
-        //=========================== LEFT HEAP ====================================
-        heapPart_index = 0;
-        cout << schemaLeft << endl;
-        totalRecordMemorySize = 0;
-        countRecordsInHeaps = 0;
-        totalRecordStored = 0;
-        while(true){
-            if(left->GetNext(temp)){
-                temp.SetOrderMaker(leftOrder);
-                totalRecordMemorySize += temp.GetSize();    // increment memory size
-                if(totalRecordMemorySize >= noPages * PAGE_SIZE){ // check if the memory size is over the limit
-                    //sort the memory vector
-                    cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-                    totalRecordStored += memoryTable.size();
-                    sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-
-                    DBFile heapPart; heapPart_index++;
-                    string heap_name = "Heaps//leftHeap_part_" + to_string(heapPart_index);
-
-                    cout << "Creating DBFile "  << heap_name << endl;
-                    
-                    int recordCount = 0;
-                    heapPart.Create(&heap_name[0],Sorted); // create a new heap 
-                    for(int i = 0; i < memoryTable.size(); i++){
-                        heapPart.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-                    cout << "Record stored in current " << heap_name << " is " << recordCount << endl;
-
-                    heapPart.Close(); // close it
-                    leftTableHeaps.push_back(heapPart); // push back the db file
-                    memoryTable.clear(); // clear the memory
-                    memoryTable.shrink_to_fit(); vector<Record> empty; // shrinking it
-                    memoryTable.swap(empty); //trying to get rid of memory
-                    cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-                    
-                    countRecordsInHeaps++;
-                
-                    memoryTable.push_back(temp);// push back the new temp
-                    totalRecordMemorySize = temp.GetSize(); //reset it for Bu
-                } else { 
-                    
-                    countRecordsInHeaps++;
-                    memoryTable.push_back(temp);
-                } } else {  totalRecordMemorySize = 0; break; } }
+    }
+    
+    //CREATE HEAPS 
+    if(outOfMemory){
+        Record record;
+        
+        int smallerTableCount = 0,
+            largerTableCount = 0;
+        
+        //PRINTING SMALLER TABLE SCHEMA
+        cout << ((leftIsSmaller) ? schemaLeft : schemaRight) << endl;
+        
+        //SMALLER TABLE
+        int heap_index = 0;
+        Table table;
+        ((leftIsSmaller) ? table = TableLeft : table = TableRight);
+        while((leftIsSmaller) ? left->GetNext(record) : right->GetNext(record)){
+            record.SetOrderMaker((leftIsSmaller) ? leftOrder : rightOrder);
+            memoryTable.push_back(record); totalRecordMemorySize +=record.GetSize();
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE) { 
+                totalRecordMemorySize = 0;
+                smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        } if(!memoryTable.empty()) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        
+        //GENERATE FINAL SMALLER HEAP
+        GenerateFinalHeap(table);
         
         
-        if(leftTableHeaps.size() == 0){ // this means all of the records fitted in memory
-            
-        } else {} // thismean they were not
+        //PRINTING LARGER TABLE SCHEMA
+        cout << ((leftIsSmaller) ? schemaRight : schemaRight) << endl;
+        
+        //LARGER TABLE
+        heap_index = 0;
+        ((leftIsSmaller) ? table = TableRight : table = TableLeft);
+        while((leftIsSmaller) ? right->GetNext(record) : left->GetNext(record)){
+            record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
+            memoryTable.push_back(record); totalRecordMemorySize +=record.GetSize();
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE) { 
+                totalRecordMemorySize = 0;
+                largerTableCount += GenerateHeapPart(++heap_index,table); }
+        } if(!memoryTable.empty()) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        
+        //GENERATE FINAL SMALLER HEAP
+        GenerateFinalHeap(table);
         
         
-        //ADDING LAST HEAP
-        DBFile lastHeapLeft;
-        string heap_nameLeft = "Heaps//leftHeap_part_" + to_string(++heapPart_index);
-        cout << "Creating DBFile "  << heap_nameLeft << endl;
-        recordCount = 0;
-        lastHeapLeft.Create(&heap_nameLeft[0],Sorted); // create a new heap
-        cout << "Sorting 'memoryTable' vector, size of " << memoryTable.size() << endl;
-        totalRecordStored += memoryTable.size();
-        sort(memoryTable.begin(),memoryTable.end(),RecordComp()); // magic huh? quicksort stl and operatro overload by TA
-        for(int i = 0; i < memoryTable.size(); i++){
-                        lastHeapLeft.AppendRecord(memoryTable[i]); recordCount++;} // insert memory into heap
-
-        cout << "Record stored in current " << heap_nameLeft << " is " << recordCount << endl;
-
-        lastHeapLeft.Close(); // close it
-        leftTableHeaps.push_back(lastHeapLeft); // push back the db file
-        memoryTable.clear(); // clear the memory
-        memoryTable.shrink_to_fit();
-        cout << "Clearing memoryTable: " << memoryTable.size() << endl;
-        
-        cout << "Total Stored: " << totalRecordStored << endl;
-        
-        //Now we sort this shit OUT-OF-MEMORY, epic huh?
-        string pathLeft = "Heaps//finalHeapLeft";
-        finalHeapLeft.Create(&pathLeft[0],Sorted);
-        
-        //CREATE TUPLELIST CREATED HERE
-        vector<Tuple> tupleListLeft;
-        for(int i = 0; i < leftTableHeaps.size(); i++){ // get first record from each heap
-            if(!leftTableHeaps[i].isOpen){ // open dbfile if it was not already opened
-                leftTableHeaps[i].Open(); 
-                cout << "Opening Heap File: " << leftTableHeaps[i].fileName << endl;
-            }
-            Record temp;
-            if(leftTableHeaps[i].GetNext(temp)){
-                temp.SetOrderMaker(leftOrder);
-                Tuple tuple;
-                tuple.rec = temp;
-                tuple.heapIndex = i;
-                tupleListLeft.push_back(tuple);
-            }
-            else { 
-                //ext::remove(leftTableHeaps,table_index); 
-            } // if no more entries delete the DBFile object
-        }
-        cout << "Count before elements in list: " << tupleListLeft.size() << endl;
-        //ITERATE TRU THE HEAPS BY REPLANISHING THE LIST
-        county = 0;
-        delDB = 0;
-        while(leftTableHeaps.size() != delDB){
-            auto min = min_element(tupleListLeft.begin(),tupleListLeft.end(),TupleComp());
-            auto recordToStore = min.base()->rec;
-            //recordToStore.print(cout,this->schemaLeft); cout << endl;
-            finalHeapLeft.AppendRecord(recordToStore);                                              //store it
-            county++;
-            if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToStore)){                   //get new one if exists
-                recordToStore.SetOrderMaker(leftOrder);                                         //set the order
-                Tuple addMe; addMe.rec = recordToStore; addMe.heapIndex = min.base()->heapIndex;//create new Tuple
-                tupleListLeft.erase(min);
-                tupleListLeft.push_back(addMe);
-            } else {                                                                            //remove the dbfile
-                //leftTableHeaps.erase(leftTableHeaps.begin() + min.base()->heapIndex);           //try to remove the dbfile
-                cout << "Erasing DBFILE " << leftTableHeaps[min.base()->heapIndex].fileName << " delDB increment " << delDB << endl;
-                delDB++;
-            }
-        }
-        for(auto it = tupleListLeft.begin();it != tupleListLeft.end();){
-            auto min = min_element(tupleListLeft.begin(),tupleListLeft.end(),TupleComp());
-            auto recordToStore = min.base()->rec;
-            finalHeapLeft.AppendRecord(recordToStore); 
-            tupleListLeft.erase(min);
-            county++;
-        } finalHeapLeft.Close();
-        cout << "tuple count left " << tupleListLeft.size() << endl;
-        cout << "total record: " << county << endl;
+        //PERFORM 3-PASS
         
         
-        string finalheapName = "Heaps//finalHeap_" + to_string(std::rand());
-        dbfile.Create(&finalheapName[0],Sorted);
-        finalHeapLeft.Open();
-        finalHeapRight.Open();
-        Record sleft, sright;
-        while(true){
-            if(finalHeapLeft.GetNext(sleft)){
-                while(finalHeapRight.GetNext(sright)){
-                    if(predicate.Run(sleft,sright)){
-                        Record joined;
-                        joined.AppendRecords(sleft,sright,schemaLeft.atts.size(),schemaRight.atts.size());
-                        dbfile.AppendRecord(joined);
-                    } else break; // since sorted we break
-                }
-                
-            //check to see if next record in left is equal to the record before it 
-            //join the same records again
-            } else break;
-        }
-        dbfile.Close();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    //HERE WE FINALLY DO JOINT 420
-//    DBFile joinedHeap;
-//    string joinedHeapPath = "Heap//joinedHeap.dat"; // this needs some kind of random filename to not overwrite itself
-//    joinedHeap.Create(&joinedHeapPath[0],Heap);
-//    finalHeap.Open();
-//    Record sorted, unsorted;
-//    while(true){
-//        if(finalHeap.GetNext(sorted)){
-//            if(leftIsSmaller){
-//                while(right->GetNext(unsorted)){
-//                    if(predicate.Run(sorted,unsorted)){
-//                        Record joined;
-//                        joined.AppendRecords(sorted,unsorted,schemaLeft.atts.size(),schemaRight.atts.size());
-//                        joinedHeap.AppendRecord(joined);
-//                    }
-//                }
-//            } else {
-//                while(left->GetNext(unsorted)){
-//                    if(predicate.Run(unsorted,sorted)){
-//                        Record joined;
-//                        joined.AppendRecords(unsorted,sorted,schemaLeft.atts.size(),schemaRight.atts.size());
-//                        joinedHeap.AppendRecord(joined);
-//                    }
-//                }
-//            }
-//        } else { break; }
-//    }
-//    joinedHeap.Close();
-//    dbfile = joinedHeap;
+    }
     
 }
 
