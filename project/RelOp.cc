@@ -419,16 +419,8 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         totalRecordMemorySize = 0;
         heap_index = 0;
         
-        ofstream testfile;
-        string testpath = "Heaps//testing.txt";
-        testfile.open(testpath);
-        
-        
         ((leftIsSmaller) ? table = TableRight : table = TableLeft);
         while((leftIsSmaller) ? right->GetNext(record) : left->GetNext(record)){
-            
-            Schema testing = ((leftIsSmaller) ? schemaRight : schemaRight);
-            record.print(testfile,testing); testfile << endl;
             
             record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
             memoryTable.push_back(record); 
@@ -437,16 +429,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                 totalRecordMemorySize = 0;
                 largerTableCount += GenerateHeapPart(++heap_index,table);
             }
-        } if(memoryTable.size() != 0) { 
-            
-                    Schema test = ((leftIsSmaller) ? schemaRight : schemaRight);
-                    ofstream myfile;
-                    string path = "Heaps//data.txt";
-                    myfile.open(path);
-                    for(int i = 0; i < memoryTable.size(); i++){ memoryTable[i].print(myfile,test); myfile << endl; }
-                    
-                    
-            smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        } if(memoryTable.size() != 0) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
         
         
         
