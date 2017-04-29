@@ -75,8 +75,8 @@ void DBFile::Load (Schema& schema, char* textFile) {
 
 int DBFile::Close () {
     isOpen = false;
-    //if(ftype == Sorted) { 
-    //file.AddPage(page, pageCount); } // testing
+    if(ftype == Sorted) { 
+    file.AddPage(page, pageCount); } // testing
     return file.Close();
 }
 
@@ -97,13 +97,21 @@ void DBFile::AppendRecord (Record& rec) {
 }
 
 int DBFile::GetNext (Record& rec) {
-    int size = file.GetLength();
-    while(1){
-        if(!page.GetFirst(rec)){
-            if(pageCount == size){ break; } // end of file
-            else { file.GetPage(page, pageCount++); } //move to next page
-        } else { return 1; } // record found
-    } return 0;
+    if(page.GetFirst(rec) == 0){
+        if(pageCount < file.GetLength()){
+                
+                pageCount++;
+                file.GetPage(page, pageCount);
+                return page.GetFirst(rec);
+        }else{ return 0; } } return 1;
+    
+//    int size = file.GetLength();
+//    while(1){
+//        if(!page.GetFirst(rec)){
+//            if(pageCount == size){ break; } // end of file
+//            else { file.GetPage(page, ++pageCount); } //move to next page
+//        } else { return 1; } // record found
+//    } return 0;
     
 //    //if(!isOpen){Open(&fileName[0]); MoveFirst(); }
 //    if (page.GetFirst(rec) == 0) {

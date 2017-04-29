@@ -312,9 +312,10 @@ int Join::GenerateHeapPart(int& index, Table table){
     memoryTable.clear();
     memoryTable.shrink_to_fit();
     vector<Record> empty; memoryTable.swap(empty);
-    newPartHeap.MoveFirst();
+    //newPartHeap.MoveFirst();
     
     //ADD TO HEAPLIST
+    newPartHeap.Close();
     ((table == TableLeft) ? leftTableHeaps : rightTableHeaps).push_back(newPartHeap);
     
     
@@ -322,11 +323,11 @@ int Join::GenerateHeapPart(int& index, Table table){
     //TEST
     //newPartHeap.Close();
     //newPartHeap.Open(); //DO NOT REOPEN IT IT PRODUCES ONLY 1 PGAE
-    int count = 0;
-    Record ober;
-    while(newPartHeap.GetNext(ober)){
-        count++;
-    } cout << "----COUNTED RECORDS: " << count << endl;
+    //int count = 0;
+    //Record ober;
+    //while(newPartHeap.GetNext(ober)){
+    //    count++;
+    //} cout << "----COUNTED RECORDS: " << count << endl;
     //newPartHeap.MoveFirst();
     myfile.close();
     
@@ -417,21 +418,34 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         //LARGER TABLE
         totalRecordMemorySize = 0;
         heap_index = 0;
+        
+        ofstream testfile;
+        string testpath = "Heaps//testing.txt";
+        testfile.open(testpath);
+        
+        
         ((leftIsSmaller) ? table = TableRight : table = TableLeft);
         while((leftIsSmaller) ? right->GetNext(record) : left->GetNext(record)){
+            
+            Schema testing = ((leftIsSmaller) ? schemaRight : schemaRight);
+            record.print(testfile,testing); testfile << endl;
+            
+            record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
+            memoryTable.push_back(record); 
+            totalRecordMemorySize +=record.GetSize();
             if(totalRecordMemorySize >= noPages * PAGE_SIZE) { 
                 totalRecordMemorySize = 0;
                 largerTableCount += GenerateHeapPart(++heap_index,table);
             }
-            record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
-            memoryTable.push_back(record); 
-            totalRecordMemorySize +=record.GetSize();
         } if(memoryTable.size() != 0) { 
-            Schema test = ((leftIsSmaller) ? schemaRight : schemaRight);
+            
+                    Schema test = ((leftIsSmaller) ? schemaRight : schemaRight);
                     ofstream myfile;
                     string path = "Heaps//data.txt";
                     myfile.open(path);
                     for(int i = 0; i < memoryTable.size(); i++){ memoryTable[i].print(myfile,test); myfile << endl; }
+                    
+                    
             smallerTableCount += GenerateHeapPart(++heap_index,table); }
         
         
