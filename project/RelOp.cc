@@ -214,7 +214,9 @@ int Join::GenerateFinalHeap(Table table){
         cout << "Total Inserted Into Final Heap: " << counter << endl;
         
         //CLEAN UP
+        finalHeap.Close();
         for(int i = 0; i < leftTableHeaps.size();i++){ remove(leftTableHeaps[i].fileName.c_str()); }
+        leftTableHeaps.clear();
         
         //PUSH BACK FINAL HEAP
         leftTableHeaps.push_back(finalHeap);
@@ -273,8 +275,10 @@ int Join::GenerateFinalHeap(Table table){
         
         //CLEAN UP
         for(int i = 0; i < rightTableHeaps.size();i++){ remove(rightTableHeaps[i].fileName.c_str()); }
+        rightTableHeaps.clear();
         
         //PUSH BACK FINAL HEAP
+        finalHeap.Close();
         rightTableHeaps.push_back(finalHeap);
         myfile.close();
     }
@@ -334,6 +338,37 @@ int Join::GenerateHeapPart(int& index, Table table){
     //RETURNING RECORDS STORED
     return recordStored;
 }
+int Join::LoadMoreLargerTable(){
+    if(!((leftIsSmaller) ? rightTableHeaps[0].isOpen : leftTableHeaps[0].isOpen)) { 
+        cout << "Opening Larger DBFile: " << ((leftIsSmaller) ? rightTableHeaps[0].fileName : leftTableHeaps[0].fileName) << endl; 
+        ((leftIsSmaller) ? rightTableHeaps[0].Open() : leftTableHeaps[0].Open()); }
+    memoryTableLarger.clear();
+    Record record;
+    int totalRecordMemorySize = 0, recordCount = 0;
+    while((leftIsSmaller) ? rightTableHeaps[0].GetNext(record) : leftTableHeaps[0].GetNext(record)){
+        record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
+        memoryTableLarger.push_back(record);
+        recordCount++;
+        totalRecordMemorySize += record.GetSize();
+        if(totalRecordMemorySize >= (noPages/2) * PAGE_SIZE){ break; }
+    } return recordCount;
+}
+int Join::LoadMoreSmallerTable(){
+    if(!((leftIsSmaller) ? leftTableHeaps[0].isOpen : rightTableHeaps[0].isOpen)) { 
+        cout << "Opening Smaller DBFile: " << ((leftIsSmaller) ? leftTableHeaps[0].fileName : rightTableHeaps[0].fileName) << endl;
+        ((leftIsSmaller) ? leftTableHeaps[0].Open() : rightTableHeaps[0].Open()); }
+    memoryTable.clear();
+    Record record;
+    int totalRecordMemorySize = 0, recordCount = 0;
+    while((leftIsSmaller) ? leftTableHeaps[0].GetNext(record) : rightTableHeaps[0].GetNext(record)){
+        record.SetOrderMaker((leftIsSmaller) ? leftOrder : rightOrder);
+        memoryTable.push_back(record); 
+        recordCount++;
+        totalRecordMemorySize += record.GetSize();
+        if(totalRecordMemorySize >= (noPages/2) * PAGE_SIZE){ break;}
+    } return recordCount;
+}
+
 
 Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
@@ -358,7 +393,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     //CHECK IF FITTING IN MEMORY
     bool outOfMemory = false;
     unsigned int totalRecordMemorySize = 0;
-    if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) >= schemaLeft.GetDistincts(schemaRight.atts.at(0).name)){
+    if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) >= schemaLeft.GetDistincts(schemaLeft.atts.at(0).name)){
         leftIsSmaller = true;
         largerTable = _right;
         Record temp;
@@ -382,7 +417,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     
     
     //CREATE HEAPS 
-    if(outOfMemory){
+    if(true){
         Record record;
         
         int smallerTableCount = 0,
@@ -438,8 +473,70 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         
         
         //PERFORM 3-PASS
+        //totalRecordMemorySize = 0;
         
+        //CREATING JOIN HEAP
+        string finalJoinPath = "Heaps//finalJoin_" + to_string(rand()) + ".dat";
+        joinDBFile.Create(&finalJoinPath[0],Sorted);
         
+        ofstream myfile;
+        string finalJoinPathfile = "Heaps//finalJoin_" + to_string(rand()) + ".txt";
+        myfile.open(finalJoinPathfile);
+        
+        while(LoadMoreSmallerTable() != 0){
+            Record previousRecord;
+            for(int i = 0; i < memoryTable.size(); i++){
+                //CURRENT RECORD
+                Record currentRecord = memoryTable.at(i);
+
+                int countLarger = LoadMoreLargerTable();
+
+                bool breakWhile = false;
+                while(countLarger != 0){
+                    for(int j = 0; j < memoryTableLarger.size(); j++){
+                        Record fromLargerTable = memoryTableLarger.at(j);
+
+                        //THIS MEANS DUPLICATE RECORD
+                        if((previousRecord.GetBits() != NULL) && currentRecord.IsEqual(previousRecord)){
+
+                        } else { //ACTUAL JOINT 420
+                            if(currentRecord.LessThan(fromLargerTable)) { 
+                                //BREAK OUT OF WHILE
+                                breakWhile = true;
+                                //RESET LARGER HEAP
+                                ((leftIsSmaller) ? rightTableHeaps[0].MoveFirst() : leftTableHeaps[0].MoveFirst()); 
+                                // BREAK OUT OF FOR
+                                break; }
+                            else if (currentRecord.IsEqual(fromLargerTable)){
+                                // SAVE PREVIOUS POSITION
+
+
+                                // DO THE JOINt
+                                Record joinedRecord;
+                                if(predicate.Run(currentRecord,fromLargerTable)){
+                                    //FIND PROPER SCHEMAS
+                                    Schema SchemaLeft = ((leftIsSmaller) ? schemaLeft : schemaRight);
+                                    Schema SchemaRight = ((leftIsSmaller) ? schemaRight : schemaLeft);
+                                    //COMPUTE THE JOINT RECORD
+                                    joinedRecord.AppendRecords(currentRecord,fromLargerTable,SchemaLeft.atts.size(), SchemaRight.atts.size());
+                                    
+                                    //TEST
+                                    joinedRecord.print(myfile,this->schemaOut); myfile<<endl;
+                                    
+                                    
+                                    //ADD TO JOIN HEAP FILE
+                                    joinDBFile.AppendRecord(joinedRecord);
+
+                                } else { cout << "ERROR WITH JOINING RECORDS" << endl; }
+                            } else { /*DO NOTHING*/ }
+                        }
+                    } ((breakWhile) ? countLarger = 0 : countLarger = LoadMoreLargerTable());
+                }
+            }
+        }
+        // SAVE THE LAST PAGE
+        joinDBFile.Close();
+        myfile.close();
     }
     
 }
@@ -452,8 +549,8 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    if(dbfile.isOpen){ dbfile.GetNext(_record); }
-    else { dbfile.Open(); dbfile.GetNext(_record); }
+    if(joinDBFile.isOpen){ joinDBFile.GetNext(_record); }
+    else { joinDBFile.Open(); joinDBFile.GetNext(_record); }
     
     
     //join heapfLeftFinal = heapRightFinal;

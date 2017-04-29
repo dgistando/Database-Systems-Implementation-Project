@@ -156,8 +156,9 @@ private:
         enum Table{ TableLeft, TableRight };
         OrderMaker* leftOrder;
         OrderMaker* rightOrder;
-        DBFile dbfile;
+        DBFile joinDBFile;
         vector <Record> memoryTable;
+        vector <Record> memoryTableLarger;
         vector<DBFile> rightTableHeaps, leftTableHeaps;
         
 
@@ -174,6 +175,9 @@ public:
 	virtual ostream& print(ostream& _os);
         
         int GenerateFinalHeap(Table table);
+        
+        int LoadMoreLargerTable();
+        int LoadMoreSmallerTable();
         
         /* Returns amount of records stored in heap
          */

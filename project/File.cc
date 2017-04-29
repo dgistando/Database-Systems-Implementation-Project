@@ -163,7 +163,7 @@ int File :: Open (int fileLen, char* fName) {
 
 	// see if there was an error
 	if (fileDescriptor < 0) {
-		cerr << "ERROR: Open file did not work for " << fileName << "!" << endl;
+		//cerr << "ERROR: Open file did not work for " << fileName << "!" << endl;
 		return -1;
 	}
 
@@ -192,8 +192,8 @@ int File :: Close () {
 
 int File :: GetPage (Page& putItHere, off_t whichPage) {
 	if (whichPage >= curLength) {
-		cerr << "ERROR: Read past end of the file " << fileName << ": ";
-		cerr << "page = " << whichPage << " length = " << curLength << endl;
+		//cerr << "ERROR: Read past end of the file " << fileName << ": ";
+		//cerr << "page = " << whichPage << " length = " << curLength << endl;
 		return -1;
 	}
         
