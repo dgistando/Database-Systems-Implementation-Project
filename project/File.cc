@@ -21,6 +21,9 @@ Page :: Page() : curSizeInBytes(sizeof (int)), numRecs(0) {
 Page :: ~Page() {
 }
 
+void Page::GetRecord(TwoWayList<Record>& ret) {
+	ret.Swap(myRecs);
+}
 void Page :: EmptyItOut() {
 	// get rid of all of the records
 	TwoWayList<Record> aux; aux.Swap(myRecs);

@@ -53,8 +53,9 @@ int DBFile::Open (char* f_path) {
 }
 int DBFile::Open () {
         isOpen = true;
+	int result = file.Open(1,&fileName[0]);
         MoveFirst();
-	return file.Open(1,&fileName[0]);
+        return result;
 }
 
 void DBFile::Load (Schema& schema, char* textFile) {
@@ -74,13 +75,14 @@ void DBFile::Load (Schema& schema, char* textFile) {
 
 int DBFile::Close () {
     isOpen = false;
-    if(ftype == Sorted) { 
-    file.AddPage(page, pageCount); } // testing
+    //if(ftype == Sorted) { 
+    //file.AddPage(page, pageCount); } // testing
     return file.Close();
 }
 
 void DBFile::MoveFirst () {
 	pageCount = 0;
+        page.EmptyItOut();
 	file.GetPage(page,pageCount);
 }
 
@@ -115,12 +117,6 @@ int DBFile::GetNext (Record& rec) {
 //        { return GetNext(rec); }
 //    } return 1;
     
-//    if (page.GetFirst(rec) == 0) {
-//        if (file.GetLength() == pageCount) return 0;
-//        if (file.GetPage(page, pageCount) == -1) return 0;
-//        page.GetFirst(rec);
-//        pageCount++; }
-//	return 1;
 }
 int DBFile::GetSpecificRecord(int pNumber, int rNumber, Record& rec) {
     page.EmptyItOut(); 

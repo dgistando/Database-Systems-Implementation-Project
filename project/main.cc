@@ -4,7 +4,7 @@
 #include <vector>
 #include <iterator>
 
-//#include <fstream>
+#include <fstream>
 
 #include "Catalog.h"
 #include "QueryOptimizer.h"
@@ -71,12 +71,13 @@ int main () {
         
         for (int i = 0; i < files1.size(); i++)
 	{
-//            string path = "Heaps//" + tables1.at(i) + ".txt";
-//            ofstream myfile;
-//            myfile.open(path);
-            
-            
             break;
+            string path = "Heaps//" + tables1.at(i) + ".txt";
+            ofstream myfile;
+            myfile.open(path);
+            
+            
+            //break;
             DBFile db1;
             //i = 0;
             string newFileName = fileName1 + "/" + tables1.at(i) + ".dat";
@@ -98,9 +99,9 @@ int main () {
             int records = 0;
             //db2.MoveFirst();
             while (db2.GetNext(r) != 0) {
-                //r.print(myfile,sch);
-                //myfile << endl;
-                //cout << endl;
+                r.print(myfile,sch);
+                myfile << endl;
+                cout << endl;
                 records++;
             }
             r.print(cout,sch);
@@ -108,7 +109,7 @@ int main () {
             
             db1.Close();//<<endl;
             //break;
-            //myfile.close();
+            myfile.close();
 	}
         
         

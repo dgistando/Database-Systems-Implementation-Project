@@ -22,7 +22,7 @@ public:
 	// constructor & destructor
 	Page();
 	virtual ~Page();
-
+        void GetRecord(TwoWayList<Record>& ret);
 	// write records to bits
 	void ToBinary(char* bits);
 

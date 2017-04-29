@@ -158,6 +158,7 @@ int Join::GenerateFinalHeap(Table table){
     ofstream myfile (testPath);
     myfile.is_open() ; 
     
+    int counter = 0;
     
     vector<Tuple> tupleList;
     if(table == TableLeft){
@@ -169,6 +170,7 @@ int Join::GenerateFinalHeap(Table table){
         //POPULATE REPLENISHER
         for(int i = 0; i < leftTableHeaps.size(); i++){
             if(!leftTableHeaps[i].isOpen) { leftTableHeaps[i].Open(); cout << "Opening Heap: " << leftTableHeaps[i].fileName << endl; }
+            leftTableHeaps[i].MoveFirst();
             Record temp;
             if(leftTableHeaps[i].GetNext(temp)){
                 temp.SetOrderMaker(leftOrder);
@@ -191,6 +193,8 @@ int Join::GenerateFinalHeap(Table table){
             myfile << endl;
             
             finalHeap.AppendRecord(recordToStore);
+            counter++;
+            
             if(noMoreHeaps) { tupleList.erase(min); }
             Record recordToReplenish;
             if(leftTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
@@ -203,8 +207,11 @@ int Join::GenerateFinalHeap(Table table){
                 //min.base()->rec.print(cout,schemaLeft); cout << endl;
                 emptyDBFileCount++;  cout << "incrementing DBFile erase Count: " << emptyDBFileCount << " leftTableHeaps.size() = " << leftTableHeaps.size() << " NAME " << leftTableHeaps[min.base()->heapIndex].fileName << endl;
                 tupleList.erase(min); }
-        } if(!tupleList.empty()) { 
+        } if(tupleList.size() != 0) { 
             cout << "HEY" << endl; noMoreHeaps = true; goto pushMinimumLeft; }
+        
+        
+        cout << "Total Inserted Into Final Heap: " << counter << endl;
         
         //CLEAN UP
         for(int i = 0; i < leftTableHeaps.size();i++){ remove(leftTableHeaps[i].fileName.c_str()); }
@@ -221,6 +228,7 @@ int Join::GenerateFinalHeap(Table table){
         //POPULATE REPLENISHER
         for(int i = 0; i < rightTableHeaps.size(); i++){
             if(!rightTableHeaps[i].isOpen) { rightTableHeaps[i].Open(); cout << "Opening Heap: " << rightTableHeaps[i].fileName << endl; }
+            rightTableHeaps[i].MoveFirst();
             Record temp;
             if(rightTableHeaps[i].GetNext(temp)){
                 temp.SetOrderMaker(rightOrder);
@@ -242,6 +250,9 @@ int Join::GenerateFinalHeap(Table table){
             
             
             finalHeap.AppendRecord(recordToStore);
+            counter++;
+            
+            
             if(noMoreHeaps) { tupleList.erase(min); }
             Record recordToReplenish;
             if(rightTableHeaps[min.base()->heapIndex].GetNext(recordToReplenish)){
@@ -254,8 +265,11 @@ int Join::GenerateFinalHeap(Table table){
                 //min.base()->rec.print(cout,schemaLeft); cout << endl;
                 emptyDBFileCount++;  cout << "incrementing DBFile erase Count: " << emptyDBFileCount << " rightTableHeaps.size() = " << rightTableHeaps.size() << " NAME " << rightTableHeaps[min.base()->heapIndex].fileName << endl;
                 tupleList.erase(min); }
-        } if(!tupleList.empty()) { 
+        } if(tupleList.size() != 0) { 
             cout << "HEY" << endl; noMoreHeaps = true; goto pushMinimumRight; }
+        
+        
+         cout << "Total Inserted Into Final Heap: " << counter << endl;
         
         //CLEAN UP
         for(int i = 0; i < rightTableHeaps.size();i++){ remove(rightTableHeaps[i].fileName.c_str()); }
@@ -298,7 +312,7 @@ int Join::GenerateHeapPart(int& index, Table table){
     memoryTable.clear();
     memoryTable.shrink_to_fit();
     vector<Record> empty; memoryTable.swap(empty);
-    //newPartHeap.MoveFirst();
+    newPartHeap.MoveFirst();
     
     //ADD TO HEAPLIST
     ((table == TableLeft) ? leftTableHeaps : rightTableHeaps).push_back(newPartHeap);
@@ -306,14 +320,14 @@ int Join::GenerateHeapPart(int& index, Table table){
     
     
     //TEST
-    newPartHeap.Close();
-    newPartHeap.Open(); //DO NOT REOPEN IT IT PRODUCES ONLY 1 PGAE
+    //newPartHeap.Close();
+    //newPartHeap.Open(); //DO NOT REOPEN IT IT PRODUCES ONLY 1 PGAE
     int count = 0;
     Record ober;
     while(newPartHeap.GetNext(ober)){
         count++;
     } cout << "----COUNTED RECORDS: " << count << endl;
-    newPartHeap.MoveFirst();
+    //newPartHeap.MoveFirst();
     myfile.close();
     
     //RETURNING RECORDS STORED
@@ -347,7 +361,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         leftIsSmaller = true;
         largerTable = _right;
         Record temp;
-        while(_left->GetNext(temp)){
+        while(left->GetNext(temp)){
             temp.SetOrderMaker(leftOrder);
             totalRecordMemorySize += temp.GetSize();
             memoryTable.push_back(temp);
@@ -357,13 +371,14 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
        leftIsSmaller = false; 
        largerTable = _left;
        Record temp;
-       while(_right->GetNext(temp)){
+       while(right->GetNext(temp)){
             totalRecordMemorySize += temp.GetSize();
             temp.SetOrderMaker(rightOrder);
             memoryTable.push_back(temp);
             if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
         }
     }
+    
     
     //CREATE HEAPS 
     if(outOfMemory){
@@ -380,12 +395,16 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         Table table;
         ((leftIsSmaller) ? table = TableLeft : table = TableRight);
         while((leftIsSmaller) ? left->GetNext(record) : right->GetNext(record)){
-            record.SetOrderMaker((leftIsSmaller) ? leftOrder : rightOrder);
-            memoryTable.push_back(record); totalRecordMemorySize +=record.GetSize();
             if(totalRecordMemorySize >= noPages * PAGE_SIZE) { 
                 totalRecordMemorySize = 0;
-                smallerTableCount += GenerateHeapPart(++heap_index,table); }
-        } if(!memoryTable.empty()) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
+                smallerTableCount += GenerateHeapPart(++heap_index,table); 
+            }
+            record.SetOrderMaker((leftIsSmaller) ? leftOrder : rightOrder);
+            memoryTable.push_back(record); 
+            totalRecordMemorySize +=record.GetSize();
+        } if(memoryTable.size() != 0) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        
+        
         
         //GENERATE FINAL SMALLER HEAP
         GenerateFinalHeap(table);
@@ -394,16 +413,28 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         //PRINTING LARGER TABLE SCHEMA
         cout << ((leftIsSmaller) ? schemaRight : schemaRight) << endl;
         
+        
         //LARGER TABLE
+        totalRecordMemorySize = 0;
         heap_index = 0;
         ((leftIsSmaller) ? table = TableRight : table = TableLeft);
         while((leftIsSmaller) ? right->GetNext(record) : left->GetNext(record)){
-            record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
-            memoryTable.push_back(record); totalRecordMemorySize +=record.GetSize();
             if(totalRecordMemorySize >= noPages * PAGE_SIZE) { 
                 totalRecordMemorySize = 0;
-                largerTableCount += GenerateHeapPart(++heap_index,table); }
-        } if(!memoryTable.empty()) { smallerTableCount += GenerateHeapPart(++heap_index,table); }
+                largerTableCount += GenerateHeapPart(++heap_index,table);
+            }
+            record.SetOrderMaker((leftIsSmaller) ? rightOrder : leftOrder);
+            memoryTable.push_back(record); 
+            totalRecordMemorySize +=record.GetSize();
+        } if(memoryTable.size() != 0) { 
+            Schema test = ((leftIsSmaller) ? schemaRight : schemaRight);
+                    ofstream myfile;
+                    string path = "Heaps//data.txt";
+                    myfile.open(path);
+                    for(int i = 0; i < memoryTable.size(); i++){ memoryTable[i].print(myfile,test); myfile << endl; }
+            smallerTableCount += GenerateHeapPart(++heap_index,table); }
+        
+        
         
         //GENERATE FINAL SMALLER HEAP
         GenerateFinalHeap(table);
