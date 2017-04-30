@@ -369,7 +369,10 @@ int Join::LoadMoreSmallerTable(){
     } return recordCount;
 }
 
-
+struct PrevRecIndex{
+    Record rec;
+    int index;
+};
 Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _schemaOut,
 	CNF& _predicate, RelationalOp* _left, RelationalOp* _right) {
         
@@ -473,6 +476,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         
         
         //PERFORM 3-PASS
+        cout << "JOIN RUNNING" << endl;
         //totalRecordMemorySize = 0;
         
         //CREATING JOIN HEAP
@@ -484,30 +488,51 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         myfile.open(finalJoinPathfile);
         
         while(LoadMoreSmallerTable() != 0){
-            Record previousRecord;
+            //PREVIOUS RECORD
+            PrevRecIndex previousRecord; previousRecord.index = -1;
+            
+            bool atFirstLarger = true, firstTime = true;
+            
+            //ITERATE TRU SMALLER TABLE
             for(int i = 0; i < memoryTable.size(); i++){
                 //CURRENT RECORD
                 Record currentRecord = memoryTable.at(i);
 
-                int countLarger = LoadMoreLargerTable();
+                int countLarger = 0;
+                countLarger = LoadMoreLargerTable();
 
                 bool breakWhile = false;
+                int joinDuplicateCount = 0;
                 while(countLarger != 0){
                     for(int j = 0; j < memoryTableLarger.size(); j++){
                         Record fromLargerTable = memoryTableLarger.at(j);
 
                         //THIS MEANS DUPLICATE RECORD
-                        if((previousRecord.GetBits() != NULL) && currentRecord.IsEqual(previousRecord)){
-
+                        if((previousRecord.index != -1) && currentRecord.IsEqual(previousRecord.rec)){
+                            if(previousRecord.index == 0){ //NO PREVIOUS MATCHES FOR THE SAME RECORD BREAK
+                                //BREAK OUT OF WHILE
+                                breakWhile = true;
+                                //RESET LARGER HEAP
+                                ((leftIsSmaller) ? rightTableHeaps[0].MoveFirst() : leftTableHeaps[0].MoveFirst()); 
+                                // BREAK OUT OF FOR
+                                break;
+                            }  else {
+                                // GO BACK "INDEX" MANY RECORDS IN LARGE TABLE
+                                j -= previousRecord.index; 
+                                if(j < 0) { cout << "!--THE DUPLICATE WAS IN PREVIOUS MEMORY BLOCK--!" << endl; j = 0;}
+                                previousRecord.index = -1;
+                                goto recordComparison;
+                            }
                         } else { //ACTUAL JOINT 420
+                            recordComparison:
                             if(currentRecord.LessThan(fromLargerTable)) { 
                                 //BREAK OUT OF WHILE
                                 breakWhile = true;
                                 //RESET LARGER HEAP
                                 ((leftIsSmaller) ? rightTableHeaps[0].MoveFirst() : leftTableHeaps[0].MoveFirst()); 
                                 // BREAK OUT OF FOR
-                                break; }
-                            else if (currentRecord.IsEqual(fromLargerTable)){
+                                break; 
+                            } else if (currentRecord.IsEqual(fromLargerTable)){
                                 // SAVE PREVIOUS POSITION
 
 
@@ -526,12 +551,17 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                                     
                                     //ADD TO JOIN HEAP FILE
                                     joinDBFile.AppendRecord(joinedRecord);
+                                    
+                                    //Increment the joinDuplicateCount
+                                    joinDuplicateCount++;
 
                                 } else { cout << "ERROR WITH JOINING RECORDS" << endl; }
                             } else { /*DO NOTHING*/ }
                         }
-                    } ((breakWhile) ? countLarger = 0 : countLarger = LoadMoreLargerTable());
+                    } if(breakWhile){ countLarger = 0; } else { countLarger = LoadMoreLargerTable(); }
                 }
+                previousRecord.rec = currentRecord;
+                previousRecord.index = joinDuplicateCount;
             }
         }
         // SAVE THE LAST PAGE
