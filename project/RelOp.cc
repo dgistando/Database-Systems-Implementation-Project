@@ -508,7 +508,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                         Record fromLargerTable = memoryTableLarger.at(j);
 
                         //THIS MEANS DUPLICATE RECORD
-                        if((previousRecord.index != -1) && currentRecord.IsEqual(previousRecord.rec)){
+                        if(false){//){(previousRecord.index != -1) && currentRecord.IsEqual(previousRecord.rec)){
                             if(previousRecord.index == 0){ //NO PREVIOUS MATCHES FOR THE SAME RECORD BREAK
                                 //BREAK OUT OF WHILE
                                 breakWhile = true;
@@ -535,27 +535,53 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                             } else if (currentRecord.IsEqual(fromLargerTable)){
                                 // SAVE PREVIOUS POSITION
 
+                                if(!leftIsSmaller){
+                                    
+                                    // DO THE JOINt
+                                    Record joinedRecord;
+                                    if(predicate.Run(fromLargerTable,currentRecord)){
+                                        //FIND PROPER SCHEMAS
+                                        Schema SchemaLeft = ((leftIsSmaller) ? schemaLeft : schemaRight);
+                                        Schema SchemaRight = ((leftIsSmaller) ? schemaRight : schemaLeft);
+                                        //COMPUTE THE JOINT RECORD
 
-                                // DO THE JOINt
-                                Record joinedRecord;
-                                if(predicate.Run(currentRecord,fromLargerTable)){
-                                    //FIND PROPER SCHEMAS
-                                    Schema SchemaLeft = ((leftIsSmaller) ? schemaLeft : schemaRight);
-                                    Schema SchemaRight = ((leftIsSmaller) ? schemaRight : schemaLeft);
-                                    //COMPUTE THE JOINT RECORD
-                                    joinedRecord.AppendRecords(currentRecord,fromLargerTable,SchemaLeft.atts.size(), SchemaRight.atts.size());
-                                    
-                                    //TEST
-                                    joinedRecord.print(myfile,this->schemaOut); myfile<<endl;
-                                    
-                                    
-                                    //ADD TO JOIN HEAP FILE
-                                    joinDBFile.AppendRecord(joinedRecord);
-                                    
-                                    //Increment the joinDuplicateCount
-                                    joinDuplicateCount++;
+                                        joinedRecord.AppendRecords(fromLargerTable,currentRecord, SchemaRight.atts.size(),SchemaLeft.atts.size());
 
-                                } else { cout << "ERROR WITH JOINING RECORDS" << endl; }
+                                        //TEST
+                                        joinedRecord.print(myfile,this->schemaOut); myfile<<endl;
+
+
+                                        //ADD TO JOIN HEAP FILE
+                                        joinDBFile.AppendRecord(joinedRecord);
+
+                                        //Increment the joinDuplicateCount
+                                        joinDuplicateCount++;
+
+                                    } else { /*cout << "ERROR WITH JOINING RECORDS" << endl;*/ }
+                                } else {
+                                    
+                                    // DO THE JOINt
+                                    Record joinedRecord;
+                                    if(predicate.Run(currentRecord,fromLargerTable)){
+                                        //FIND PROPER SCHEMAS
+                                        Schema SchemaLeft = ((leftIsSmaller) ? schemaLeft : schemaRight);
+                                        Schema SchemaRight = ((leftIsSmaller) ? schemaRight : schemaLeft);
+                                        //COMPUTE THE JOINT RECORD
+
+                                        joinedRecord.AppendRecords(currentRecord,fromLargerTable, SchemaLeft.atts.size(),SchemaRight.atts.size());
+
+                                        //TEST
+                                        joinedRecord.print(myfile,this->schemaOut); myfile<<endl;
+
+
+                                        //ADD TO JOIN HEAP FILE
+                                        joinDBFile.AppendRecord(joinedRecord);
+
+                                        //Increment the joinDuplicateCount
+                                        joinDuplicateCount++;
+
+                                    } else { /*cout << "ERROR WITH JOINING RECORDS" << endl;*/ }
+                                }
                             } else { /*DO NOTHING*/ }
                         }
                     } if(breakWhile){ countLarger = 0; } else { countLarger = LoadMoreLargerTable(); }

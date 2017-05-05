@@ -6,6 +6,8 @@
       </df>
       <df name="Heaps">
       </df>
+      <df name="qxTrees">
+      </df>
       <in>Catalog.cc</in>
       <in>Catalog.h</in>
       <in>Comparison.cc</in>

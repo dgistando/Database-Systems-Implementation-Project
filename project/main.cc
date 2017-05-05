@@ -26,6 +26,8 @@ extern struct NameList* attsToSelect; // the attributes in SELECT
 extern int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query
 extern char* command; // command to execute other functionalities (e.g. exit)
 
+
+
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
 
@@ -155,7 +157,7 @@ int main () {
 				compiler.Compile(numPages,tables, attsToSelect, finalFunction, predicate,
 					groupingAtts, distinctAtts, queryTree);
 
-				//cout << queryTree << endl;
+				cout << queryTree << endl;
                                 queryTree.ExecuteQuery();
 			}
 		}

@@ -241,7 +241,7 @@ void QueryCompiler::Compile(int& numberOfPages,TableList* _tables, NameList* _at
 	}
 
 	// in the end, create WriteOut at the root of qxTree
-	string outFile = "qxTrees/output.txt";
+	string outFile = "output.txt";
 	Schema outSchema = qxTreeRoot->GetSchema();
 	WriteOut* writeOut = new WriteOut(outSchema, outFile, qxTreeRoot);
 	qxTreeRoot = (RelationalOp*) writeOut;
