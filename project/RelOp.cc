@@ -773,7 +773,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         joinDBFile.Close();
         myfile.close();
     // RESET THE MEMORY TABLE FOR IN MEMORY SORT
-    } else {  smallTable.MoveToStart(); }
+    } else {  smallTable.MoveToFinish();/*smallTable.MoveToStart();*/ }
     
 }
 
