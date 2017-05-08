@@ -12,6 +12,12 @@
 #define GREATER_THAN 6
 #define EQUALS 7
 
+//PROJECT 6
+struct AttList {
+    char* attname; // name of the attribute
+    char* atttype; // type of the attribute
+    struct AttList* next; // chained next attribute
+};
 
 // functional expressions
 struct FuncOperand {

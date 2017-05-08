@@ -126,6 +126,7 @@ int DBFile::GetNext (Record& rec) {
 //    } return 1;
     
 }
+void DBFile::GetPageNo (int number, Page& indexpage) { file.GetPage(indexpage, number); }
 int DBFile::GetSpecificRecord(int pNumber, int rNumber, Record& rec) {
     page.EmptyItOut(); 
     if (file.GetPage(page, pNumber) == -1) return 0; // return 0 for no page found 

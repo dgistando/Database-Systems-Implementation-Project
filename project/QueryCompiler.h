@@ -31,7 +31,7 @@ public:
 	RelationalOp* buildJoinTree(int& numberOfPages,OptimizationTree*& _tree, 
 		AndList* _predicate, unordered_map<string, RelationalOp*>& _pushDowns, int depth);
 
-	void Compile(int& numberOfPages,TableList* _tables, NameList* _attsToSelect,
+	void Compile(AttList* attsToCreate, int& queryType,int& numberOfPages,TableList* _tables, NameList* _attsToSelect,
 		FuncOperator* _finalFunction, AndList* _predicate,
 		NameList* _groupingAtts, int& _distinctAtts,
 		QueryExecutionTree& _queryTree);

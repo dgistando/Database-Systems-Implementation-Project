@@ -38,6 +38,8 @@ public:
 	void MoveFirst ();
 	void AppendRecord (Record& _addMe);
 	int GetNext (Record& _fetchMe);
+        //for scan index
+        void GetPageNo (int number, Page& indexpage);
         int GetSpecificRecord(int pNumber, int rNumber, Record& rec);
 };
 

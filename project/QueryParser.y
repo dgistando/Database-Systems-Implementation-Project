@@ -17,6 +17,10 @@
 	struct NameList* attsToSelect; // the attributes in SELECT
 	int distinctAtts; // 1 if there is a DISTINCT in a non-aggregate query 
 	char* command;
+        
+        //PROJECT 6
+        struct AttList* attsToCreate; // used to Create
+        int queryType = 0;  // 0 for select, 1 to create, 2 is for load, 3 for the index
 %}
 
 
@@ -31,6 +35,9 @@
 	struct NameList* myNames;
 	char* actualChars;
 	char whichOne;
+
+        //PROJECT 6
+        struct AttList* myAtts;
 }
 
 
@@ -47,6 +54,15 @@
 %token SUM
 %token AND
 
+//PROJECT 6
+%token CREATE
+%token TABLE
+%token LOAD
+%token DATA
+%token INDEX
+%token ON
+//END PROJECT 6
+
 %type <myAndList> AndList
 %type <myOperand> SimpleExp
 %type <myOperator> CompoundExp
@@ -56,6 +72,13 @@
 %type <myTables> Tables
 %type <myBoolOperand> Literal
 %type <myNames> Atts
+
+
+//PROJECT 6
+%type <myAtts> Atrbut
+%type <myAtts> Attr
+%type <myTables> IndTab
+//END PROJECT 6
 
 %start SQL
 
@@ -81,6 +104,71 @@ SQL: SELECT SelectAtts FROM Tables WHERE AndList
 	predicate = $6;	
 	groupingAtts = $9;
 }
+
+//PROJECT 6
+
+| CREATE TABLE Tables '(' Atrbut ')'
+{
+	tables = $3;
+	queryType = 1;
+	tables->next = NULL;
+}
+
+
+| LOAD DATA Tables FROM Atts
+{
+	tables = $3;
+	tables->next = NULL;
+	attsToSelect = $5;
+	attsToSelect->next = NULL;
+	queryType = 2;
+}
+
+| CREATE INDEX IndTab TABLE Tables ON Atts
+{
+	tables = $3;
+	tables->next = $5;
+	tables->next->next = NULL;
+	attsToSelect = $7;
+	attsToSelect->next = NULL;
+	queryType = 3;
+};
+	
+	
+IndTab: YY_NAME
+{
+	$$ = (struct TableList*) malloc (sizeof (struct TableList));
+	$$->tableName = $1;
+	$$->next = NULL;
+};
+
+
+Atrbut: Attr ',' Atrbut
+{
+	attsToCreate = $1;
+	attsToCreate->next = $3;
+}
+
+| Attr
+{
+	attsToCreate = $1;
+};
+
+
+Attr: YY_NAME YY_NAME
+{
+	$$ = (struct AttList*) malloc (sizeof (struct AttList));
+	$$->attname = $1;
+	$$->atttype = $2;
+	$$->next = NULL;
+};
+
+
+//PROJECT 6
+
+
+
+
 | YY_NAME
 {
 	command = $1;

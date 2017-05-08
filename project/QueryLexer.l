@@ -36,6 +36,18 @@ void yyerror(char* s);
 
 "sqlite-jarvis> " ; // ignore cmd-line prefix
 
+"CREATE"                return(CREATE);
+
+"TABLE"                 return(TABLE);
+
+"LOAD"                  return(LOAD);
+
+"DATA"                  return(DATA);
+
+"INDEX"                 return(INDEX);
+
+"ON"                    return(ON);
+
 "SELECT"		return(SELECT);
 
 "FROM"			return(FROM);

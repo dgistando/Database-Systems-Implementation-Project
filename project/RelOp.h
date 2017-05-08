@@ -72,6 +72,31 @@ public:
 	virtual ostream& print(ostream& _os);
 };
 
+class ScanIndex : public RelationalOp {
+private:
+	// schema of records in operator
+	Schema schema;
+
+	// selection predicate in conjunctive normal form
+	CNF predicate;
+	// constant values for attributes in predicate
+	Record constants;
+
+	string leaf, internal, table;
+	vector<Record> finalrec;
+	int once, veccount;
+
+public:
+	ScanIndex(Schema& _schema, CNF& _predicate, Record& _constants, string& _indexfile, string& _indexheader, string& _table);
+	virtual ~ScanIndex();
+
+	virtual Schema GetSchema(){ return schema;}
+
+	virtual bool GetNext(Record& _record);
+
+	virtual ostream& print(ostream& _os);
+};
+
 class Select : public RelationalOp {
 private:
 	// schema of records in operator
@@ -254,9 +279,13 @@ private:
 	// operator generating data
 	RelationalOp* producer;
         
-        bool mapsCreated;
-        map<string,Record> recordMap;
-        map<string,double> sumMap;
+        //bool mapsCreated;
+        //map<string,Record> recordMap;
+        //map<string,double> sumMap;
+        Schema copy, sum;
+        int phase;
+	map <string, double> set;
+	map <string, Record> recMap;
 
 public:
 	GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,

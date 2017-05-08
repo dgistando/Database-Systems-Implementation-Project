@@ -30,7 +30,9 @@ extern char* command; // command to execute other functionalities (e.g. exit)
 
 extern "C" int yyparse();
 extern "C" int yylex_destroy();
-
+//PROJECT 6
+extern struct AttList* attsToCreate; //the type connected via Parser.y
+extern int queryType; //the type connected via Parser.y
 
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
@@ -53,7 +55,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 int main () {
         //NUMBER OF PAGES
-        int numPages = 300;
+        int numPages = 500;
 	// this is the catalog
 	string dbFile = "catalog.sqlite";
 	Catalog catalog(dbFile);
@@ -154,8 +156,7 @@ int main () {
 				// we are ready to invoke the query compiler with the given query
 				// the result is the execution tree built from the parse tree and optimized
 				QueryExecutionTree queryTree;
-				compiler.Compile(numPages,tables, attsToSelect, finalFunction, predicate,
-					groupingAtts, distinctAtts, queryTree);
+				compiler.Compile(attsToCreate,queryType,numPages,tables, attsToSelect, finalFunction, predicate, groupingAtts, distinctAtts, queryTree);
 
 				cout << queryTree << endl;
                                 queryTree.ExecuteQuery();

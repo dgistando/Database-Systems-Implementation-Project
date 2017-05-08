@@ -33,6 +33,168 @@ ostream& Scan::print(ostream& _os) {
 	//return _os << file.GetTableName();
 }
 
+ScanIndex::ScanIndex(Schema& _schema, CNF& _predicate, Record& _constants, 
+		     string& _indexfile, string& _indexheader, string& _table) {
+
+	schema = _schema;
+	predicate = _predicate;
+	constants = _constants;
+	leaf = _indexfile;
+	internal = _indexheader;
+	table = _table;
+	once =0;
+	veccount=0;
+	//Record fals;
+	//finalrec.push_back(fals);
+}
+
+bool ScanIndex::GetNext(Record& rec) {
+
+	//vector<Record>finalrec;
+	if(once==0) { //cout<<"here"<<endl;
+		DBFile mainfile;
+		mainfile.Open(&table[0]);
+
+		DBFile f_leaf, f_internal;
+		f_leaf.Open(&leaf[0]);
+		f_internal.Open(&internal[0]);
+
+		vector<string> at; at.push_back("value") ;
+		vector<string> type; type.push_back("INTEGER");
+		vector<unsigned int> dis; dis.push_back(0);
+		Schema sche(at, type, dis);
+
+		stringstream ss;	
+
+		constants.print(ss, sche); //cout<<endl;
+		string s = ss.str();
+		size_t pos = s.find(":");
+		string str = s.substr(pos+2, s.length()-pos-3);
+		//cout<<endl<<str<<endl;
+
+		Record internalrecord;
+		f_internal.MoveFirst();
+		int counter=1;
+		int childcount=0;
+
+		while(f_internal.GetNext(internalrecord)){
+		
+		
+			at.clear();
+			type.clear();
+			dis.clear();
+
+			at.push_back("key") ; at.push_back("child");
+			type.push_back("INTEGER"); type.push_back("INTEGER");
+			dis.push_back(0); dis.push_back(0);
+			Schema sc(at, type, dis);
+
+			stringstream ssindex;
+
+			internalrecord.print(ssindex, sc); cout<<endl;
+			s = ssindex.str();
+			//cout<<s<<endl;
+			pos = s.find(":");
+			size_t pos1 = s.find(",");
+			string internalkey = s.substr(pos+1, pos1-pos-1);
+			//cout<<endl<<internalkey<<endl;
+		
+			if(stoi(str)<stoi(internalkey)) { childcount = counter-1; break;}
+			else childcount = counter;
+			counter++;
+		}
+		//cout<<"child "<<childcount<<" counter "<<counter;
+	
+		Page p;
+		Record r;
+		f_leaf.GetPageNo(childcount-1, p);
+		int count=0, count1=0;
+		vector<Record> indexrecvec;
+	
+		at.clear();
+		type.clear();
+		dis.clear();	
+		at.push_back("key");at.push_back("page");at.push_back("record");
+		type.push_back("INTEGER");type.push_back("INTEGER");type.push_back("INTEGER");
+		dis.push_back(0); dis.push_back(0); dis.push_back(0);
+
+		Schema leafschema(at, type, dis);
+
+
+		while(p.GetFirst(r) != 0) {
+
+			count++;
+	
+			stringstream leafrec;
+			r.print(leafrec, leafschema);
+
+			string a, keynum, c, pagenum, e, recnum;
+			int kn=0, pn=0, rn=0;
+
+			leafrec>>a>>keynum>>c>>pagenum>>e>>recnum;
+
+			keynum.pop_back();
+			pagenum.pop_back();
+			recnum.pop_back();
+			kn=stoi(keynum, nullptr,10); pn=stoi(pagenum, nullptr, 10); rn=stoi(recnum, nullptr, 10);
+
+			int valTocompare = stoi(str, nullptr, 10);
+
+			if(valTocompare == kn) 
+			{
+
+				count1++;
+
+				cout<<"page"<<pn<<" ";
+
+				cout<<"record"<<rn<<" "<<"count "<<count1 <<endl;
+	
+				Record mainrec;
+			
+				mainfile.GetSpecificRecord(pn-1, rn, mainrec);
+				//cout<<"here";
+		
+				finalrec.push_back(mainrec);
+				//cout<<"here";
+				//mainrec.print(cout, schema); cout<<endl;
+
+			
+			}
+
+			//cout<<kn<<endl<<pn<<endl<<rn<<endl;
+			 
+		}
+		
+		
+		//cout<<"vector size "<<finalrec.size();
+	
+		once=1;
+		cout<<endl<<"number total records "<<count<<" number applicable records "<<count1<<endl;
+		//cout<<"HERE in Scan Index"<<endl;
+		//return false;
+	
+	}
+		
+	if(veccount<finalrec.size()) {
+		rec = finalrec[veccount];
+		veccount++;
+		return true;
+	}
+	else return false;
+			
+
+}
+
+
+ScanIndex::~ScanIndex() {
+}
+
+ostream& ScanIndex::print(ostream& _os) {
+	return _os << "SCAN INDEX";
+}
+
+
+
 
 Select::Select(Schema& _schema, CNF& _predicate, Record& _constants,
 	RelationalOp* _producer) {
@@ -420,7 +582,7 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     
     
     //CREATE HEAPS 
-    if(true){
+    if(outOfMemory){
         Record record;
         
         int smallerTableCount = 0,
@@ -593,6 +755,8 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         // SAVE THE LAST PAGE
         joinDBFile.Close();
         myfile.close();
+    } else {
+        
     }
     
 }
@@ -784,12 +948,77 @@ GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtt
 	groupingAtts.Swap(_groupingAtts);
 	compute = _compute;
 	producer = _producer;
+        phase = 0;
 }
 
 GroupBy::~GroupBy() {
 }
 
-bool GroupBy::GetNext(Record& _record){
+bool GroupBy::GetNext(Record& record)
+{
+	vector<int> attsToKeep, attsToKeep1;
+	for (int i = 1; i < schemaOut.GetNumAtts(); i++)
+		attsToKeep.push_back(i);
+
+	copy = schemaOut;
+	copy.Project(attsToKeep);
+
+	attsToKeep1.push_back(0);
+	sum = schemaOut;
+	sum.Project(attsToKeep1);
+
+	if (phase == 0)
+	{
+		while (producer->GetNext(record))	
+		{	
+			stringstream s;
+			int iResult = 0;
+			double dResult = 0;
+			compute.Apply(record, iResult, dResult);
+			double val = dResult + (double)iResult;
+			
+			record.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts , copy.GetNumAtts());
+			record.print(s, copy);
+			auto it = set.find(s.str());
+
+			if(it != set.end())	set[s.str()]+= val;
+			else
+			{
+				set[s.str()] = val;
+				recMap[s.str()] = record;
+			}
+		
+		}
+		phase = 1;
+	}
+
+	if (phase == 1)
+	{
+		if (set.empty()) return false;
+
+		Record temp = recMap.begin()->second;
+		string strr = set.begin()->first;
+
+		char* recSpace = new char[PAGE_SIZE];
+		int currentPosInRec = sizeof (int) * (2);
+		((int *) recSpace)[1] = currentPosInRec;
+		*((double *) &(recSpace[currentPosInRec])) = set.begin()->second;
+		currentPosInRec += sizeof (double);
+		((int *) recSpace)[0] = currentPosInRec;
+		Record sumRec;
+		sumRec.CopyBits( recSpace, currentPosInRec );
+		delete [] recSpace;
+		
+		Record newRec;
+		newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
+		recMap.erase(strr);
+		set.erase(strr);
+		record = newRec;
+		return true;
+	}
+}
+
+/*bool GroupBy::GetNext(Record& _record){
     if(!mapsCreated){
         int integer_sum = 0;
         double double_sum = 0;
@@ -838,7 +1067,7 @@ bool GroupBy::GetNext(Record& _record){
         _record = newRec;
         return true;
     }
-}
+}*/
 
 ostream& GroupBy::print(ostream& _os) {
 	_os << "γ [";
