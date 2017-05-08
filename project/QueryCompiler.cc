@@ -85,12 +85,12 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                     }
 
                     /** ORIGINAL **/
-                    /*if(cnf.numAnds > 0) {
+                    if(cnf.numAnds > 0) {
                             Select* select = new Select(schema, cnf, record, (RelationalOp*) scan);
                             pushDowns[tableName] = (RelationalOp*) select;
-                    }*/
+                    }
                     /** NEW_START **/
-                    if(cnf.numAnds > 0) {
+                    /*if(cnf.numAnds > 0) {
                         vector<Attribute> test = schema.GetAtts();
                         string indexfile = test[0].name;
                         string indexheader = test[1].name;
@@ -99,7 +99,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                     } else {
                         Select* select = new Select(schema, cnf, record, (RelationalOp*) scan);
                         pushDowns[tableName] = (RelationalOp*) select;
-                    }
+                    }*/
                     /** NEW_END **/
 
                     // move on to the next table

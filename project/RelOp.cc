@@ -554,28 +554,36 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     rightOrder = new OrderMaker();
     _predicate.GetSortOrders(*leftOrder,*rightOrder);
     
-    
-    //CHECK IF FITTING IN MEMORY
-    bool outOfMemory = false;
+    //CHECK IF FITTING IN MEMORY 
+    cout << "Checking if in memory sort capable..." << endl;
+    outOfMemory = false;
     unsigned int totalRecordMemorySize = 0;
     if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) >= schemaLeft.GetDistincts(schemaLeft.atts.at(0).name)){
+        
+        cout << schemaLeft << endl;
+        
         leftIsSmaller = true;
         largerTable = _right;
         Record temp;
         while(left->GetNext(temp)){
             temp.SetOrderMaker(leftOrder);
             totalRecordMemorySize += temp.GetSize();
-            memoryTable.push_back(temp);
+            smallTable.Insert(temp);
+            //memoryTable.push_back(temp);
             if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
         }
     } else {
+        
+       cout << schemaRight << endl; 
+        
        leftIsSmaller = false; 
        largerTable = _left;
        Record temp;
        while(right->GetNext(temp)){
             totalRecordMemorySize += temp.GetSize();
             temp.SetOrderMaker(rightOrder);
-            memoryTable.push_back(temp);
+            smallTable.Insert(temp);
+            //memoryTable.push_back(temp);
             if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
         }
     }
@@ -583,7 +591,16 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     
     //CREATE HEAPS 
     if(outOfMemory){
+        cout << "Starting out of memory algo..." << endl;
         Record record;
+        //LOAD MEMORY FROM TWOWAYLIST INTO VECTOR
+        smallTable.MoveToStart();
+        while(smallTable.Length() != 0) { //empty old list and put into vector
+                smallTable.Remove(record);
+                record.SetOrderMaker( (leftIsSmaller) ? leftOrder : rightOrder );
+                memoryTable.push_back(record);
+        }
+        
         
         int smallerTableCount = 0,
             largerTableCount = 0;
@@ -755,9 +772,8 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
         // SAVE THE LAST PAGE
         joinDBFile.Close();
         myfile.close();
-    } else {
-        
-    }
+    // RESET THE MEMORY TABLE FOR IN MEMORY SORT
+    } else {  smallTable.MoveToStart(); }
     
 }
 
@@ -769,31 +785,35 @@ Join::~Join() {
 
 
 bool Join::GetNext(Record& _record){
-    if(joinDBFile.isOpen){ joinDBFile.GetNext(_record); }
-    else { joinDBFile.Open(); joinDBFile.GetNext(_record); }
-    
-    
-    //join heapfLeftFinal = heapRightFinal;
-    
-    
-    
     // old
-//    while(true){
-//        if(smallTable.AtEnd()){ if(!(largerTable->GetNext(curRecord))){ return false; } smallTable.MoveToStart(); }
-//        while (!smallTable.AtEnd()){
-//            if(leftIsSmaller){
-//                if (predicate.Run(smallTable.Current(), curRecord)){
-//                    _record.AppendRecords(smallTable.Current(), curRecord, schemaLeft.atts.size(), schemaRight.atts.size());
-//                    smallTable.Advance(); return true;
-//                }
-//            } else {
-//                if (predicate.Run(curRecord,smallTable.Current())){
-//                    _record.AppendRecords(curRecord, smallTable.Current(), schemaLeft.atts.size(), schemaRight.atts.size());
-//                    smallTable.Advance(); return true;
-//                }
-//            } smallTable.Advance();
-//        }
-//    } return false;
+    if(!outOfMemory){
+        while(true){
+            if(smallTable.AtEnd()){ 
+                if(!(largerTable->GetNext(curRecord))){ return false; } 
+                else { ((leftIsSmaller) ? curRecord.SetOrderMaker(rightOrder) : curRecord.SetOrderMaker(leftOrder)); } 
+                smallTable.MoveToStart(); 
+            }
+            while (!smallTable.AtEnd()){
+                Record smallTableCurrent = smallTable.Current();
+                ((leftIsSmaller) ? smallTableCurrent.SetOrderMaker(leftOrder) : smallTableCurrent.SetOrderMaker(rightOrder));
+                if(leftIsSmaller){
+                    if (predicate.Run(smallTableCurrent, curRecord)){
+                        _record.AppendRecords(smallTableCurrent, curRecord, schemaLeft.atts.size(), schemaRight.atts.size());
+                        smallTable.Advance(); return true;
+                    }
+                } else {
+                    if (predicate.Run(curRecord,smallTableCurrent)){
+                        _record.AppendRecords(curRecord, smallTableCurrent, schemaLeft.atts.size(), schemaRight.atts.size());
+                        smallTable.Advance(); return true;
+                    }
+                } smallTable.Advance();
+            }
+        } return false;
+    }
+    else {
+        if(joinDBFile.isOpen){ joinDBFile.GetNext(_record); }
+        else { joinDBFile.Open(); joinDBFile.GetNext(_record); }
+    }
 }
 
 ostream& Join::print(ostream& _os) {

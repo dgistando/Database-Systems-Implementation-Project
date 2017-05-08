@@ -178,6 +178,7 @@ private:
 	TwoWayList <Record> smallTable;
         
         //part 5
+        bool outOfMemory,leftSmaller;
         enum Table{ TableLeft, TableRight };
         OrderMaker* leftOrder;
         OrderMaker* rightOrder;
@@ -211,8 +212,6 @@ public:
 	int depth;
 
 	int numTuples;
-        
-        bool leftSmaller;
 };
 
 class DuplicateRemoval : public RelationalOp {
