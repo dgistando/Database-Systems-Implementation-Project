@@ -186,7 +186,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                             Function compute; compute.GrowFromParseTree(_finalFunction, schemaIn);
 
                             attributes.push_back("sum");
-                            attributeTypes.push_back(compute.GetType());
+                            attributeTypes.push_back(compute.GetTypeAsString());
                             distincts.push_back(1);
                             Schema schemaOut(attributes, attributeTypes, distincts);
 
@@ -205,7 +205,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                             compute.GrowFromParseTree(_finalFunction, schemaIn);
 
                             attributes.push_back("sum");
-                            attributeTypes.push_back(compute.GetType());
+                            attributeTypes.push_back(compute.GetTypeAsString());
                             distincts.push_back(1);
                     }
 

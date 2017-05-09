@@ -903,6 +903,7 @@ Sum::Sum(Schema& _schemaIn, Schema& _schemaOut, Function& _compute,
 Sum::~Sum() {
 }
 
+
 bool Sum::GetNext(Record& _record){
     if(alreadyCalculatedSum){ return false; }
     int integer_sum = 0;
@@ -961,133 +962,111 @@ ostream& Sum::print(ostream& _os) {
 
 
 GroupBy::GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,
-	Function& _compute,	RelationalOp* _producer) {
-	schemaIn = _schemaIn;
-	schemaOut = _schemaOut;
-	groupingAtts = _groupingAtts;
-	groupingAtts.Swap(_groupingAtts);
-	compute = _compute;
-	producer = _producer;
-        phase = 0;
+	Function& _compute,	RelationalOp* _producer) :
+	schemaIn(_schemaIn),
+	schemaOut(_schemaOut),
+	groupingAtts(_groupingAtts),
+	compute(_compute),
+	producer(_producer),
+	isFirst(true) {
 }
 
 GroupBy::~GroupBy() {
+    
 }
+struct GroupByComp{
+    bool operator() (GroupVal& left, GroupVal& right){return left.sum < right.sum;}
+};
+bool GroupBy::GetNext(Record& _record) {
+    	bool hasCompute = compute.HasOps();
+	// Phase 1. build a map for each group
+	if(isFirst) { // this step is done only once
+		Record rec;
+		while(producer->GetNext(rec)) {
+			// check whether aggregate function exist
+			double result = 0;
+			Schema schemaTmp = schemaOut;
+			if(hasCompute) { // calculate aggregate function (sum)
+				int resInt = 0; double resDbl = 0;
+				compute.Apply(rec, resInt, resDbl);
+				result = resDbl + resInt;
 
-bool GroupBy::GetNext(Record& record)
-{
-	vector<int> attsToKeep, attsToKeep1;
-	for (int i = 1; i < schemaOut.GetNumAtts(); i++)
-		attsToKeep.push_back(i);
+				// create schema having grouping atts only to get right key
+				vector<int> attsToKeep;
+				for(int i = 1; i < schemaOut.GetNumAtts(); i++)
+					attsToKeep.push_back(i);
 
-	copy = schemaOut;
-	copy.Project(attsToKeep);
-
-	attsToKeep1.push_back(0);
-	sum = schemaOut;
-	sum.Project(attsToKeep1);
-
-	if (phase == 0)
-	{
-		while (producer->GetNext(record))	
-		{	
-			stringstream s;
-			int iResult = 0;
-			double dResult = 0;
-			compute.Apply(record, iResult, dResult);
-			double val = dResult + (double)iResult;
-			
-			record.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts , copy.GetNumAtts());
-			record.print(s, copy);
-			auto it = set.find(s.str());
-
-			if(it != set.end())	set[s.str()]+= val;
-			else
-			{
-				set[s.str()] = val;
-				recMap[s.str()] = record;
+				schemaTmp.Project(attsToKeep);
 			}
-		
+
+			// project record with grouping attributes
+			rec.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts, schemaIn.GetNumAtts());
+
+			// create key from the current record
+			string key = rec.createKeyFromRecord(schemaTmp);
+			double keyd = std::stod(key.substr(2));
+                        
+			// find key in the map and create new if not exist
+			if(groups.find(keyd) == groups.end()) {
+				GroupVal val;
+				val.sum = result; val.rec = rec;
+				groups[keyd] = val;
+			} else { // do aggregate if group already exists
+				groups[keyd].sum += result;
+			}
 		}
-		phase = 1;
+
+		// end of preprocessing
+		groupsIt = groups.begin();
+		isFirst = false;
+                //sort(groups.begin(),groups.end(),GroupByComp());
 	}
+	
+	// Phase 2. iterate groups and return each group
+	if(groupsIt != groups.end()) { // get next record from the map
+		Record recNew;
+		if(hasCompute) {
+			// create record for sum
+			Record recSum; 
+			char* recBits = new char[1];
+			int recSize;
 
-	if (phase == 1)
-	{
-		if (set.empty()) return false;
+			bool resType = compute.GetType();
+			if(resType == Float) {
+				*((double *) recBits) = (*groupsIt).second.sum;
+				recSize = sizeof(double);
+			} else { // resType == Integer
+				*((int *) recBits) = (int)(*groupsIt).second.sum;
+				recSize = sizeof(int);
+			}
+			
+			char* recComplete = new char[sizeof(int) + sizeof(int) + recSize];
+			((int*) recComplete)[0] = 2*sizeof(int) + recSize;
+			((int*) recComplete)[1] = 2*sizeof(int);
+			memcpy(recComplete+2*sizeof(int), recBits, recSize);
 
-		Record temp = recMap.begin()->second;
-		string strr = set.begin()->first;
+			recSum.Consume(recComplete);
 
-		char* recSpace = new char[PAGE_SIZE];
-		int currentPosInRec = sizeof (int) * (2);
-		((int *) recSpace)[1] = currentPosInRec;
-		*((double *) &(recSpace[currentPosInRec])) = set.begin()->second;
-		currentPosInRec += sizeof (double);
-		((int *) recSpace)[0] = currentPosInRec;
-		Record sumRec;
-		sumRec.CopyBits( recSpace, currentPosInRec );
-		delete [] recSpace;
-		
-		Record newRec;
-		newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
-		recMap.erase(strr);
-		set.erase(strr);
-		record = newRec;
+			// merge sum and other attributes into new record
+			recNew.AppendRecords(recSum, (*groupsIt).second.rec, 1, schemaOut.GetNumAtts()-1);
+
+			// remove obsolete record
+			(*groupsIt).second.rec.Nullify(); 
+		} else { // if there is no aggreagate function
+			// just get current record (also removes obsolete record in map by swap)
+                        
+			recNew.Swap((*groupsIt).second.rec);
+		}
+
+		// return new record and advance iterator
+		_record = recNew; 
+		groupsIt++;
+
 		return true;
+	} else { // map is empty
+		return false;
 	}
 }
-
-/*bool GroupBy::GetNext(Record& _record){
-    if(!mapsCreated){
-        int integer_sum = 0;
-        double double_sum = 0;
-        while(producer->GetNext(_record)){
-            stringstream key;
-            int integer_result = 0;
-            double double_result = 0;
-
-            (compute.Apply(_record,integer_result,double_result) == Integer)?
-            integer_sum += integer_result:
-            double_sum += double_result;
-            double sum_result = (double)integer_sum + double_sum; // one of them will be zero
-            
-            _record.Project(&groupingAtts.whichAtts[0], groupingAtts.numAtts , schemaOut.GetNumAtts());
-            _record.print(key, schemaOut);
-            auto it = sumMap.find(key.str());
-
-            if(it != sumMap.end())	{ sumMap[key.str()]+= sum_result; }
-            else {
-                    sumMap[key.str()] = sum_result;
-                    recordMap[key.str()] = _record;
-            }
-
-        }
-        mapsCreated = true;
-    } else {
-        if (sumMap.empty()) return false;
-
-        Record temp = recordMap.begin()->second;
-        string topr = sumMap.begin()->first;
-
-        char* recSpace = new char[16];
-        int currentPosInRec = sizeof (int) * (2);
-        ((int *) recSpace)[1] = currentPosInRec;
-        *((double *) &(recSpace[currentPosInRec])) = sumMap.begin()->second;
-        currentPosInRec += sizeof (double);
-        ((int *) recSpace)[0] = currentPosInRec;
-        Record sumRec;
-        sumRec.CopyBits( recSpace, currentPosInRec );
-        delete [] recSpace;
-
-        Record newRec;
-        newRec.AppendRecords(sumRec, temp, 1, schemaOut.GetNumAtts()-1);
-        recordMap.erase(topr);
-        sumMap.erase(topr);
-        _record = newRec;
-        return true;
-    }
-}*/
 
 ostream& GroupBy::print(ostream& _os) {
 	_os << "γ [";

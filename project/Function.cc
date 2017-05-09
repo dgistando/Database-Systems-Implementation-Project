@@ -347,3 +347,24 @@ Type Function :: Apply (Record& toMe, int &intResult, double &doubleResult) {
 		return Float;
 	}
 }
+
+Type Function :: GetType() {
+	if(returnsInt == 1)
+		return Integer;
+	else
+		return Float;
+}
+
+string Function :: GetTypeAsString() { 
+	if(returnsInt == 1)
+		return "INTEGER";
+	else
+		return "FLOAT";
+}
+
+bool Function :: HasOps() {
+	if(numOps > 0)
+		return true;
+	else
+		return false;
+}

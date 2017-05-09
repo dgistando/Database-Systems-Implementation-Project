@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "Config.h"
 #include "Swap.h"
@@ -461,3 +462,42 @@ bool Record::LessThan (Record& _withMe) {
     if (ret == -1) return true;
     return false;
 }*/
+string Record :: createKeyFromRecord(Schema& _schema) {
+	stringstream ss;
+	int n = _schema.GetNumAtts();
+	vector<Attribute> atts = _schema.GetAtts();
+	
+	for (int i = 0; i < n; i++) {
+		// print the attribute index, instead of name to make it short
+		ss << i << ":";
+
+		// use the i^th slot at the head of the record to get the
+		// offset to the correct attribute in the record
+		int pointer = ((int *) bits)[i + 1];
+
+		// here we determine the type, which given in the schema;
+		// depending on the type we then print out the contents
+		// first is integer
+		if (atts[i].type == Integer) {
+			int *myInt = (int *) &(bits[pointer]);
+			ss << *myInt;
+		}
+		// then is a double
+		else if (atts[i].type == Float) {
+			double *myDouble = (double *) &(bits[pointer]);
+			ss << fixed << *myDouble;
+		}
+		// then is a character string
+		else if (atts[i].type == String) {
+			char *myString = (char *) &(bits[pointer]);
+			ss << myString;
+		} 
+
+		// print out a comma as needed to separate tuples
+		if (i != n - 1) {
+			ss << ",";
+		}
+	}
+
+	return ss.str();
+}

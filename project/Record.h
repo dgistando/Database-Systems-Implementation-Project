@@ -92,6 +92,8 @@ public:
 
     void SetOrderMaker(OrderMaker* _order) {compOrder = _order;}
     
+    // create minified key from record (used in GroupBy::GetNext())
+    string createKeyFromRecord(Schema& _schema);
     
     //friend bool operator<(const Record a,const Record b); //This wasnt necessary
     

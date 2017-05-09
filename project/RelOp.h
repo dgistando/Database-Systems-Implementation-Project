@@ -263,6 +263,10 @@ public:
 	virtual ostream& print(ostream& _os);
 };
 
+struct GroupVal {
+	double sum;
+	Record rec;
+};
 class GroupBy : public RelationalOp {
 private:
 	// schema of records input to operator
@@ -278,13 +282,17 @@ private:
 	// operator generating data
 	RelationalOp* producer;
         
-        //bool mapsCreated;
-        //map<string,Record> recordMap;
-        //map<string,double> sumMap;
-        Schema copy, sum;
-        int phase;
-	map <string, double> set;
-	map <string, Record> recMap;
+        // first-run indicator
+	bool isFirst;
+
+	// map for each grouping attribute
+	map<double, GroupVal> groups;
+        
+        
+
+	// iterator for the groups
+	map<double, GroupVal>::iterator groupsIt;
+        
 
 public:
 	GroupBy(Schema& _schemaIn, Schema& _schemaOut, OrderMaker& _groupingAtts,
@@ -330,11 +338,17 @@ public:
 	virtual ~QueryExecutionTree() {}
 
 	void ExecuteQuery() {
+            ofstream output;
+            string path = "output.txt";
+            output.open(path);
             Record rec;
             while(root->GetNext(rec)){
                Schema sch = root->GetSchema();
                rec.print(cout,sch); cout << endl;
+               rec.print(output,sch); output << endl;
             }
+            output.close();
+            cout << "DONE!" << endl;
         }
 	void SetRoot(RelationalOp& _root) {root = &_root;}
 

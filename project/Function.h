@@ -41,7 +41,16 @@ public:
 	// applies the function to the given record and returns the result
 	Type Apply (Record& toMe, int& intResult, double &doubleResult);
 
-	string GetType() { if(returnsInt == 1) { return "INTEGER"; } else { return "FLOAT"; } }
+	// return type of result of this function (Integer or Float)
+	Type GetType();
+
+	// return type of result of this function as string (INTGER or FLOAT)
+	string GetTypeAsString();
+
+	// return true if it has operations, otherwise false
+	// so that we can know whether 'sum' is required or not
+	bool HasOps();
+	
 };
 
 #endif // _FUNCTION_H
