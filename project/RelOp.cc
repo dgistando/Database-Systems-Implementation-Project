@@ -420,8 +420,9 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
     cout << "Checking if in memory sort capable..." << endl;
     outOfMemory = false;
     unsigned int totalRecordMemorySize = 0;
-    if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) >= schemaLeft.GetDistincts(schemaLeft.atts.at(0).name)){
+    if(schemaRight.GetDistincts(schemaRight.atts.at(0).name) > schemaLeft.GetDistincts(schemaLeft.atts.at(0).name)){
         
+        cout << "---LEFT IS SMALLER PRINTING SCHEMA---" << endl;
         cout << schemaLeft << endl;
         
         leftIsSmaller = true;
@@ -432,10 +433,11 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
             totalRecordMemorySize += temp.GetSize();
             smallTable.Insert(temp);
             //memoryTable.push_back(temp);
-            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ 
+                outOfMemory = true; break; }
         }
     } else {
-        
+       cout << "---RIGHT IS SMALLER PRINTING SCHEMA---" << endl;
        cout << schemaRight << endl; 
         
        leftIsSmaller = false; 
@@ -446,7 +448,8 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
             temp.SetOrderMaker(rightOrder);
             smallTable.Insert(temp);
             //memoryTable.push_back(temp);
-            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ outOfMemory = true; break; }
+            if(totalRecordMemorySize >= noPages * PAGE_SIZE){ 
+                outOfMemory = true; break; }
         }
     }
     
@@ -463,6 +466,8 @@ Join::Join(int& numPages, Schema& _schemaLeft, Schema& _schemaRight, Schema& _sc
                 memoryTable.push_back(record);
         }
         
+        
+        cout << "SIZE OF SMALLEST: " << memoryTable.size() << endl;
         
         int smallerTableCount = 0,
             largerTableCount = 0;
