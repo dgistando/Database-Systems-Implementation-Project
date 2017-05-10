@@ -157,7 +157,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
 
                                     _attsToSelect = _attsToSelect->next;
                             }
-
+                            reverse(attsToKeep.begin(),attsToKeep.end());
                             if(schemaOut.Project(attsToKeep) == -1) {
                                     cerr << "ERROR: Project failed:\n" << schemaOut << endl << endl;
                                     exit(-1);

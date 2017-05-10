@@ -75,7 +75,7 @@ void DBFile::Load (Schema& schema, char* textFile) {
 
 int DBFile::Close () {
     isOpen = false;
-    if(ftype == Sorted | ftype == Index) { 
+    if(ftype == Sorted || ftype == Index) { 
     file.AddPage(page, pageCount); } // testing
     return file.Close();
 }
