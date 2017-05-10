@@ -125,47 +125,69 @@ int main () {
 	// this is the query compiler
 	// it includes the catalog and the query optimizer
 	QueryCompiler compiler(catalog, optimizer);
+        
+        
+        while(true){
+            int n = 0;
+            cout << "1. Print Catalog " << endl;
+            cout << "2. Run Query " << endl;
+            cout << "3. Exit " << endl;
+            cin >> n;
 
-	while(true) {		
-		cout << "\n<sqlite> ";
+            switch(n) {
+                case 1:{
+                    cout << catalog << endl;
+                    break;
+                }
+                case 2:{
+                    //while(true) {		
+                        cout << "\n<sqlite> ";
 
-		// the query parser is accessed directly through yyparse
-		// this populates the extern data structures
-		int parse = -1;
-		if (yyparse() == 0) {
-			parse = 0;
-		} else {
-			cout << "Error: Query is not correct!" << endl << endl;
-			parse = -1;
-		}
+                        // the query parser is accessed directly through yyparse
+                        // this populates the extern data structures
+                        int parse = -1;
+                        if (yyparse() == 0) {
+                                parse = 0;
+                        } else {
+                                cout << "Error: Query is not correct!" << endl << endl;
+                                parse = -1;
+                        }
 
-		yylex_destroy();
+                        yylex_destroy();
 
-		if(parse == 0) {
-			if(command != NULL) {
-				if(strcmp(command, "exit") == 0) {
-					cout << endl << "Bye!" << endl << endl;
-					return 0;
-				} else {
-					cout << endl << "Error: Command not found." << endl << endl;
-				}
-			} else {
-				cout << endl << "OK!" << endl;
+                        if(parse == 0) {
+                                if(command != NULL) {
+                                        if(strcmp(command, "exit") == 0) {
+                                                cout << endl << "Bye!" << endl << endl;
+                                                return 0;
+                                        } else {
+                                                cout << endl << "Error: Command not found." << endl << endl;
+                                        }
+                                } else {
+                                        cout << endl << "OK!" << endl;
 
-				// at this point we have the parse tree in the ParseTree data structures
-				// we are ready to invoke the query compiler with the given query
-				// the result is the execution tree built from the parse tree and optimized
-				QueryExecutionTree queryTree;
-				compiler.Compile(attsToCreate,queryType,numPages,tables, attsToSelect, finalFunction, predicate, groupingAtts, distinctAtts, queryTree);
-
-				cout << queryTree << endl;
-                                queryTree.ExecuteQuery();
-			}
-		}
-		// re-open stdin so that we can start reading from the scratch
-		freopen("/dev/tty", "r", stdin);
-	}
-	fclose(stdin);
-	
+                                        // at this point we have the parse tree in the ParseTree data structures
+                                        // we are ready to invoke the query compiler with the given query
+                                        // the result is the execution tree built from the parse tree and optimized
+                                        QueryExecutionTree queryTree;
+                                        compiler.Compile(attsToCreate,queryType,numPages,tables, attsToSelect, finalFunction, predicate, groupingAtts, distinctAtts, queryTree);
+                                        if(queryType == 3){
+                                            continue;
+                                        }
+                                        cout << queryTree << endl;
+                                        queryTree.ExecuteQuery();
+                                }
+                        }
+                        // re-open stdin so that we can start reading from the scratch
+                        freopen("/dev/tty", "r", stdin);
+                //}
+                //fclose(stdin);
+                    break;
+                }
+                case 3:{
+                    return 0;
+                }
+            }
+        }
 	return 0;
 }

@@ -288,24 +288,22 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
             dbfile.Load(schema,&textFileToLoadFrom[0]);
             dbfile.Close();       
         } else if (queryType == 3){ // INDEX QUERIES
-            map <int, vector<Record>> mapindex;
+            map <int, vector<Record>> mapindex; // map that holds record in least to greatest order
             TableList* tabl = _tables;
+            
+            string indexName = tabl->tableName; tabl = tabl->next;  // name of index-name test = test
+            string tableName = tabl->tableName;                     // name of the table-name supplier = supplier
+            string indexTable (tabl->tableName); indexTable += ".dat";  // name of the .dat file supplier = supplier.dat
+            string indexAtt = _attsToSelect->name;                  // name of the attribute the index is based on
 
-            string indexName = tabl->tableName;
-            tabl = tabl->next;
-            string indexTable (tabl->tableName); indexTable += ".dat";
-            string indexAtt = _attsToSelect->name;
-
-            //cout<<indexName<<indexTable<<indexAtt<<endl;
-
-            DBFile db, ind, childex;
-            db.Open(&indexTable[0]);
+            DBFile dbdat, leaves, header;    // dbis the dat file, ind is leafs, childex root
+            dbdat.Open(&indexTable[0]);
             Record record;
             int counter=0;
             int counteri=0, p = 1, r=0;
             //Record rec;
 
-            ind.Create(&indexName[0], Index);
+            leaves.Create(&indexName[0], Index);
 
             string childname = "internal_" + indexAtt ;
 
@@ -315,33 +313,39 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
             catalog->CreateTable(indexAtt, at, type);
 
 
-            childex.Create(&childname[0], Index);
+            header.Create(&childname[0], Index);
 
 
             catalog->Save();
 
             at.clear();
             type.clear();
-/*
-            vector<string> at; at.push_back("key");at.push_back("page");at.push_back("record");
-            vector<string> type; type.push_back("INTEGER");type.push_back("INTEGER");type.push_back("INTEGER");
-            catalog->CreateTable(indexName, at, type);
-            vector<string> lt; lt.push_back("key"); lt.push_back("child");
-            vector<string> typ; typ.push_back("INTEGER"); typ.push_back("INTEGER");
-            catalog->CreateTable(childname, lt, typ);
-*/		
+            
+            Schema testSchema1;
+            Attribute att1,att2;
+            att1.name = "s_supkey";
+            att1.noDistinct = 10000;
+            att1.type = (Type)Integer;
+            att2.name = "page";
+            att2.noDistinct = 10000;
+            att2.type = (Type)Integer;
+                    
+            testSchema1.atts.push_back(att1);
+            testSchema1.atts.push_back(att2);
+            
+            dbdat.Close();
+            dbdat.Open();
 
-            //Schema sc;
-            //catalog->GetSchema(indexName, sc);
-
-            while(db.GetNext(record)) { 
-
+            while(dbdat.GetNext(record)) { 
+                    
+                //record.print(cout, tableName); cout << endl;
+                
                     counter++;
 
                     counteri+= record.GetSize();
                     if(counteri > PAGE_SIZE) {p++; r=0; counteri=0;};
                     Schema sch;
-                    catalog->GetSchema(indexTable, sch);
+                    catalog->GetSchema(tableName, sch);
                     unsigned int numAtts = sch.GetNumAtts();
                     vector<int> attIndex;
                     attIndex.push_back(sch.Index(indexAtt));	
@@ -428,7 +432,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
             currentPosInRec += sizeof (int);
             ((int *) recSpace)[0] = currentPosInRec;
             Record newrec;
-            newrec.CopyBits( recSpace, currentPosInRec );
+            newrec.Consume(recSpace);
 
             recSpace = new char[PAGE_SIZE];
             currentPosInRec = sizeof (int) * (2);
@@ -437,21 +441,21 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
             currentPosInRec += sizeof (int);
             ((int *) recSpace)[0] = currentPosInRec;
             Record newrec2;
-            newrec2.CopyBits( recSpace, currentPosInRec );
+            newrec2.Consume( recSpace );
 
             Record temp;
             temp.AppendRecords (newrec,newrec2,1,1);
 
             //temp.print(cout, sh);
 
-            childex.AppendRecord(temp);
+            header.AppendRecord(temp);
 
             for(auto at:mapindex) {
                     for(int i =0; i<at.second.size(); i++)
                             {	
                                     counteri += at.second[i].GetSize();
-                                    //at.second[i].print(cout, sc); cout<<endl; 
-                                    ind.AppendRecord(at.second[i]);
+                                    //at.second[i].print(cout, testSchema1); cout<<endl; 
+                                    leaves.AppendRecord(at.second[i]);
 
 
                                     if(counteri >= PAGE_SIZE) {
@@ -467,7 +471,7 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                                             currentPosInRec += sizeof (int);
                                             ((int *) recSpace)[0] = currentPosInRec;
                                             Record newrec;
-                                            newrec.CopyBits( recSpace, currentPosInRec );
+                                            newrec.Consume( recSpace );
 
                                             recSpace = new char[PAGE_SIZE];
                                             currentPosInRec = sizeof (int) * (2);
@@ -476,21 +480,61 @@ void QueryCompiler::Compile(AttList* attsToCreate, int& queryType, int& numberOf
                                             currentPosInRec += sizeof (int);
                                             ((int *) recSpace)[0] = currentPosInRec;
                                             Record newrec2;
-                                            newrec2.CopyBits( recSpace, currentPosInRec );
+                                            newrec2.Consume( recSpace );
 
                                             temp.AppendRecords (newrec,newrec2,1,1);
 
                                             //temp.print(cout, sh);
 
-                                            childex.AppendRecord(temp);
+                                            header.AppendRecord(temp);
 
                                     }
                             }
             }
 
-            childex.Close();
-            ind.Close();	
-        } else { cout << "ERROR QUERY TYPE" << endl; }
+            header.Close();
+            leaves.Close();
+            
+            cout << "---WRITING LEAVES--" << endl;
+            
+            
+            leaves.Open();
+            ofstream file;
+            string pathfile = "Heaps//index.txt";
+            
+            file.open(pathfile);
+            Record rec;
+            while(leaves.GetNext(rec)){
+                rec.print(file,testSchema1); file << endl;
+            }
+            file.close();
+            
+            cout << "---WRITING HEADER--" << endl;
+            Schema testSchema2;
+            Attribute att3,att4;
+            att3.name = "key";
+            att3.noDistinct = 10000;
+            att3.type = (Type)Integer;
+            att4.name = "page";
+            att4.noDistinct = 10000;
+            att4.type = (Type)Integer;
+                    
+            testSchema2.atts.push_back(att3);
+            testSchema2.atts.push_back(att4);
+            
+            leaves.Open();
+            ofstream file1;
+            pathfile = "Heaps//header.txt";
+            
+            file1.open(pathfile);
+            while(header.GetNext(rec)){
+                rec.print(file1,testSchema2); file1 << endl;
+            }
+            file1.close();
+            
+        } else { cout << "--ERROR QUERY TYPE--" << endl; }
+        
+        
 }
 // a recursive function to create Join operators (w/ Select & Scan) from optimization result
 RelationalOp* QueryCompiler::buildJoinTree(int& numberOfPages,OptimizationTree*& _tree,

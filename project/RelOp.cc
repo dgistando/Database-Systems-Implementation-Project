@@ -39,150 +39,10 @@ ScanIndex::ScanIndex(Schema& _schema, CNF& _predicate, Record& _constants,
 	schema = _schema;
 	predicate = _predicate;
 	constants = _constants;
-	leaf = _indexfile;
-	internal = _indexheader;
-	table = _table;
-	once =0;
-	veccount=0;
-	//Record fals;
-	//finalrec.push_back(fals);
 }
 
 bool ScanIndex::GetNext(Record& rec) {
-
-	//vector<Record>finalrec;
-	if(once==0) { //cout<<"here"<<endl;
-		DBFile mainfile;
-		mainfile.Open(&table[0]);
-
-		DBFile f_leaf, f_internal;
-		f_leaf.Open(&leaf[0]);
-		f_internal.Open(&internal[0]);
-
-		vector<string> at; at.push_back("value") ;
-		vector<string> type; type.push_back("INTEGER");
-		vector<unsigned int> dis; dis.push_back(0);
-		Schema sche(at, type, dis);
-
-		stringstream ss;	
-
-		constants.print(ss, sche); //cout<<endl;
-		string s = ss.str();
-		size_t pos = s.find(":");
-		string str = s.substr(pos+2, s.length()-pos-3);
-		//cout<<endl<<str<<endl;
-
-		Record internalrecord;
-		f_internal.MoveFirst();
-		int counter=1;
-		int childcount=0;
-
-		while(f_internal.GetNext(internalrecord)){
-		
-		
-			at.clear();
-			type.clear();
-			dis.clear();
-
-			at.push_back("key") ; at.push_back("child");
-			type.push_back("INTEGER"); type.push_back("INTEGER");
-			dis.push_back(0); dis.push_back(0);
-			Schema sc(at, type, dis);
-
-			stringstream ssindex;
-
-			internalrecord.print(ssindex, sc); cout<<endl;
-			s = ssindex.str();
-			//cout<<s<<endl;
-			pos = s.find(":");
-			size_t pos1 = s.find(",");
-			string internalkey = s.substr(pos+1, pos1-pos-1);
-			//cout<<endl<<internalkey<<endl;
-		
-			if(stoi(str)<stoi(internalkey)) { childcount = counter-1; break;}
-			else childcount = counter;
-			counter++;
-		}
-		//cout<<"child "<<childcount<<" counter "<<counter;
-	
-		Page p;
-		Record r;
-		f_leaf.GetPageNo(childcount-1, p);
-		int count=0, count1=0;
-		vector<Record> indexrecvec;
-	
-		at.clear();
-		type.clear();
-		dis.clear();	
-		at.push_back("key");at.push_back("page");at.push_back("record");
-		type.push_back("INTEGER");type.push_back("INTEGER");type.push_back("INTEGER");
-		dis.push_back(0); dis.push_back(0); dis.push_back(0);
-
-		Schema leafschema(at, type, dis);
-
-
-		while(p.GetFirst(r) != 0) {
-
-			count++;
-	
-			stringstream leafrec;
-			r.print(leafrec, leafschema);
-
-			string a, keynum, c, pagenum, e, recnum;
-			int kn=0, pn=0, rn=0;
-
-			leafrec>>a>>keynum>>c>>pagenum>>e>>recnum;
-
-			keynum.pop_back();
-			pagenum.pop_back();
-			recnum.pop_back();
-			kn=stoi(keynum, nullptr,10); pn=stoi(pagenum, nullptr, 10); rn=stoi(recnum, nullptr, 10);
-
-			int valTocompare = stoi(str, nullptr, 10);
-
-			if(valTocompare == kn) 
-			{
-
-				count1++;
-
-				cout<<"page"<<pn<<" ";
-
-				cout<<"record"<<rn<<" "<<"count "<<count1 <<endl;
-	
-				Record mainrec;
-			
-				mainfile.GetSpecificRecord(pn-1, rn, mainrec);
-				//cout<<"here";
-		
-				finalrec.push_back(mainrec);
-				//cout<<"here";
-				//mainrec.print(cout, schema); cout<<endl;
-
-			
-			}
-
-			//cout<<kn<<endl<<pn<<endl<<rn<<endl;
-			 
-		}
-		
-		
-		//cout<<"vector size "<<finalrec.size();
-	
-		once=1;
-		cout<<endl<<"number total records "<<count<<" number applicable records "<<count1<<endl;
-		//cout<<"HERE in Scan Index"<<endl;
-		//return false;
-	
-	}
-		
-	if(veccount<finalrec.size()) {
-		rec = finalrec[veccount];
-		veccount++;
-		return true;
-	}
-	else return false;
-			
-
+    return false;
 }
 
 
@@ -316,14 +176,13 @@ struct TupleComp{
 
 int Join::GenerateFinalHeap(Table table){
     
-    string testPath = "Heaps//text_" + to_string(rand()) + ".txt";
-    ofstream myfile (testPath);
-    myfile.is_open() ; 
-    
     int counter = 0;
     
     vector<Tuple> tupleList;
     if(table == TableLeft){
+        string testPath = "Heaps//lhf_" + to_string(rand()) + ".txt";
+        ofstream myfile (testPath);
+        myfile.is_open() ;
         //CREATE FINAL HEAP
         DBFile finalHeap;
         string path = "Heaps//lhf_" + to_string(rand()) + ".dat";
@@ -384,6 +243,9 @@ int Join::GenerateFinalHeap(Table table){
         leftTableHeaps.push_back(finalHeap);
         myfile.close();
     } else {
+        string testPath = "Heaps//rhf_" + to_string(rand()) + ".txt";
+        ofstream myfile (testPath);
+        myfile.is_open() ;
         //CREATE FINAL HEAP
         DBFile finalHeap;
         string path = "Heaps//rhf_" + to_string(rand()) + ".dat";

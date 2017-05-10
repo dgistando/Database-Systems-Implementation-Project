@@ -96,6 +96,7 @@ SQL: SELECT SelectAtts FROM Tables WHERE AndList
 	tables = $4;
 	predicate = $6;	
 	groupingAtts = NULL;
+        queryType = 0;
 }
 
 | SELECT SelectAtts FROM Tables WHERE AndList GROUP BY Atts
@@ -103,6 +104,7 @@ SQL: SELECT SelectAtts FROM Tables WHERE AndList
 	tables = $4;
 	predicate = $6;	
 	groupingAtts = $9;
+        queryType = 0;
 }
 
 //PROJECT 6

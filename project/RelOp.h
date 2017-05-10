@@ -82,10 +82,6 @@ private:
 	// constant values for attributes in predicate
 	Record constants;
 
-	string leaf, internal, table;
-	vector<Record> finalrec;
-	int once, veccount;
-
 public:
 	ScanIndex(Schema& _schema, CNF& _predicate, Record& _constants, string& _indexfile, string& _indexheader, string& _table);
 	virtual ~ScanIndex();
